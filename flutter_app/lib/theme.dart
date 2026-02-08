@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 
 // ── Design Tokens ───────────────────────────────────────────────────
 //
-// Design philosophy: "Warm Confidence"
-//   Calm  → generous whitespace, slow intentional animations, deep dark mode
-//   Canva → vibrant but controlled accents, clear hierarchy, skeleton loaders
-//   Etsy  → warm cream surfaces, dark pill CTAs, handcraft warmth
+// Theme: Material 3 auto-generated from amber seed.
+// Text colors come from ColorScheme (onSurface, onSurfaceVariant)
+// — no manual overrides — guaranteed accessible contrast.
 //
 
 abstract class AppSpacing {
@@ -40,34 +39,34 @@ abstract class AppDuration {
 abstract class AppColors {
   // ─ Core brand
   static const Color amber = Color(0xFFD48500);       // primary brand amber
-  static const Color teal = Color(0xFF1A8A8A);         // secondary accent (Canva/Etsy inspired)
+  static const Color teal = Color(0xFF1A8A8A);         // secondary accent
   static const Color coral = Color(0xFFE8724A);        // warm accent for highlights
 
-  // ─ Surfaces (Etsy-inspired warm cream)
+  // ─ Surfaces
   static const Color cream = Color(0xFFFAF8F5);        // scaffold background
   static const Color warmWhite = Color(0xFFFFF8F0);    // card surfaces
   static const Color softCream = Color(0xFFFFF1E0);    // container fill / banners
   static const Color cardWhite = Color(0xFFFFFFFF);     // elevated card
 
-  // ─ Text
-  static const Color ink = Color(0xFF1A1A1A);          // primary text (Etsy near-black)
-  static const Color charcoal = Color(0xFF2A2725);     // secondary text — body copy
-  static const Color stone = Color(0xFF4A443E);        // tertiary text — labels, captions
-  static const Color mist = Color(0xFF706860);         // placeholder / disabled
+  // ─ Text (aligned with M3 onSurface / onSurfaceVariant from amber seed)
+  static const Color ink = Color(0xFF1D1B16);          // primary text — M3 onSurface
+  static const Color charcoal = Color(0xFF1D1B16);     // body text — same as onSurface
+  static const Color stone = Color(0xFF4C4639);        // secondary text — M3 onSurfaceVariant
+  static const Color mist = Color(0xFF7D7667);         // placeholder / disabled — M3 outline
 
   // ─ Borders & dividers
-  static const Color border = Color(0xFFE8E2DB);       // default border
-  static const Color borderLight = Color(0xFFF0EBE5);  // subtle border
+  static const Color border = Color(0xFFCEC6B4);       // M3 outlineVariant
+  static const Color borderLight = Color(0xFFE8E2D5);  // subtle border
 
   // ─ Semantic
   static const Color success = Color(0xFF2E7D44);
   static const Color warning = Color(0xFFE8A020);
   static const Color error = Color(0xFFD93025);
 
-  // ─ Dark mode (Calm-inspired deep navy)
-  static const Color darkBase = Color(0xFF141820);     // scaffold
-  static const Color darkSurface = Color(0xFF1C2230);  // card surfaces
-  static const Color darkElevated = Color(0xFF252D3D); // elevated containers
+  // ─ Dark mode
+  static const Color darkBase = Color(0xFF141820);
+  static const Color darkSurface = Color(0xFF1C2230);
+  static const Color darkElevated = Color(0xFF252D3D);
   static const Color darkOnSurface = Color(0xFFE8E2DB);
   static const Color darkMuted = Color(0xFF8B92A0);
   static const Color darkBorder = Color(0xFF2E3648);
@@ -78,7 +77,6 @@ abstract class AppColors {
 // ── Gradients ───────────────────────────────────────────────────────
 
 abstract class AppGradients {
-  // Hero gradient — used sparingly for the main CTA
   static const LinearGradient hero = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -90,7 +88,6 @@ abstract class AppGradients {
     stops: [0.0, 0.5, 1.0],
   );
 
-  // Subtle page background
   static const LinearGradient pageBackground = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
@@ -100,7 +97,6 @@ abstract class AppGradients {
     ],
   );
 
-  // Dark mode background (Calm deep navy)
   static const LinearGradient darkBackground = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
@@ -110,7 +106,6 @@ abstract class AppGradients {
     ],
   );
 
-  // Teal accent gradient (for secondary hero moments)
   static const LinearGradient teal = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -120,12 +115,10 @@ abstract class AppGradients {
     ],
   );
 
-  // Success gradient
   static const LinearGradient success = LinearGradient(
     colors: [Color(0xFF2E7D44), Color(0xFF3A9B56)],
   );
 
-  // Card overlay for text legibility
   static const LinearGradient cardOverlay = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
@@ -140,7 +133,6 @@ abstract class AppGradients {
 // ── Shadows ─────────────────────────────────────────────────────────
 
 abstract class AppShadows {
-  // Calm-inspired soft, minimal shadows
   static List<BoxShadow> get card => [
     BoxShadow(
       color: Colors.black.withValues(alpha: 0.04),
@@ -174,15 +166,10 @@ abstract class AppShadows {
 // ── Theme ───────────────────────────────────────────────────────────
 
 ThemeData buildLightTheme() {
+  // Let M3 generate the full palette from teal seed
   final colorScheme = ColorScheme.fromSeed(
-    seedColor: AppColors.amber,
+    seedColor: AppColors.teal,
     brightness: Brightness.light,
-  ).copyWith(
-    surface: AppColors.cream,
-    surfaceContainerLow: AppColors.warmWhite,
-    primary: AppColors.ink,         // Etsy: dark primary CTAs
-    secondary: AppColors.teal,
-    tertiary: AppColors.coral,
   );
 
   return ThemeData(
@@ -190,88 +177,76 @@ ThemeData buildLightTheme() {
     colorScheme: colorScheme,
     scaffoldBackgroundColor: AppColors.cream,
 
-    // Typography — Calm's lighter weights, generous line-height
+    // Typography — NO explicit colors; M3 applies onSurface automatically
     textTheme: const TextTheme(
       headlineLarge: TextStyle(
         fontSize: 32,
         fontWeight: FontWeight.w800,
-        color: AppColors.ink,
         letterSpacing: -0.5,
         height: 1.2,
       ),
       headlineMedium: TextStyle(
         fontSize: 26,
         fontWeight: FontWeight.w700,
-        color: AppColors.ink,
         letterSpacing: -0.3,
         height: 1.25,
       ),
       headlineSmall: TextStyle(
         fontSize: 22,
         fontWeight: FontWeight.w700,
-        color: AppColors.ink,
         letterSpacing: -0.2,
         height: 1.3,
       ),
       titleLarge: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,
-        color: AppColors.ink,
         letterSpacing: -0.1,
         height: 1.35,
       ),
       titleMedium: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
-        color: AppColors.ink,
         height: 1.4,
       ),
       titleSmall: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: AppColors.ink,
         height: 1.4,
       ),
       bodyLarge: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w400,
-        color: AppColors.charcoal,
         height: 1.5,
       ),
       bodyMedium: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w400,
-        color: AppColors.charcoal,
         height: 1.5,
       ),
       bodySmall: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w400,
-        color: AppColors.stone,
         height: 1.5,
       ),
       labelLarge: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: AppColors.ink,
         letterSpacing: 0.2,
       ),
       labelMedium: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w500,
-        color: AppColors.stone,
         letterSpacing: 0.2,
       ),
       labelSmall: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w500,
-        color: AppColors.stone,
         letterSpacing: 0.3,
       ),
     ),
 
-    // App Bar — clean, floating feel (Calm)
-    appBarTheme: const AppBarTheme(
+    // App Bar
+    appBarTheme: AppBarTheme(
       centerTitle: false,
       elevation: 0,
       scrolledUnderElevation: 0.5,
@@ -280,25 +255,25 @@ ThemeData buildLightTheme() {
       titleTextStyle: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,
-        color: AppColors.ink,
+        color: colorScheme.onSurface,
         letterSpacing: -0.1,
       ),
-      iconTheme: IconThemeData(color: AppColors.ink, size: 22),
+      iconTheme: IconThemeData(color: colorScheme.onSurface, size: 22),
     ),
 
-    // Cards — warm white with subtle border (Etsy)
+    // Cards
     cardTheme: CardThemeData(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: colorScheme.outlineVariant),
       ),
       color: AppColors.cardWhite,
       surfaceTintColor: Colors.transparent,
       margin: EdgeInsets.zero,
     ),
 
-    // Filled Buttons — dark pill (Etsy-inspired)
+    // Filled Buttons — dark pill
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: AppColors.ink,
@@ -333,15 +308,15 @@ ThemeData buildLightTheme() {
       ),
     ),
 
-    // Outlined Buttons — pill with subtle border
+    // Outlined Buttons
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.ink,
+        foregroundColor: colorScheme.onSurface,
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.pill),
         ),
-        side: const BorderSide(color: AppColors.border, width: 1.5),
+        side: BorderSide(color: colorScheme.outline, width: 1.5),
         textStyle: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w600,
@@ -365,47 +340,32 @@ ThemeData buildLightTheme() {
       ),
     ),
 
-    // Input Fields — warm filled (Etsy)
+    // Input Fields
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AppColors.cardWhite,
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: colorScheme.outline),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: colorScheme.outline),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: const BorderSide(color: AppColors.teal, width: 2),
-      ),
-      hintStyle: const TextStyle(
-        color: AppColors.mist,
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-      ),
-      labelStyle: const TextStyle(
-        color: AppColors.stone,
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
+        borderSide: BorderSide(color: colorScheme.primary, width: 2),
       ),
     ),
 
-    // Chips — warm cream fill (Etsy)
+    // Chips
     chipTheme: ChipThemeData(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
-      side: const BorderSide(color: AppColors.borderLight),
+      side: BorderSide(color: colorScheme.outlineVariant),
       backgroundColor: AppColors.warmWhite,
-      labelStyle: const TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        color: AppColors.charcoal,
-      ),
     ),
 
     // Snack Bar
@@ -417,29 +377,23 @@ ThemeData buildLightTheme() {
       backgroundColor: AppColors.ink,
     ),
 
-    // Tab Bar — teal indicator
-    tabBarTheme: const TabBarThemeData(
+    // Tab Bar
+    tabBarTheme: TabBarThemeData(
       indicatorSize: TabBarIndicatorSize.label,
       indicatorColor: AppColors.teal,
       labelColor: AppColors.teal,
-      unselectedLabelColor: AppColors.stone,
-      labelStyle: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-      ),
-      unselectedLabelStyle: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-      ),
+      unselectedLabelColor: colorScheme.onSurfaceVariant,
+      labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      unselectedLabelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
     ),
 
     // Divider
-    dividerTheme: const DividerThemeData(
-      color: AppColors.borderLight,
+    dividerTheme: DividerThemeData(
+      color: colorScheme.outlineVariant,
       thickness: 1,
     ),
 
-    // Bottom nav (if used later)
+    // Bottom nav
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: AppColors.cardWhite,
       indicatorColor: AppColors.softCream,
@@ -453,13 +407,8 @@ ThemeData buildLightTheme() {
 
 ThemeData buildDarkTheme() {
   final colorScheme = ColorScheme.fromSeed(
-    seedColor: AppColors.amber,
+    seedColor: AppColors.teal,
     brightness: Brightness.dark,
-  ).copyWith(
-    surface: AppColors.darkBase,
-    surfaceContainerLow: AppColors.darkSurface,
-    primary: AppColors.darkAmber,
-    secondary: AppColors.darkTeal,
   );
 
   return ThemeData(
@@ -467,86 +416,75 @@ ThemeData buildDarkTheme() {
     colorScheme: colorScheme,
     scaffoldBackgroundColor: AppColors.darkBase,
 
+    // Typography — NO explicit colors; M3 applies onSurface automatically
     textTheme: const TextTheme(
       headlineLarge: TextStyle(
         fontSize: 32,
         fontWeight: FontWeight.w800,
-        color: AppColors.darkOnSurface,
         letterSpacing: -0.5,
         height: 1.2,
       ),
       headlineMedium: TextStyle(
         fontSize: 26,
         fontWeight: FontWeight.w700,
-        color: AppColors.darkOnSurface,
         letterSpacing: -0.3,
         height: 1.25,
       ),
       headlineSmall: TextStyle(
         fontSize: 22,
         fontWeight: FontWeight.w700,
-        color: AppColors.darkOnSurface,
         letterSpacing: -0.2,
         height: 1.3,
       ),
       titleLarge: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,
-        color: AppColors.darkOnSurface,
         letterSpacing: -0.1,
         height: 1.35,
       ),
       titleMedium: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
-        color: AppColors.darkOnSurface,
         height: 1.4,
       ),
       titleSmall: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: AppColors.darkOnSurface,
         height: 1.4,
       ),
       bodyLarge: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w400,
-        color: AppColors.darkOnSurface,
         height: 1.5,
       ),
       bodyMedium: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w400,
-        color: AppColors.darkOnSurface,
         height: 1.5,
       ),
       bodySmall: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w400,
-        color: AppColors.darkMuted,
         height: 1.5,
       ),
       labelLarge: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: AppColors.darkOnSurface,
         letterSpacing: 0.2,
       ),
       labelMedium: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w500,
-        color: AppColors.darkMuted,
         letterSpacing: 0.2,
       ),
       labelSmall: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w500,
-        color: AppColors.darkMuted,
         letterSpacing: 0.3,
       ),
     ),
 
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       centerTitle: false,
       elevation: 0,
       scrolledUnderElevation: 0.5,
@@ -555,10 +493,10 @@ ThemeData buildDarkTheme() {
       titleTextStyle: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,
-        color: AppColors.darkOnSurface,
+        color: colorScheme.onSurface,
         letterSpacing: -0.1,
       ),
-      iconTheme: IconThemeData(color: AppColors.darkOnSurface, size: 22),
+      iconTheme: IconThemeData(color: colorScheme.onSurface, size: 22),
     ),
 
     cardTheme: CardThemeData(
@@ -602,7 +540,7 @@ ThemeData buildDarkTheme() {
 
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.darkOnSurface,
+        foregroundColor: colorScheme.onSurface,
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -631,10 +569,8 @@ ThemeData buildDarkTheme() {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: const BorderSide(color: AppColors.darkTeal, width: 2),
+        borderSide: BorderSide(color: colorScheme.primary, width: 2),
       ),
-      hintStyle: const TextStyle(color: AppColors.darkMuted),
-      labelStyle: const TextStyle(color: AppColors.darkMuted),
     ),
 
     snackBarTheme: SnackBarThemeData(
@@ -645,13 +581,13 @@ ThemeData buildDarkTheme() {
       backgroundColor: AppColors.darkElevated,
     ),
 
-    tabBarTheme: const TabBarThemeData(
+    tabBarTheme: TabBarThemeData(
       indicatorSize: TabBarIndicatorSize.label,
       indicatorColor: AppColors.darkTeal,
       labelColor: AppColors.darkTeal,
-      unselectedLabelColor: AppColors.darkMuted,
-      labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-      unselectedLabelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+      unselectedLabelColor: colorScheme.onSurfaceVariant,
+      labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      unselectedLabelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
     ),
 
     dividerTheme: const DividerThemeData(
