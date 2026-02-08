@@ -27,7 +27,7 @@ def _mock_hits(req: PatentSearchRequest) -> list[PatentHit]:
             f"This invention describes improvements in the field.",
             assignee="Example Corp",
             date="2023-01-15",
-            score=round(0.9 - i * 0.08, 2),
+            score=round(0.55 - i * 0.08, 2),
             why_similar=f"Shares keywords: {', '.join(req.keywords[:2])}. "
             f"Addresses similar problem domain.",
         )
