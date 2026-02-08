@@ -23,13 +23,7 @@ class LoadingOverlay extends StatelessWidget {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(AppRadius.lg),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              boxShadow: AppShadows.elevated,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -39,7 +33,8 @@ class LoadingOverlay extends StatelessWidget {
                   height: 40,
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
-                    color: AppColors.primaryAmber,
+                    strokeCap: StrokeCap.round,
+                    color: AppColors.teal,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.base),
@@ -48,7 +43,7 @@ class LoadingOverlay extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
-                        color: AppColors.warmGray,
+                        color: AppColors.stone,
                       ),
                 ),
               ],

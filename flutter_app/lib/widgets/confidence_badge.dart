@@ -12,8 +12,8 @@ class ConfidenceBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: _color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppRadius.full),
-        border: Border.all(color: _color.withValues(alpha: 0.3), width: 1.5),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: _color.withValues(alpha: 0.25), width: 1.5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -48,18 +48,18 @@ class ConfidenceBadge extends StatelessWidget {
   Color get _color {
     switch (level) {
       case 'high':
-        return AppColors.successGreen;
+        return AppColors.success;
       case 'med':
-        return AppColors.heroOrange;
+        return AppColors.warning;
       default:
-        return const Color(0xFFE53935);
+        return AppColors.error;
     }
   }
 
   IconData get _icon {
     switch (level) {
       case 'high':
-        return Icons.verified;
+        return Icons.verified_outlined;
       case 'med':
         return Icons.info_outline;
       default:

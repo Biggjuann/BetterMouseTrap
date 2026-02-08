@@ -11,27 +11,23 @@ class DisclaimerBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.softCream,
+        color: AppColors.warmWhite,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(
-          color: AppColors.lightWarmGray.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
             Icons.info_outline,
-            color: AppColors.heroOrange,
+            color: AppColors.amber,
             size: 18,
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               'This is not legal advice. Always consult a patent attorney before filing.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.warmGray,
-                  ),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
         ],

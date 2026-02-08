@@ -62,8 +62,8 @@ class _BuildThisScreenState extends State<BuildThisScreen>
           controller: _tabController,
           indicatorWeight: 3,
           tabs: const [
-            Tab(icon: Icon(Icons.shield_rounded), text: 'Protect It'),
-            Tab(icon: Icon(Icons.construction_rounded), text: 'Build It'),
+            Tab(icon: Icon(Icons.shield_outlined), text: 'Protect It'),
+            Tab(icon: Icon(Icons.construction_outlined), text: 'Build It'),
           ],
         ),
       ),
@@ -80,18 +80,11 @@ class _BuildThisScreenState extends State<BuildThisScreen>
   Widget _patentTab() {
     return Stack(
       children: [
-        // Background
         Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [AppColors.warmWhite, Color(0xFFFFF9F0)],
-            ),
-          ),
+          decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
         ),
         SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.base),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -100,34 +93,19 @@ class _BuildThisScreenState extends State<BuildThisScreen>
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFFF3E5F5), Color(0xFFEDE7F6)],
-                  ),
+                  color: AppColors.warmWhite,
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  border: Border.all(
-                    color: const Color(0xFF7B1FA2).withValues(alpha: 0.15),
-                  ),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.sm),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF7B1FA2), Color(0xFF9C27B0)],
-                        ),
+                        color: const Color(0xFF7B1FA2),
                         borderRadius: BorderRadius.circular(AppRadius.md),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF7B1FA2).withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                       ),
-                      child: const Icon(Icons.shield, color: Colors.white, size: 22),
+                      child: const Icon(Icons.shield_outlined, color: Colors.white, size: 22),
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
@@ -136,18 +114,12 @@ class _BuildThisScreenState extends State<BuildThisScreen>
                         children: [
                           Text(
                             'Protect Your Idea',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.darkCharcoal,
-                                ),
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'When you create something unique, you have to protect it.',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.warmGray,
-                                  height: 1.4,
-                                ),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
                       ),
@@ -158,11 +130,29 @@ class _BuildThisScreenState extends State<BuildThisScreen>
               const SizedBox(height: AppSpacing.lg),
 
               if (_patentDraft == null)
-                _buildCTAButton(
-                  icon: Icons.description_rounded,
-                  label: 'Draft My Patent',
-                  gradientColors: [const Color(0xFF7B1FA2), const Color(0xFF9C27B0)],
-                  onTap: _isLoadingPatent ? null : _generatePatentDraft,
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: FilledButton(
+                    onPressed: _isLoadingPatent ? null : _generatePatentDraft,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF7B1FA2),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.description_outlined, size: 20),
+                        SizedBox(width: AppSpacing.sm),
+                        Text(
+                          'Draft My Patent',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 )
               else ...[
                 _copyBar(() {
@@ -170,7 +160,7 @@ class _BuildThisScreenState extends State<BuildThisScreen>
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Text('Copied to clipboard!'),
-                      backgroundColor: AppColors.successGreen,
+                      backgroundColor: AppColors.success,
                     ),
                   );
                 }),
@@ -179,18 +169,10 @@ class _BuildThisScreenState extends State<BuildThisScreen>
                   width: double.infinity,
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(
-                      color: AppColors.lightWarmGray.withValues(alpha: 0.3),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    color: AppColors.cardWhite,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: AppShadows.elevated,
                   ),
                   child: MarkdownBody(
                     data: _patentDraft!.markdown,
@@ -199,7 +181,7 @@ class _BuildThisScreenState extends State<BuildThisScreen>
                 ),
               ],
 
-              const SizedBox(height: AppSpacing.base),
+              const SizedBox(height: AppSpacing.lg),
               const DisclaimerBanner(),
               const SizedBox(height: AppSpacing.lg),
             ],
@@ -214,18 +196,11 @@ class _BuildThisScreenState extends State<BuildThisScreen>
   Widget _prototypeTab() {
     return Stack(
       children: [
-        // Background
         Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [AppColors.warmWhite, Color(0xFFFFF9F0)],
-            ),
-          ),
+          decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
         ),
         SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.base),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -234,34 +209,19 @@ class _BuildThisScreenState extends State<BuildThisScreen>
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFFE8F5E9), Color(0xFFC8E6C9)],
-                  ),
+                  color: AppColors.warmWhite,
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  border: Border.all(
-                    color: AppColors.successGreen.withValues(alpha: 0.15),
-                  ),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.sm),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
-                        ),
+                        color: AppColors.teal,
                         borderRadius: BorderRadius.circular(AppRadius.md),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.successGreen.withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                       ),
-                      child: const Icon(Icons.construction, color: Colors.white, size: 22),
+                      child: const Icon(Icons.construction_outlined, color: Colors.white, size: 22),
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
@@ -270,18 +230,12 @@ class _BuildThisScreenState extends State<BuildThisScreen>
                         children: [
                           Text(
                             'Build Your Prototype',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.darkCharcoal,
-                                ),
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Stay lean and mean! Get a practical build plan.',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.warmGray,
-                                  height: 1.4,
-                                ),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
                       ),
@@ -292,11 +246,29 @@ class _BuildThisScreenState extends State<BuildThisScreen>
               const SizedBox(height: AppSpacing.lg),
 
               if (_prototype == null)
-                _buildCTAButton(
-                  icon: Icons.build_rounded,
-                  label: 'Show Me How to Build It',
-                  gradientColors: [const Color(0xFF2E7D32), const Color(0xFF43A047)],
-                  onTap: _isLoadingPrototype ? null : _generatePrototype,
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: FilledButton(
+                    onPressed: _isLoadingPrototype ? null : _generatePrototype,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.teal,
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.build_outlined, size: 20),
+                        SizedBox(width: AppSpacing.sm),
+                        Text(
+                          'Show Me How to Build It',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 )
               else ...[
                 _copyBar(() {
@@ -304,7 +276,7 @@ class _BuildThisScreenState extends State<BuildThisScreen>
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Text('Copied to clipboard!'),
-                      backgroundColor: AppColors.successGreen,
+                      backgroundColor: AppColors.success,
                     ),
                   );
                 }),
@@ -313,18 +285,10 @@ class _BuildThisScreenState extends State<BuildThisScreen>
                   width: double.infinity,
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(
-                      color: AppColors.lightWarmGray.withValues(alpha: 0.3),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    color: AppColors.cardWhite,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: AppShadows.elevated,
                   ),
                   child: MarkdownBody(
                     data: _prototype!.markdown,
@@ -333,7 +297,7 @@ class _BuildThisScreenState extends State<BuildThisScreen>
                 ),
               ],
 
-              const SizedBox(height: AppSpacing.base),
+              const SizedBox(height: AppSpacing.lg),
               const DisclaimerBanner(),
               const SizedBox(height: AppSpacing.lg),
             ],
@@ -345,76 +309,14 @@ class _BuildThisScreenState extends State<BuildThisScreen>
     );
   }
 
-  Widget _buildCTAButton({
-    required IconData icon,
-    required String label,
-    required List<Color> gradientColors,
-    required VoidCallback? onTap,
-  }) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: gradientColors),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        boxShadow: [
-          BoxShadow(
-            color: gradientColors.first.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.base,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: Colors.white, size: 22),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.3,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _copyBar(VoidCallback onCopy) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.primaryAmber.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-          ),
-          child: TextButton.icon(
-            onPressed: onCopy,
-            icon: Icon(Icons.copy_rounded, size: 16, color: AppColors.primaryAmber),
-            label: Text(
-              'Copy',
-              style: TextStyle(
-                color: AppColors.primaryAmber,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+        TextButton.icon(
+          onPressed: onCopy,
+          icon: const Icon(Icons.copy_rounded, size: 16),
+          label: const Text('Copy'),
         ),
       ],
     );
@@ -478,7 +380,6 @@ class _BuildThisScreenState extends State<BuildThisScreen>
     if (prototype != null) {
       updates['prototype_json'] = prototype.toJson();
     }
-    // Fire and forget
     ApiClient.instance
         .updateSession(widget.sessionId!, updates)
         .catchError((_) {});

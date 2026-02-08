@@ -49,35 +49,20 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
       appBar: AppBar(title: const Text('Patent Landscape')),
       body: Stack(
         children: [
-          // Background gradient
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [AppColors.warmWhite, Color(0xFFFFF9F0)],
-              ),
-            ),
+            decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
           ),
           ListView(
-            padding: const EdgeInsets.all(AppSpacing.base),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
               // Confidence card
               Container(
-                padding: const EdgeInsets.all(AppSpacing.base),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  border: Border.all(
-                    color: AppColors.lightWarmGray.withValues(alpha: 0.3),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: AppColors.cardWhite,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: AppShadows.card,
                 ),
                 child: Row(
                   children: [
@@ -85,10 +70,10 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2196F3).withValues(alpha: 0.1),
+                        color: AppColors.teal.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
-                      child: const Icon(Icons.radar, color: Color(0xFF2196F3), size: 20),
+                      child: const Icon(Icons.radar, color: AppColors.teal, size: 20),
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
@@ -99,15 +84,12 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
                             'Search Confidence',
                             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.darkCharcoal,
                                 ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             'How thorough was our search',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.mutedGray,
-                                ),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
                       ),
@@ -116,29 +98,26 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.xl),
 
-              // Section header with count
+              // Section header
               Row(
                 children: [
                   Text(
                     'Prior Art Results',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.darkCharcoal,
-                        ),
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryAmber.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppRadius.full),
+                      color: AppColors.teal.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
                     ),
                     child: Text(
                       '${widget.patentResponse.hits.length}',
-                      style: TextStyle(
-                        color: AppColors.primaryAmber,
+                      style: const TextStyle(
+                        color: AppColors.teal,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
@@ -155,103 +134,59 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
                 ...widget.patentResponse.hits
                     .map((hit) => _PatentHitCard(hit: hit)),
 
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.xl),
               const DisclaimerBanner(),
-              const SizedBox(height: AppSpacing.base),
+              const SizedBox(height: AppSpacing.lg),
 
-              // Export button — gradient CTA
-              Container(
+              // Export CTA — dark pill (Etsy)
+              SizedBox(
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: AppGradients.hero,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryAmber.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _isLoading ? null : _exportOnePager,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                        vertical: AppSpacing.base,
+                height: 56,
+                child: FilledButton(
+                  onPressed: _isLoading ? null : _exportOnePager,
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.description_outlined, size: 20),
+                      SizedBox(width: AppSpacing.sm),
+                      Text(
+                        'Get your one-pager',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                        ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.description_rounded,
-                              color: Colors.white, size: 22),
-                          const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            'Get your one-pager',
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.3,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    ],
                   ),
                 ),
               ),
 
-              // Build This button
+              // Build This button — teal accent
               if (_canBuildThis) ...[
                 const SizedBox(height: AppSpacing.md),
-                Container(
+                SizedBox(
                   width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+                  height: 56,
+                  child: FilledButton(
+                    onPressed: _isLoading ? null : _navigateToBuildThis,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.teal,
                     ),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.successGreen.withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: _isLoading ? null : _navigateToBuildThis,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.lg,
-                          vertical: AppSpacing.base,
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.rocket_launch_outlined, size: 20),
+                        SizedBox(width: AppSpacing.sm),
+                        Text(
+                          'Let\'s Build This!',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
+                          ),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.rocket_launch_rounded,
-                                color: Colors.white, size: 22),
-                            const SizedBox(width: AppSpacing.sm),
-                            Text(
-                              'Let\'s Build This!',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
-                                  ?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.3,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
@@ -270,10 +205,10 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: AppColors.successGreen.withValues(alpha: 0.05),
+        color: AppColors.success.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
-          color: AppColors.successGreen.withValues(alpha: 0.2),
+          color: AppColors.success.withValues(alpha: 0.15),
         ),
       ),
       child: Column(
@@ -282,12 +217,12 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.successGreen.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppRadius.full),
+              color: AppColors.success.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.celebration_rounded,
-              color: AppColors.successGreen,
+              color: AppColors.success,
               size: 28,
             ),
           ),
@@ -295,17 +230,14 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
           Text(
             'The field is wide open!',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.successGreen,
+                  color: AppColors.success,
                 ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'No matching patents found — your idea could be a real hero.',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.mutedGray,
-                ),
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
       ),
@@ -337,7 +269,6 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
         hits: widget.patentResponse.hits,
       );
 
-      // Save export to session (fire and forget)
       if (widget.sessionId != null) {
         ApiClient.instance.updateSession(widget.sessionId!, {
           'export_markdown': response.markdown,
@@ -384,29 +315,18 @@ class _PatentHitCardState extends State<_PatentHitCard> {
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-            color: AppColors.lightWarmGray.withValues(alpha: 0.3),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: AppColors.cardWhite,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border),
+          boxShadow: AppShadows.card,
         ),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.base),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Score badge on left
               ScoreBadge(score: hit.score),
               const SizedBox(width: AppSpacing.md),
-
-              // Content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,14 +335,12 @@ class _PatentHitCardState extends State<_PatentHitCard> {
                       hit.title,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.darkCharcoal,
                           ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       hit.patentId,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.mutedGray,
                             fontWeight: FontWeight.w500,
                           ),
                     ),
@@ -457,7 +375,7 @@ class _PatentHitCardState extends State<_PatentHitCard> {
                                   ? Icons.expand_less_rounded
                                   : Icons.expand_more_rounded,
                               size: 18,
-                              color: AppColors.primaryAmber,
+                              color: AppColors.teal,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -466,7 +384,7 @@ class _PatentHitCardState extends State<_PatentHitCard> {
                                   .textTheme
                                   .labelMedium
                                   ?.copyWith(
-                                    color: AppColors.primaryAmber,
+                                    color: AppColors.teal,
                                     fontWeight: FontWeight.w600,
                                   ),
                             ),
@@ -481,33 +399,22 @@ class _PatentHitCardState extends State<_PatentHitCard> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(AppSpacing.md),
                         decoration: BoxDecoration(
-                          color: AppColors.softCream.withValues(alpha: 0.5),
+                          color: AppColors.warmWhite,
                           borderRadius: BorderRadius.circular(AppRadius.sm),
-                          border: Border.all(
-                            color:
-                                AppColors.lightWarmGray.withValues(alpha: 0.2),
-                          ),
+                          border: Border.all(color: AppColors.borderLight),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               hit.whySimilar,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: AppColors.warmGray,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     height: 1.5,
                                   ),
                             ),
                             if (hit.abstract_.isNotEmpty) ...[
                               const SizedBox(height: AppSpacing.sm),
-                              Divider(
-                                color: AppColors.lightWarmGray
-                                    .withValues(alpha: 0.3),
-                                height: 1,
-                              ),
+                              Divider(color: AppColors.borderLight, height: 1),
                               const SizedBox(height: AppSpacing.sm),
                               Text(
                                 hit.abstract_,
@@ -517,7 +424,6 @@ class _PatentHitCardState extends State<_PatentHitCard> {
                                     .textTheme
                                     .bodySmall
                                     ?.copyWith(
-                                      color: AppColors.mutedGray,
                                       fontStyle: FontStyle.italic,
                                       height: 1.4,
                                     ),
@@ -541,14 +447,13 @@ class _PatentHitCardState extends State<_PatentHitCard> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 13, color: AppColors.mutedGray),
+        Icon(icon, size: 13, color: AppColors.stone),
         const SizedBox(width: 4),
         Flexible(
           child: Text(
             text,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.mutedGray,
                   fontSize: 12,
                 ),
           ),

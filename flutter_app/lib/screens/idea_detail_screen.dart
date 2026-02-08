@@ -46,42 +46,23 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
       appBar: AppBar(title: const Text('Your Idea')),
       body: Stack(
         children: [
-          // Subtle background gradient
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [AppColors.warmWhite, Color(0xFFFFF9F0)],
-              ),
-            ),
+            decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
           ),
           SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.base),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Hero header card
+                // Hero header card — warm cream
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFFFFF8EE), Color(0xFFFFF1DC)],
-                    ),
+                    color: AppColors.warmWhite,
                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                    border: Border.all(
-                      color: AppColors.warmGold.withValues(alpha: 0.3),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryAmber.withValues(alpha: 0.08),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: AppShadows.elevated,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,20 +72,11 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                           Container(
                             padding: const EdgeInsets.all(AppSpacing.sm),
                             decoration: BoxDecoration(
-                              gradient: AppGradients.hero,
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.md),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primaryAmber
-                                      .withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
+                              color: AppColors.amber,
+                              borderRadius: BorderRadius.circular(AppRadius.md),
                             ),
                             child: const Icon(
-                              Icons.lightbulb,
+                              Icons.lightbulb_outline,
                               color: Colors.white,
                               size: 22,
                             ),
@@ -113,14 +85,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                           Expanded(
                             child: Text(
                               widget.variant.title,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.darkCharcoal,
-                                    letterSpacing: -0.3,
-                                  ),
+                              style: Theme.of(context).textTheme.headlineSmall,
                             ),
                           ),
                         ],
@@ -129,14 +94,13 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                       Text(
                         widget.variant.summary,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.warmGray,
                               height: 1.5,
                             ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.xl),
 
                 if (_isLoadingSpec)
                   _buildLoadingState()
@@ -144,7 +108,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                   _specSection(_spec!),
                 ],
 
-                const SizedBox(height: AppSpacing.base),
+                const SizedBox(height: AppSpacing.lg),
                 const DisclaimerBanner(),
                 const SizedBox(height: AppSpacing.lg),
               ],
@@ -170,14 +134,14 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
               child: CircularProgressIndicator(
                 strokeWidth: 3,
                 strokeCap: StrokeCap.round,
-                color: AppColors.primaryAmber,
+                color: AppColors.teal,
               ),
             ),
-            const SizedBox(height: AppSpacing.base),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               'Breaking down what makes this clever...',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.mutedGray,
+                    color: AppColors.stone,
                   ),
             ),
           ],
@@ -193,29 +157,29 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
         _specCard(
           'What Makes It Unique',
           spec.novelty,
-          Icons.auto_awesome,
-          const Color(0xFFEF6C00),
+          Icons.auto_awesome_outlined,
+          AppColors.amber,
         ),
         const SizedBox(height: AppSpacing.md),
         _specCard(
           'How It Works',
           spec.mechanism,
-          Icons.settings_suggest,
-          const Color(0xFF2196F3),
+          Icons.settings_suggest_outlined,
+          AppColors.teal,
         ),
         const SizedBox(height: AppSpacing.md),
         _specCard(
           'What Exists Today',
           spec.baseline,
-          Icons.analytics,
-          const Color(0xFF00897B),
+          Icons.analytics_outlined,
+          AppColors.coral,
         ),
         const SizedBox(height: AppSpacing.md),
 
         // Differentiators card
         _sectionCard(
-          icon: Icons.stars,
-          color: AppColors.successGreen,
+          icon: Icons.stars_outlined,
+          color: AppColors.success,
           title: 'Why It Stands Out',
           child: Column(
             children: spec.differentiators
@@ -235,28 +199,20 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                           width: 20,
                           height: 20,
                           decoration: BoxDecoration(
-                            color: AppColors.successGreen
-                                .withValues(alpha: 0.1),
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.full),
+                            color: AppColors.success.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
                           ),
                           child: const Icon(
                             Icons.check,
                             size: 12,
-                            color: AppColors.successGreen,
+                            color: AppColors.success,
                           ),
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Text(
                             entry.value,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: AppColors.warmGray,
-                                  height: 1.4,
-                                ),
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
                       ],
@@ -270,8 +226,8 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
 
         // Keywords card
         _sectionCard(
-          icon: Icons.label,
-          color: AppColors.richBrown,
+          icon: Icons.label_outline,
+          color: AppColors.stone,
           title: 'Keywords',
           child: Wrap(
             spacing: 8,
@@ -279,50 +235,28 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             children: spec.keywords.map((k) => KeywordTag(text: k)).toList(),
           ),
         ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.xl),
 
-        // Patent search CTA
-        Container(
+        // Patent search CTA — dark pill (Etsy)
+        SizedBox(
           width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: AppGradients.hero,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryAmber.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap:
-                  _isLoadingPatents ? null : () => _searchPatents(spec),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.base,
+          height: 56,
+          child: FilledButton(
+            onPressed: _isLoadingPatents ? null : () => _searchPatents(spec),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.search_rounded, size: 20),
+                SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Check for existing patents',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.search_rounded,
-                        color: Colors.white, size: 22),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(
-                      'Check for existing patents',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.3,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
+              ],
             ),
           ),
         ),
@@ -339,7 +273,6 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.warmGray,
               height: 1.5,
             ),
       ),
@@ -354,20 +287,12 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.base),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(
-          color: AppColors.lightWarmGray.withValues(alpha: 0.3),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.cardWhite,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppShadows.card,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,7 +314,6 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                   title,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.darkCharcoal,
                       ),
                 ),
               ),
@@ -411,7 +335,6 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
       );
       if (mounted) {
         setState(() => _spec = spec);
-        // Save spec to session (fire and forget)
         if (widget.sessionId != null) {
           ApiClient.instance.updateSession(widget.sessionId!, {
             'spec_json': spec.toJson(),
@@ -439,7 +362,6 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
         keywords: spec.keywords,
       );
 
-      // Save patent results to session (fire and forget)
       if (widget.sessionId != null) {
         ApiClient.instance.updateSession(widget.sessionId!, {
           'patent_hits_json':

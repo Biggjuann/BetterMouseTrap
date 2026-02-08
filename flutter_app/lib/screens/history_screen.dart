@@ -46,7 +46,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Session deleted'),
-            backgroundColor: AppColors.successGreen,
+            backgroundColor: AppColors.success,
           ),
         );
       }
@@ -65,20 +65,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
       appBar: AppBar(title: const Text('My Ideas')),
       body: Stack(
         children: [
-          // Background
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [AppColors.warmWhite, Color(0xFFFFF9F0)],
-              ),
-            ),
+            decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
           ),
           _isLoading
               ? Center(
                   child: CircularProgressIndicator(
-                    color: AppColors.primaryAmber,
+                    color: AppColors.teal,
                     strokeWidth: 3,
                     strokeCap: StrokeCap.round,
                   ),
@@ -86,7 +79,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               : _sessions == null || _sessions!.isEmpty
                   ? _emptyState()
                   : RefreshIndicator(
-                      color: AppColors.primaryAmber,
+                      color: AppColors.teal,
                       onRefresh: _loadSessions,
                       child: ListView.builder(
                         padding: const EdgeInsets.fromLTRB(
@@ -131,29 +124,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: AppColors.primaryAmber.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppRadius.full),
+                color: AppColors.amber.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.lightbulb_outline_rounded,
                 size: 36,
-                color: AppColors.primaryAmber,
+                color: AppColors.amber,
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
               'No ideas yet!',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.darkCharcoal,
-                  ),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Every great product starts with an idea.\nGo create one!',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.mutedGray,
+                    color: AppColors.stone,
                     height: 1.5,
                   ),
             ),
@@ -181,22 +171,14 @@ class _SessionTile extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-            color: AppColors.lightWarmGray.withValues(alpha: 0.3),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: AppColors.cardWhite,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border),
+          boxShadow: AppShadows.card,
         ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.base),
             child: Row(
@@ -206,12 +188,12 @@ class _SessionTile extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: AppColors.primaryAmber.withValues(alpha: 0.1),
+                    color: AppColors.teal.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: Icon(
                     _iconForStatus(session.status),
-                    color: AppColors.primaryAmber,
+                    color: AppColors.teal,
                     size: 20,
                   ),
                 ),
@@ -224,12 +206,8 @@ class _SessionTile extends StatelessWidget {
                         session.displayTitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: AppColors.darkCharcoal,
                             ),
                       ),
                       const SizedBox(height: 4),
@@ -239,10 +217,7 @@ class _SessionTile extends StatelessWidget {
                           const SizedBox(width: AppSpacing.sm),
                           Text(
                             _formatDate(session.updatedAt),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: AppColors.mutedGray),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
                       ),
@@ -251,7 +226,7 @@ class _SessionTile extends StatelessWidget {
                 ),
                 IconButton(
                   icon: Icon(Icons.delete_outline_rounded,
-                      size: 20, color: AppColors.mutedGray),
+                      size: 20, color: AppColors.mist),
                   onPressed: onDelete,
                 ),
               ],
@@ -265,15 +240,15 @@ class _SessionTile extends StatelessWidget {
   IconData _iconForStatus(String status) {
     switch (status) {
       case 'exported':
-        return Icons.description_rounded;
+        return Icons.description_outlined;
       case 'patents_searched':
         return Icons.search_rounded;
       case 'spec_generated':
-        return Icons.analytics_rounded;
+        return Icons.analytics_outlined;
       case 'ideas_generated':
-        return Icons.lightbulb_rounded;
+        return Icons.lightbulb_outline;
       default:
-        return Icons.edit_rounded;
+        return Icons.edit_outlined;
     }
   }
 
@@ -301,13 +276,13 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.primaryAmber.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppRadius.full),
+        color: AppColors.teal.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         status,
-        style: TextStyle(
-          color: AppColors.primaryAmber,
+        style: const TextStyle(
+          color: AppColors.teal,
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),

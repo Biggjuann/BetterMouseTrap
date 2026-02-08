@@ -53,18 +53,28 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // Subtle page gradient (Calm-style)
+          Container(
+            decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
+          ),
           CustomScrollView(
             slivers: [
-              // Hero gradient header
+              // Hero header
               SliverToBoxAdapter(
                 child: Container(
                   width: double.infinity,
-                  decoration: const BoxDecoration(gradient: AppGradients.hero),
+                  decoration: BoxDecoration(
+                    gradient: AppGradients.hero,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(AppRadius.xl),
+                      bottomRight: Radius.circular(AppRadius.xl),
+                    ),
+                  ),
                   child: SafeArea(
                     bottom: false,
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.lg, AppSpacing.base, AppSpacing.lg, AppSpacing.xl,
+                        AppSpacing.lg, AppSpacing.base, AppSpacing.lg, AppSpacing.xxl,
                       ),
                       child: Column(
                         children: [
@@ -73,14 +83,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Icon(
-                                Icons.tips_and_updates,
-                                size: 28,
+                                Icons.tips_and_updates_outlined,
+                                size: 26,
                                 color: Colors.white,
                               ),
                               Row(
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.history, color: Colors.white),
+                                    icon: const Icon(Icons.history_rounded, color: Colors.white),
                                     tooltip: 'My Ideas',
                                     onPressed: () => Navigator.push(
                                       context,
@@ -90,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.logout, color: Colors.white),
+                                    icon: const Icon(Icons.logout_rounded, color: Colors.white),
                                     tooltip: 'Sign out',
                                     onPressed: _logout,
                                   ),
@@ -98,21 +108,22 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: AppSpacing.lg),
+                          const SizedBox(height: AppSpacing.xxl),
 
-                          // Hero text
+                          // Hero text — Calm-style generous spacing
                           Text(
                             'MouseTrap',
                             style: Theme.of(context)
                                 .textTheme
                                 .headlineLarge
                                 ?.copyWith(
-                                  fontWeight: FontWeight.bold,
                                   color: Colors.white,
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w800,
                                   letterSpacing: -0.5,
                                 ),
                           ),
-                          const SizedBox(height: AppSpacing.sm),
+                          const SizedBox(height: AppSpacing.md),
                           Text(
                             'Got a product idea?\nLet\'s find out if it\'s a Hero or a Zero.',
                             textAlign: TextAlign.center,
@@ -121,10 +132,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 .bodyLarge
                                 ?.copyWith(
                                   color: Colors.white.withValues(alpha: 0.9),
-                                  height: 1.4,
+                                  height: 1.5,
+                                  fontWeight: FontWeight.w400,
                                 ),
                           ),
-                          const SizedBox(height: AppSpacing.base),
+                          const SizedBox(height: AppSpacing.lg),
                         ],
                       ),
                     ),
@@ -132,20 +144,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              // Form content
+              // Form content — Calm generous spacing
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.lg,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Product input
                       Text(
                         'Describe your product',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       TextField(
@@ -162,10 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       // URL input
                       Text(
                         'Product URL (optional)',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       TextField(
@@ -175,94 +183,70 @@ class _HomeScreenState extends State<HomeScreen> {
                           hintText: 'https://example.com/product',
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.xl),
+                      const SizedBox(height: AppSpacing.xxl),
 
-                      // Hero CTA button
-                      Container(
+                      // Hero CTA — dark pill button (Etsy)
+                      SizedBox(
                         width: double.infinity,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          gradient: _canGenerate ? AppGradients.hero : null,
-                          color: _canGenerate ? null : AppColors.lightWarmGray,
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          boxShadow: _canGenerate
-                              ? [
-                                  BoxShadow(
-                                    color: AppColors.primaryAmber
-                                        .withValues(alpha: 0.3),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ]
+                        height: 56,
+                        child: FilledButton(
+                          onPressed: _canGenerate
+                              ? () => _generate(random: false)
                               : null,
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: _canGenerate
-                                ? () => _generate(random: false)
-                                : null,
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.md),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.auto_awesome,
-                                    color: Colors.white, size: 22),
-                                const SizedBox(width: AppSpacing.sm),
-                                Text(
-                                  'Make it a Hero',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                              ],
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _canGenerate
+                                ? AppColors.ink
+                                : AppColors.mist,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.pill),
                             ),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.auto_awesome, size: 20),
+                              SizedBox(width: AppSpacing.sm),
+                              Text(
+                                'Make it a Hero',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      Container(
+
+                      // Secondary CTA — outlined pill
+                      SizedBox(
                         width: double.infinity,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          border: Border.all(
-                            color: AppColors.primaryAmber.withValues(alpha: 0.4),
-                          ),
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: _isLoading
-                                ? null
-                                : () => _generate(random: true),
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.md),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.casino_rounded,
-                                    color: AppColors.primaryAmber, size: 22),
-                                const SizedBox(width: AppSpacing.sm),
-                                Text(
-                                  'Surprise me!',
-                                  style: TextStyle(
-                                    color: AppColors.primaryAmber,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                        height: 52,
+                        child: OutlinedButton(
+                          onPressed: _isLoading
+                              ? null
+                              : () => _generate(random: true),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.casino_rounded,
+                                  size: 20, color: AppColors.amber),
+                              const SizedBox(width: AppSpacing.sm),
+                              Text(
+                                'Surprise me!',
+                                style: TextStyle(
+                                  color: AppColors.amber,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.xxl),
 
                       const DisclaimerBanner(),
                       const SizedBox(height: AppSpacing.lg),

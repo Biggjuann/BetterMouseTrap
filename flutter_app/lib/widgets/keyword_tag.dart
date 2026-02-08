@@ -14,16 +14,14 @@ class KeywordTag extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: AppColors.softCream,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(
-          color: AppColors.lightWarmGray.withValues(alpha: 0.4),
-        ),
+        color: AppColors.warmWhite,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Text(
         text,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.richBrown,
+              color: AppColors.charcoal,
               fontWeight: FontWeight.w500,
             ),
       ),

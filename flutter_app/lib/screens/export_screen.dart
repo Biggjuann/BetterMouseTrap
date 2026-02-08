@@ -16,16 +16,11 @@ class ExportScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Your One-Pager'),
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: AppSpacing.sm),
-            decoration: BoxDecoration(
-              color: AppColors.primaryAmber.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
             child: IconButton(
               icon: const Icon(Icons.copy_rounded),
               tooltip: 'Copy to clipboard',
-              color: AppColors.primaryAmber,
               onPressed: () {
                 Clipboard.setData(
                   ClipboardData(text: exportResponse.plainText),
@@ -33,7 +28,7 @@ class ExportScreen extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Text('Copied to clipboard!'),
-                    backgroundColor: AppColors.successGreen,
+                    backgroundColor: AppColors.success,
                   ),
                 );
               },
@@ -43,18 +38,11 @@ class ExportScreen extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          // Background gradient
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [AppColors.warmWhite, Color(0xFFFFF9F0)],
-              ),
-            ),
+            decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
           ),
           SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.base),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -63,25 +51,17 @@ class ExportScreen extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(
-                      color: AppColors.lightWarmGray.withValues(alpha: 0.3),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    color: AppColors.cardWhite,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: AppShadows.elevated,
                   ),
                   child: MarkdownBody(
                     data: exportResponse.markdown,
                     selectable: true,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.base),
+                const SizedBox(height: AppSpacing.lg),
                 const DisclaimerBanner(),
                 const SizedBox(height: AppSpacing.lg),
               ],

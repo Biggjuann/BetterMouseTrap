@@ -72,13 +72,12 @@ class ScoreBadge extends StatelessWidget {
   }
 
   Color get _color {
-    if (score >= 0.7) return const Color(0xFFE53935);
-    if (score >= 0.4) return AppColors.heroOrange;
-    return AppColors.successGreen;
+    if (score >= 0.7) return AppColors.error;
+    if (score >= 0.4) return AppColors.warning;
+    return AppColors.success;
   }
 }
 
-/// A compact inline score indicator (used in list tiles)
 class ScoreIndicator extends StatelessWidget {
   final double score;
   const ScoreIndicator({super.key, required this.score});
@@ -90,7 +89,7 @@ class ScoreIndicator extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: _color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppRadius.full),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
         border: Border.all(color: _color.withValues(alpha: 0.3)),
       ),
       child: Text(
@@ -106,8 +105,8 @@ class ScoreIndicator extends StatelessWidget {
   }
 
   Color get _color {
-    if (score >= 0.7) return const Color(0xFFE53935);
-    if (score >= 0.4) return AppColors.heroOrange;
-    return AppColors.successGreen;
+    if (score >= 0.7) return AppColors.error;
+    if (score >= 0.4) return AppColors.warning;
+    return AppColors.success;
   }
 }

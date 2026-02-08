@@ -30,14 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFFFF8EE), AppColors.warmWhite, Color(0xFFFFF3E3)],
-            stops: [0.0, 0.5, 1.0],
-          ),
-        ),
+        decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.xl),
@@ -46,23 +39,16 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Logo with glow
+                  // Logo
                   Container(
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      gradient: AppGradients.hero,
+                      color: AppColors.ink,
                       borderRadius: BorderRadius.circular(AppRadius.xl),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primaryAmber.withValues(alpha: 0.35),
-                          blurRadius: 20,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
                     ),
                     child: const Icon(
-                      Icons.tips_and_updates,
+                      Icons.tips_and_updates_outlined,
                       size: 40,
                       color: Colors.white,
                     ),
@@ -70,46 +56,25 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   Text(
                     'MouseTrap',
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineMedium
-                        ?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.darkCharcoal,
-                          letterSpacing: -0.5,
-                        ),
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     _isRegisterMode ? 'Join the club!' : 'Welcome back!',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyLarge
-                        ?.copyWith(color: AppColors.mutedGray),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: AppColors.stone,
+                        ),
                   ),
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.xxl),
 
                   // Form card
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.cardWhite,
                       borderRadius: BorderRadius.circular(AppRadius.lg),
-                      border: Border.all(
-                        color: AppColors.lightWarmGray.withValues(alpha: 0.3),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
-                        ),
-                        BoxShadow(
-                          color: AppColors.primaryAmber.withValues(alpha: 0.04),
-                          blurRadius: 32,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: AppShadows.elevated,
                     ),
                     child: Column(
                       children: [
@@ -153,57 +118,28 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         const SizedBox(height: AppSpacing.lg),
 
-                        // Gradient sign-in button
-                        Container(
+                        // Dark pill CTA (Etsy)
+                        SizedBox(
                           width: double.infinity,
                           height: 52,
-                          decoration: BoxDecoration(
-                            gradient: _isLoading ? null : AppGradients.hero,
-                            color: _isLoading
-                                ? AppColors.lightWarmGray
-                                : null,
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.md),
-                            boxShadow: _isLoading
-                                ? null
-                                : [
-                                    BoxShadow(
-                                      color: AppColors.primaryAmber
-                                          .withValues(alpha: 0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 3),
+                          child: FilledButton(
+                            onPressed: _isLoading ? null : _submit,
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
                                     ),
-                                  ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: _isLoading ? null : _submit,
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.md),
-                              child: Center(
-                                child: _isLoading
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : Text(
-                                        _isRegisterMode
-                                            ? 'Register'
-                                            : 'Sign In',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.3,
-                                        ),
-                                      ),
-                              ),
-                            ),
+                                  )
+                                : Text(
+                                    _isRegisterMode ? 'Register' : 'Sign In',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
@@ -221,10 +157,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       _isRegisterMode
                           ? 'Already have an account? Sign in'
                           : 'Have an invite code? Register',
-                      style: TextStyle(
-                        color: AppColors.primaryAmber,
-                        fontWeight: FontWeight.w600,
-                      ),
                     ),
                   ),
                 ],
