@@ -31,6 +31,7 @@ COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
 ENV PORT=8000
+ENV PYTHONPATH=/app
 EXPOSE 8000
 
 CMD ["/app/start.sh"]
