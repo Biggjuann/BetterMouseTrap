@@ -51,9 +51,9 @@ abstract class AppColors {
 
   // ─ Text
   static const Color ink = Color(0xFF1A1A1A);          // primary text (Etsy near-black)
-  static const Color charcoal = Color(0xFF3D3935);     // secondary text
-  static const Color stone = Color(0xFF7A7067);        // tertiary text
-  static const Color mist = Color(0xFFB5ADA5);         // placeholder / disabled
+  static const Color charcoal = Color(0xFF2D2926);     // secondary text (darkened for readability)
+  static const Color stone = Color(0xFF574F47);        // tertiary text (darkened for readability)
+  static const Color mist = Color(0xFF8A827A);         // placeholder / disabled (darkened for readability)
 
   // ─ Borders & dividers
   static const Color border = Color(0xFFE8E2DB);       // default border
