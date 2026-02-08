@@ -102,7 +102,7 @@ async def generate_ideas(req: GenerateIdeasRequest):
         log.warning("No LLM API key configured — returning mock variants")
         return GenerateIdeasResponse(variants=_mock_variants(product))
 
-    prompt = build_generate_variants_prompt(product, req.category)
+    prompt = build_generate_variants_prompt(product, req.category, random=req.random)
     try:
         data = call_llm(
             prompt,

@@ -22,8 +22,14 @@ def no_legal_advice_instructions() -> str:
 # ── Prompt A: Generate Idea Variants ─────────────────────────────────
 
 GENERATE_VARIANTS_SYSTEM = (
-    "You are an expert product innovation consultant. "
-    "Given a product description, you brainstorm creative improvements. "
+    "You are an expert consumer product innovation consultant. "
+    "You specialize in everyday consumer products — the kind of items that sell well "
+    "on Amazon, at Target, Walmart, or Costco. Think kitchen gadgets, home organization, "
+    "fitness accessories, pet products, travel gear, phone accessories, desk accessories, "
+    "kids' products, and similar mass-market goods. "
+    "Your ideas should be practical, manufacturable, and appealing to everyday shoppers — "
+    "not scientific instruments, industrial equipment, or overly technical devices. "
+    "Each idea should feel like something a regular person would see and say 'I need that.' "
     + no_legal_advice_instructions()
 )
 
@@ -40,19 +46,38 @@ GENERATE_VARIANTS_SCHEMA = """{
 }"""
 
 
-def build_generate_variants_prompt(product_text: str, category: str | None = None) -> str:
+def build_generate_variants_prompt(product_text: str, category: str | None = None, random: bool = False) -> str:
+    if random:
+        product_line = (
+            "Pick a random, common everyday consumer product — something you'd find in a "
+            "typical household, kitchen, office, gym bag, car, or backpack. "
+            "Think items like: water bottles, phone stands, lunch boxes, pet bowls, "
+            "closet organizers, travel pillows, cable organizers, shower caddies, etc."
+        )
+    else:
+        product_line = f"Product: {product_text}"
+
     cat_line = f"\nProduct category: {category}" if category else ""
-    return f"""Product: {product_text}{cat_line}
+
+    return f"""{product_line}{cat_line}
 
 Generate exactly 10 creative "better version" variants of this product. Each variant should
-propose a meaningfully different improvement. Cover a diverse mix of improvement modes:
+propose a meaningfully different improvement that a mass-market consumer would actually want.
+
+Keep ideas grounded and practical:
+- Products should be the kind of thing that could be a top seller on Amazon or at Target
+- Avoid overly scientific, industrial, or complex technical solutions
+- Think about what makes everyday consumers say "that's clever, I'd buy that"
+- Ideas should be simple enough to explain in one sentence to a friend
+
+Cover a diverse mix of improvement modes:
 cost_down, durability, safety, convenience, sustainability, performance, and mashup (combining
 ideas from other domains).
 
 For each variant provide:
 - A unique UUID as the id
-- A concise, descriptive title
-- A 2-3 sentence summary of the improvement
+- A concise, descriptive title (like a product listing name)
+- A 2-3 sentence summary written like a product description, not a technical paper
 - The primary improvement mode
 - 3-5 keywords useful for patent searching (include technical synonyms)
 
