@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/session_summary.dart';
 import '../services/api_client.dart';
+import '../theme.dart';
 import 'session_detail_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -43,7 +44,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (mounted) {
         setState(() => _sessions?.remove(session));
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session deleted')),
+          SnackBar(
+            content: const Text('Session deleted'),
+            backgroundColor: AppColors.successGreen,
+          ),
         );
       }
     } catch (e) {
@@ -59,54 +63,103 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('My Ideas')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _sessions == null || _sessions!.isEmpty
+      body: Stack(
+        children: [
+          // Background
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [AppColors.warmWhite, Color(0xFFFFF9F0)],
+              ),
+            ),
+          ),
+          _isLoading
               ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.history, size: 64, color: Colors.grey[400]),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No ideas yet!',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Colors.grey[600],
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Every great product starts with an idea. Go create one!',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[400],
-                            ),
-                      ),
-                    ],
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryAmber,
+                    strokeWidth: 3,
+                    strokeCap: StrokeCap.round,
                   ),
                 )
-              : RefreshIndicator(
-                  onRefresh: _loadSessions,
-                  child: ListView.builder(
-                    itemCount: _sessions!.length,
-                    itemBuilder: (context, index) {
-                      final session = _sessions![index];
-                      return _SessionTile(
-                        session: session,
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  SessionDetailScreen(sessionId: session.id),
-                            ),
+              : _sessions == null || _sessions!.isEmpty
+                  ? _emptyState()
+                  : RefreshIndicator(
+                      color: AppColors.primaryAmber,
+                      onRefresh: _loadSessions,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.base,
+                          AppSpacing.sm,
+                          AppSpacing.base,
+                          AppSpacing.xl,
+                        ),
+                        itemCount: _sessions!.length,
+                        itemBuilder: (context, index) {
+                          final session = _sessions![index];
+                          return _SessionTile(
+                            session: session,
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SessionDetailScreen(
+                                      sessionId: session.id),
+                                ),
+                              );
+                              _loadSessions();
+                            },
+                            onDelete: () => _deleteSession(session),
                           );
-                          _loadSessions();
                         },
-                        onDelete: () => _deleteSession(session),
-                      );
-                    },
+                      ),
+                    ),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.primaryAmber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppRadius.full),
+              ),
+              child: Icon(
+                Icons.lightbulb_outline_rounded,
+                size: 36,
+                color: AppColors.primaryAmber,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'No ideas yet!',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.darkCharcoal,
                   ),
-                ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Every great product starts with an idea.\nGo create one!',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.mutedGray,
+                    height: 1.5,
+                  ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -124,54 +177,104 @@ class _SessionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      session.displayTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        _StatusChip(status: session.statusLabel),
-                        const SizedBox(width: 8),
-                        Text(
-                          _formatDate(session.updatedAt),
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(
+            color: AppColors.lightWarmGray.withValues(alpha: 0.3),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.base),
+            child: Row(
+              children: [
+                // Status icon
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryAmber.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Icon(
+                    _iconForStatus(session.status),
+                    color: AppColors.primaryAmber,
+                    size: 20,
+                  ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, size: 20),
-                color: Colors.grey,
-                onPressed: onDelete,
-              ),
-            ],
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        session.displayTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.darkCharcoal,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          _StatusChip(status: session.statusLabel),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            _formatDate(session.updatedAt),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: AppColors.mutedGray),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.delete_outline_rounded,
+                      size: 20, color: AppColors.mutedGray),
+                  onPressed: onDelete,
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  IconData _iconForStatus(String status) {
+    switch (status) {
+      case 'exported':
+        return Icons.description_rounded;
+      case 'patents_searched':
+        return Icons.search_rounded;
+      case 'spec_generated':
+        return Icons.analytics_rounded;
+      case 'ideas_generated':
+        return Icons.lightbulb_rounded;
+      default:
+        return Icons.edit_rounded;
+    }
   }
 
   String _formatDate(String isoDate) {
@@ -198,14 +301,16 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.primaryAmber.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.full),
       ),
       child: Text(
         status,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
+        style: TextStyle(
+          color: AppColors.primaryAmber,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

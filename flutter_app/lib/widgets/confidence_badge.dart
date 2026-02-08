@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
+
 class ConfidenceBadge extends StatelessWidget {
   final String level;
   const ConfidenceBadge({super.key, required this.level});
@@ -7,18 +9,27 @@ class ConfidenceBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: ShapeDecoration(
-        color: _color,
-        shape: const StadiumBorder(),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: _color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        border: Border.all(color: _color.withValues(alpha: 0.3), width: 1.5),
       ),
-      child: Text(
-        _label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_icon, size: 14, color: _color),
+          const SizedBox(width: 5),
+          Text(
+            _label,
+            style: TextStyle(
+              color: _color,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -37,11 +48,22 @@ class ConfidenceBadge extends StatelessWidget {
   Color get _color {
     switch (level) {
       case 'high':
-        return Colors.green;
+        return AppColors.successGreen;
       case 'med':
-        return Colors.orange;
+        return AppColors.heroOrange;
       default:
-        return Colors.red;
+        return const Color(0xFFE53935);
+    }
+  }
+
+  IconData get _icon {
+    switch (level) {
+      case 'high':
+        return Icons.verified;
+      case 'med':
+        return Icons.info_outline;
+      default:
+        return Icons.warning_amber;
     }
   }
 }

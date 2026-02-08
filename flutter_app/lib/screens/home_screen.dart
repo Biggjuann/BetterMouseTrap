@@ -177,28 +177,89 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: AppSpacing.xl),
 
-                      // Buttons
-                      FilledButton.icon(
-                        onPressed:
-                            _canGenerate ? () => _generate(random: false) : null,
-                        icon: const Icon(Icons.auto_awesome),
-                        label: const Text('Make it a Hero'),
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 52),
-                          textStyle: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                      // Hero CTA button
+                      Container(
+                        width: double.infinity,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          gradient: _canGenerate ? AppGradients.hero : null,
+                          color: _canGenerate ? null : AppColors.lightWarmGray,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          boxShadow: _canGenerate
+                              ? [
+                                  BoxShadow(
+                                    color: AppColors.primaryAmber
+                                        .withValues(alpha: 0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _canGenerate
+                                ? () => _generate(random: false)
+                                : null,
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.md),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.auto_awesome,
+                                    color: Colors.white, size: 22),
+                                const SizedBox(width: AppSpacing.sm),
+                                Text(
+                                  'Make it a Hero',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      OutlinedButton.icon(
-                        onPressed:
-                            _isLoading ? null : () => _generate(random: true),
-                        icon: const Icon(Icons.casino),
-                        label: const Text('Surprise me!'),
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 48),
+                      Container(
+                        width: double.infinity,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(
+                            color: AppColors.primaryAmber.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _isLoading
+                                ? null
+                                : () => _generate(random: true),
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.md),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.casino_rounded,
+                                    color: AppColors.primaryAmber, size: 22),
+                                const SizedBox(width: AppSpacing.sm),
+                                Text(
+                                  'Surprise me!',
+                                  style: TextStyle(
+                                    color: AppColors.primaryAmber,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),

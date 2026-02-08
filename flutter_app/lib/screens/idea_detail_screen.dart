@@ -4,6 +4,7 @@ import '../models/idea_spec.dart';
 import '../models/idea_variant.dart';
 import '../models/product_input.dart';
 import '../services/api_client.dart';
+import '../theme.dart';
 import '../widgets/disclaimer_banner.dart';
 import '../widgets/keyword_tag.dart';
 import '../widgets/loading_overlay.dart';
@@ -45,52 +46,142 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
       appBar: AppBar(title: const Text('Your Idea')),
       body: Stack(
         children: [
+          // Subtle background gradient
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [AppColors.warmWhite, Color(0xFFFFF9F0)],
+              ),
+            ),
+          ),
           SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.base),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Variant header
-                Text(
-                  widget.variant.title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
+                // Hero header card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFFFF8EE), Color(0xFFFFF1DC)],
+                    ),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(
+                      color: AppColors.warmGold.withValues(alpha: 0.3),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryAmber.withValues(alpha: 0.08),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
                       ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.variant.summary,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                ),
-                const SizedBox(height: 24),
-
-                if (_isLoadingSpec)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
-                      child: Column(
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          CircularProgressIndicator(),
-                          SizedBox(height: 16),
-                          Text('Breaking down what makes this clever...'),
+                          Container(
+                            padding: const EdgeInsets.all(AppSpacing.sm),
+                            decoration: BoxDecoration(
+                              gradient: AppGradients.hero,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.md),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primaryAmber
+                                      .withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.lightbulb,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Text(
+                              widget.variant.title,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.darkCharcoal,
+                                    letterSpacing: -0.3,
+                                  ),
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                  )
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        widget.variant.summary,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.warmGray,
+                              height: 1.5,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                if (_isLoadingSpec)
+                  _buildLoadingState()
                 else if (_spec != null) ...[
                   _specSection(_spec!),
                 ],
 
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.base),
                 const DisclaimerBanner(),
+                const SizedBox(height: AppSpacing.lg),
               ],
             ),
           ),
           if (_isLoadingPatents)
-            const LoadingOverlay(message: 'Checking what\'s already out there...'),
+            const LoadingOverlay(
+                message: 'Checking what\'s already out there...'),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
+        child: Column(
+          children: [
+            SizedBox(
+              width: 48,
+              height: 48,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                strokeCap: StrokeCap.round,
+                color: AppColors.primaryAmber,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.base),
+            Text(
+              'Breaking down what makes this clever...',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.mutedGray,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -99,102 +190,215 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _specField('What Makes It Unique', spec.novelty, Icons.auto_awesome),
-        const SizedBox(height: 16),
-        _specField('How It Works', spec.mechanism, Icons.settings),
-        const SizedBox(height: 16),
-        _specField('What Exists Today', spec.baseline, Icons.bar_chart),
-        const SizedBox(height: 16),
-
-        // Differentiators
-        Row(
-          children: [
-            Icon(Icons.list, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 8),
-            Text(
-              'Why It Stands Out',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-          ],
+        _specCard(
+          'What Makes It Unique',
+          spec.novelty,
+          Icons.auto_awesome,
+          const Color(0xFFEF6C00),
         ),
-        const SizedBox(height: 8),
-        ...spec.differentiators.map(
-          (d) => Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.check_circle, color: Colors.green, size: 16),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(d, style: Theme.of(context).textTheme.bodyMedium),
-                ),
-              ],
-            ),
+        const SizedBox(height: AppSpacing.md),
+        _specCard(
+          'How It Works',
+          spec.mechanism,
+          Icons.settings_suggest,
+          const Color(0xFF2196F3),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _specCard(
+          'What Exists Today',
+          spec.baseline,
+          Icons.analytics,
+          const Color(0xFF00897B),
+        ),
+        const SizedBox(height: AppSpacing.md),
+
+        // Differentiators card
+        _sectionCard(
+          icon: Icons.stars,
+          color: AppColors.successGreen,
+          title: 'Why It Stands Out',
+          child: Column(
+            children: spec.differentiators
+                .asMap()
+                .entries
+                .map(
+                  (entry) => Padding(
+                    padding: EdgeInsets.only(
+                      bottom:
+                          entry.key < spec.differentiators.length - 1 ? 10 : 0,
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.only(top: 2),
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: AppColors.successGreen
+                                .withValues(alpha: 0.1),
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.full),
+                          ),
+                          child: const Icon(
+                            Icons.check,
+                            size: 12,
+                            color: AppColors.successGreen,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            entry.value,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: AppColors.warmGray,
+                                  height: 1.4,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+                .toList(),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
 
-        // Keywords
-        Row(
-          children: [
-            Icon(Icons.label, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 8),
-            Text(
-              'Keywords',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+        // Keywords card
+        _sectionCard(
+          icon: Icons.label,
+          color: AppColors.richBrown,
+          title: 'Keywords',
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: spec.keywords.map((k) => KeywordTag(text: k)).toList(),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+
+        // Patent search CTA
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: AppGradients.hero,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryAmber.withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap:
+                  _isLoadingPatents ? null : () => _searchPatents(spec),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.base,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.search_rounded,
+                        color: Colors.white, size: 22),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      'Check for existing patents',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: spec.keywords.map((k) => KeywordTag(text: k)).toList(),
-        ),
-        const SizedBox(height: 24),
-
-        // Search button
-        FilledButton.icon(
-          onPressed: _isLoadingPatents ? null : () => _searchPatents(spec),
-          icon: const Icon(Icons.search),
-          label: const Text('Check for existing patents'),
-          style: FilledButton.styleFrom(
-            minimumSize: const Size(double.infinity, 52),
           ),
         ),
       ],
     );
   }
 
-  Widget _specField(String title, String text, IconData icon) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+  Widget _specCard(
+      String title, String text, IconData icon, Color color) {
+    return _sectionCard(
+      icon: icon,
+      color: color,
+      title: title,
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.warmGray,
+              height: 1.5,
             ),
-          ],
+      ),
+    );
+  }
+
+  Widget _sectionCard({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.base),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: AppColors.lightWarmGray.withValues(alpha: 0.3),
         ),
-        const SizedBox(height: 4),
-        Text(
-          text,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Icon(icon, color: color, size: 20),
               ),
-        ),
-      ],
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.darkCharcoal,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          child,
+        ],
+      ),
     );
   }
 
