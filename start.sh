@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+echo "DATABASE_URL scheme: ${DATABASE_URL%%://*}://"
 echo "Running database migrations..."
 cd /app && alembic upgrade head
 
