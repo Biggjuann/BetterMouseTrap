@@ -56,12 +56,12 @@ class _BuildThisScreenState extends State<BuildThisScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Build This'),
+        title: const Text('Make It Real'),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(icon: Icon(Icons.description), text: 'Patent Draft'),
-            Tab(icon: Icon(Icons.build), text: 'Prototype'),
+            Tab(icon: Icon(Icons.description), text: 'Protect It'),
+            Tab(icon: Icon(Icons.build), text: 'Build It'),
           ],
         ),
       ),
@@ -84,7 +84,7 @@ class _BuildThisScreenState extends State<BuildThisScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Provisional Patent Application',
+                'Protect Your Idea',
                 style: Theme.of(context)
                     .textTheme
                     .titleLarge
@@ -92,7 +92,7 @@ class _BuildThisScreenState extends State<BuildThisScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Generate a draft provisional patent application based on your idea spec and prior art search.',
+                'When you create something unique, you have to protect it. Let\'s draft a provisional patent application to get your idea on file.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey[600],
                     ),
@@ -103,7 +103,7 @@ class _BuildThisScreenState extends State<BuildThisScreen>
                 FilledButton.icon(
                   onPressed: _isLoadingPatent ? null : _generatePatentDraft,
                   icon: const Icon(Icons.description),
-                  label: const Text('Generate Patent Draft'),
+                  label: const Text('Draft My Patent'),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(double.infinity, 52),
                   ),
@@ -138,7 +138,7 @@ class _BuildThisScreenState extends State<BuildThisScreen>
           ),
         ),
         if (_isLoadingPatent)
-          const LoadingOverlay(message: 'Drafting patent application...'),
+          const LoadingOverlay(message: 'Drafting your patent application...'),
       ],
     );
   }
@@ -152,7 +152,7 @@ class _BuildThisScreenState extends State<BuildThisScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Prototyping Package',
+                'Build Your Prototype',
                 style: Theme.of(context)
                     .textTheme
                     .titleLarge
@@ -160,7 +160,7 @@ class _BuildThisScreenState extends State<BuildThisScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Get practical fabrication approaches with bill of materials and step-by-step assembly instructions.',
+                'Stay lean and mean! Get a practical build plan with everything you need — materials, costs, and step-by-step instructions.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey[600],
                     ),
@@ -171,7 +171,7 @@ class _BuildThisScreenState extends State<BuildThisScreen>
                 FilledButton.icon(
                   onPressed: _isLoadingPrototype ? null : _generatePrototype,
                   icon: const Icon(Icons.build),
-                  label: const Text('Generate Prototype Plan'),
+                  label: const Text('Show Me How to Build It'),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(double.infinity, 52),
                   ),
@@ -206,7 +206,7 @@ class _BuildThisScreenState extends State<BuildThisScreen>
           ),
         ),
         if (_isLoadingPrototype)
-          const LoadingOverlay(message: 'Generating prototype plan...'),
+          const LoadingOverlay(message: 'Putting together your build plan...'),
       ],
     );
   }

@@ -58,7 +58,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('History')),
+      appBar: AppBar(title: const Text('My Ideas')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _sessions == null || _sessions!.isEmpty
@@ -69,14 +69,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       Icon(Icons.history, size: 64, color: Colors.grey[400]),
                       const SizedBox(height: 16),
                       Text(
-                        'No sessions yet',
+                        'No ideas yet!',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                               color: Colors.grey[600],
                             ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Generate some ideas to get started',
+                        'Every great product starts with an idea. Go create one!',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.grey[400],
                             ),

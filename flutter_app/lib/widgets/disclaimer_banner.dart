@@ -19,7 +19,7 @@ class DisclaimerBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Not legal advice. Patent search is not exhaustive.',
+              'This is not legal advice. Always consult a patent attorney before filing.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),

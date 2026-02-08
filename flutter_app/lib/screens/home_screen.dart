@@ -91,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Describe a product and we\'ll generate better versions',
+                  'Got a product idea? Let\'s find out if it\'s a Hero or a Zero.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Colors.grey[600],
@@ -116,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   maxLines: 4,
                   decoration: InputDecoration(
                     hintText:
-                        'e.g. "mousetrap", "travel coffee mug", "bike lock"',
+                        'e.g. "travel coffee mug", "shower caddy", "bike lock"',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -155,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 FilledButton.icon(
                   onPressed: _canGenerate ? () => _generate(random: false) : null,
                   icon: const Icon(Icons.auto_awesome),
-                  label: const Text('Make it better'),
+                  label: const Text('Make it a Hero'),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(double.infinity, 52),
                     textStyle: const TextStyle(
@@ -168,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 OutlinedButton.icon(
                   onPressed: _isLoading ? null : () => _generate(random: true),
                   icon: const Icon(Icons.casino),
-                  label: const Text('Surprise me (Random)'),
+                  label: const Text('Surprise me!'),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 48),
                   ),
@@ -180,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           if (_isLoading)
-            const LoadingOverlay(message: 'Generating ideas...'),
+            const LoadingOverlay(message: 'Finding your next hero product...'),
         ],
       ),
     );

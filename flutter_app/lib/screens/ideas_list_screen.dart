@@ -115,7 +115,7 @@ class _IdeasListScreenState extends State<IdeasListScreen> {
             },
           ),
           if (_isLoading)
-            const LoadingOverlay(message: 'Generating new ideas...'),
+            const LoadingOverlay(message: 'Finding fresh hero ideas...'),
         ],
       ),
     );

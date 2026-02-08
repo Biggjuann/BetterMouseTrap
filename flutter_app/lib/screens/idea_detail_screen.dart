@@ -42,7 +42,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Concept Detail')),
+      appBar: AppBar(title: const Text('Your Idea')),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -74,7 +74,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                         children: [
                           CircularProgressIndicator(),
                           SizedBox(height: 16),
-                          Text('Generating concept spec...'),
+                          Text('Breaking down what makes this clever...'),
                         ],
                       ),
                     ),
@@ -89,7 +89,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             ),
           ),
           if (_isLoadingPatents)
-            const LoadingOverlay(message: 'Searching prior art...'),
+            const LoadingOverlay(message: 'Checking what\'s already out there...'),
         ],
       ),
     );
@@ -99,11 +99,11 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _specField('Novelty', spec.novelty, Icons.auto_awesome),
+        _specField('What Makes It Unique', spec.novelty, Icons.auto_awesome),
         const SizedBox(height: 16),
-        _specField('Mechanism', spec.mechanism, Icons.settings),
+        _specField('How It Works', spec.mechanism, Icons.settings),
         const SizedBox(height: 16),
-        _specField('Baseline', spec.baseline, Icons.bar_chart),
+        _specField('What Exists Today', spec.baseline, Icons.bar_chart),
         const SizedBox(height: 16),
 
         // Differentiators
@@ -112,7 +112,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             Icon(Icons.list, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 8),
             Text(
-              'Differentiators',
+              'Why It Stands Out',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -162,7 +162,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
         FilledButton.icon(
           onPressed: _isLoadingPatents ? null : () => _searchPatents(spec),
           icon: const Icon(Icons.search),
-          label: const Text('Search prior art'),
+          label: const Text('Check for existing patents'),
           style: FilledButton.styleFrom(
             minimumSize: const Size(double.infinity, 52),
           ),

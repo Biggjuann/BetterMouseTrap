@@ -45,7 +45,7 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Prior Art')),
+      appBar: AppBar(title: const Text('Patent Landscape')),
       body: Stack(
         children: [
           ListView(
@@ -58,7 +58,7 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
                   child: Row(
                     children: [
                       Text(
-                        'Search confidence',
+                        'How thorough was our search',
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       const Spacer(),
@@ -73,7 +73,7 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
 
               // Section header
               Text(
-                'Closest patents we found',
+                'Here\'s what\'s already out there',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -85,7 +85,7 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 24),
                   child: Text(
-                    'No matching patents found.',
+                    'No matching patents found — the field is wide open!',
                     style: TextStyle(color: Colors.grey),
                   ),
                 )
@@ -101,7 +101,7 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
               FilledButton.icon(
                 onPressed: _isLoading ? null : _exportOnePager,
                 icon: const Icon(Icons.description),
-                label: const Text('Export one-pager'),
+                label: const Text('Get your one-pager'),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 52),
                 ),
@@ -113,7 +113,7 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
                 FilledButton.icon(
                   onPressed: _isLoading ? null : _navigateToBuildThis,
                   icon: const Icon(Icons.build),
-                  label: const Text('Build This'),
+                  label: const Text('Let\'s Build This!'),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(double.infinity, 52),
                     backgroundColor: Colors.green,
@@ -124,7 +124,7 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
             ],
           ),
           if (_isLoading)
-            const LoadingOverlay(message: 'Building export...'),
+            const LoadingOverlay(message: 'Putting together your one-pager...'),
         ],
       ),
     );
@@ -277,7 +277,7 @@ class _PatentHitCardState extends State<_PatentHitCard> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Why similar',
+                    'How it compares',
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.bold,

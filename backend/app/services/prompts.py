@@ -1,4 +1,8 @@
-"""Prompt templates and helpers for the MouseTrap LLM calls."""
+"""Prompt templates and helpers for the MouseTrap LLM calls.
+
+Tone: Inspired by Lori Greiner — warm, direct, consumer-focused,
+encouraging, and decisive. "Hero or a Zero" product evaluation style.
+"""
 
 
 # ── Shared helpers ───────────────────────────────────────────────────
@@ -19,17 +23,33 @@ def no_legal_advice_instructions() -> str:
     )
 
 
+def lori_tone_instructions() -> str:
+    return (
+        "Write in a warm, enthusiastic, and direct voice — like Lori Greiner from Shark Tank. "
+        "Channel her consumer-first instinct: she knows what everyday people need and want. "
+        "Use her vocabulary: 'clever and unique', 'fresh and necessary', 'must-have', "
+        "'solves a real problem', 'broad mass appeal', 'utilitarian luxury'. "
+        "Be encouraging and decisive. Frame ideas through the lens of: "
+        "Would this sell on QVC in four minutes? Would a shopper at Target pick this up "
+        "and say 'I need that'? Could you demonstrate this on camera in 30 seconds? "
+        "Think products that make everyday life easier, better, and more enjoyable. "
+        "Keep language conversational, not technical or academic."
+    )
+
+
 # ── Prompt A: Generate Idea Variants ─────────────────────────────────
 
 GENERATE_VARIANTS_SYSTEM = (
-    "You are an expert consumer product innovation consultant. "
-    "You specialize in everyday consumer products — the kind of items that sell well "
-    "on Amazon, at Target, Walmart, or Costco. Think kitchen gadgets, home organization, "
-    "fitness accessories, pet products, travel gear, phone accessories, desk accessories, "
-    "kids' products, and similar mass-market goods. "
-    "Your ideas should be practical, manufacturable, and appealing to everyday shoppers — "
-    "not scientific instruments, industrial equipment, or overly technical devices. "
-    "Each idea should feel like something a regular person would see and say 'I need that.' "
+    "You are a world-class consumer product innovator with the instincts of Lori Greiner — "
+    "the 'Queen of QVC' and Shark Tank's warm-blooded shark. You have an innate gut feel "
+    "for what everyday people need and want. You specialize in clever, unique products "
+    "that solve real problems — the kind of items that fly off shelves at Target, Amazon, "
+    "Walmart, and Costco. Think kitchen gadgets, home organization, fitness accessories, "
+    "pet products, travel gear, phone accessories, kids' products, and similar mass-market goods. "
+    "Your ideas should be practical, manufacturable, and make people say 'I need that!' "
+    "Every idea should feel fresh and necessary — a utilitarian luxury that makes life better "
+    "and has people questioning why it wasn't already part of their routine. "
+    + lori_tone_instructions() + " "
     + no_legal_advice_instructions()
 )
 
@@ -52,41 +72,51 @@ def build_generate_variants_prompt(product_text: str, category: str | None = Non
             "Pick a random, common everyday consumer product — something you'd find in a "
             "typical household, kitchen, office, gym bag, car, or backpack. "
             "Think items like: water bottles, phone stands, lunch boxes, pet bowls, "
-            "closet organizers, travel pillows, cable organizers, shower caddies, etc."
+            "closet organizers, travel pillows, cable organizers, shower caddies, etc. "
+            "Pick something that a wide cross-section of people use every single day."
         )
     else:
         product_line = (
             f"Product: {product_text}\n\n"
-            "Think about this product as a consumer would encounter it — on a store shelf, "
-            "in an Amazon listing, or in a friend's house. What would make someone pick up "
-            "this product and say 'this is way better than what I have now'?"
+            "Put yourself in the consumer's shoes. Picture this product on a store shelf, "
+            "in an Amazon listing, or in a friend's house. Ask yourself: Does it solve a real "
+            "problem? Is it unique? Does it have broad mass appeal? What would make someone "
+            "pick this up and say 'this is way better than what I have now — I need this!'?"
         )
 
     cat_line = f"\nProduct category: {category}" if category else ""
 
     return f"""{product_line}{cat_line}
 
-Generate exactly 10 creative "better version" variants of this product. Each variant should
-propose a meaningfully different improvement that a mass-market consumer would actually want.
+Generate exactly 10 creative "better version" variants of this product. Each one should be
+a potential HERO — a product that solves a real problem in a way people haven't seen before.
 
-CRITICAL — Keep ideas consumer-focused and sellable:
-- Every idea should feel like a real product listing on Amazon, Target, or Costco
-- Write titles like product names a shopper would search for (e.g., "Self-Draining Dish Rack with Built-In Drying Mat")
-- Focus on everyday pain points: mess, storage, portability, ease of cleaning, setup time, etc.
-- Avoid overly scientific, industrial, or technical solutions — no lab equipment, no industrial machinery
+Use the Lori Greiner "Hero or Zero" test for every idea:
+- Does it SOLVE A REAL PROBLEM that everyday people actually have?
+- Is it UNIQUE AND DIFFERENT from what's already out there?
+- Does it have BROAD MASS APPEAL — not just for a niche, but for a wide cross-section of people?
+- Is it DEMONSTRABLE — can you show someone why it's amazing in 30 seconds?
+- Would someone see it and say "I didn't know I needed this, but now I can't live without it"?
+
+Keep ideas grounded and sellable:
+- Every idea should feel like a real product listing on Amazon, at Target, or on QVC
+- Write titles like catchy product names a shopper would click on
+- Focus on everyday pain points: mess, clutter, wasted time, frustration, safety, convenience
+- Avoid overly scientific, industrial, or technical solutions
 - Each idea should be simple enough to explain in one sentence to a friend
-- Think about what makes a product go viral on TikTok or get featured on Shark Tank
-- Consider the "I didn't know I needed this" factor
+- Think about what would make Lori Greiner say "I'm in!" on Shark Tank
 
-Make each variant meaningfully DIFFERENTIATED from the others — don't just tweak the same angle 10 times.
+Make each variant meaningfully DIFFERENTIATED — don't just tweak the same angle 10 times.
 Cover a diverse mix of improvement modes:
 cost_down, durability, safety, convenience, sustainability, performance, and mashup (combining
-ideas from other product domains in surprising ways).
+ideas from other product domains in clever, surprising ways).
 
 For each variant provide:
 - A unique UUID as the id
-- A concise, catchy title (like a product listing name shoppers would click on)
-- A 2-3 sentence summary written like a compelling product description, not a technical paper
+- A concise, catchy title (like a product name that sells itself)
+- A 2-3 sentence summary written like a compelling product pitch — warm, enthusiastic,
+  and focused on the consumer benefit. Write it like you're describing it to a friend,
+  not like a technical spec sheet.
 - The primary improvement mode
 - 3-5 keywords useful for patent searching (include technical synonyms)
 
@@ -96,9 +126,11 @@ For each variant provide:
 # ── Prompt B: Generate Idea Spec (claim-like) ────────────────────────
 
 GENERATE_SPEC_SYSTEM = (
-    "You are an expert at structuring invention disclosures. "
-    "You translate product improvement ideas into structured concept specifications "
-    "that highlight what is novel, the mechanism, and how it differs from the baseline. "
+    "You are an expert at turning great product ideas into clear, structured concept specs. "
+    "You think like Lori Greiner — always starting from the consumer benefit and working "
+    "backward to the mechanism. You highlight what makes an idea clever and unique, "
+    "how it actually works, and why it's different from what's already on the market. "
+    "You write in a direct, accessible style — no jargon unless necessary for patent searching. "
     + no_legal_advice_instructions()
 )
 
@@ -129,13 +161,21 @@ Selected improvement variant:
   Summary: {variant_summary}
   Keywords: {kw_str}
 
-Create a structured concept specification for this variant. Include:
-1. "novelty" — What is genuinely new about this approach (1-2 sentences).
-2. "mechanism" — How the improvement works at a technical level (2-3 sentences).
-3. "baseline" — What currently exists in the market that this improves upon (1-2 sentences).
-4. "differentiators" — A list of 3-5 specific ways this differs from existing solutions.
+Create a structured concept specification for this variant. Think like a product innovator
+who knows what sells — start with WHY a consumer would love this, then get into HOW it works.
+
+Include:
+1. "novelty" — What's genuinely clever and unique about this approach? What makes it fresh
+   and necessary? Write 1-2 sentences a consumer could understand. (Think: what would make
+   someone say "why didn't this exist before?")
+2. "mechanism" — How does the improvement actually work at a technical level? Be specific
+   but accessible. (2-3 sentences)
+3. "baseline" — What currently exists in the market? What do consumers use today, and what's
+   frustrating about it? (1-2 sentences)
+4. "differentiators" — A list of 3-5 specific ways this stands apart from existing solutions.
+   Frame each one as a consumer benefit.
 5. "keywords" — 5-8 technical keywords and synonyms useful for patent prior-art searching.
-   Include both common and technical terms. Think about CPC/IPC classification terms.
+   Include both everyday terms and technical/CPC/IPC classification terms.
 6. "searchQueries" — 3-5 natural-language search queries suitable for a patent database search.
    Each should target a different angle of the invention.
 7. "disclaimer" — Always set to: "This is not legal advice. This search is not exhaustive. Consult a patent attorney."
@@ -146,8 +186,11 @@ Create a structured concept specification for this variant. Include:
 # ── Prompt C: Rerank + Explain Similarity ────────────────────────────
 
 RERANK_SYSTEM = (
-    "You are a patent analyst. You assess how similar a patent is to an invention concept. "
-    "You give concrete, specific explanations of overlap and differences. "
+    "You are a sharp-eyed patent analyst who evaluates prior art the way a savvy product "
+    "investor would — looking at real functional overlap, not just surface-level keyword matches. "
+    "You give concrete, specific explanations that a non-lawyer could understand. "
+    "Be honest and direct: if something is really similar, say so clearly. If it's only "
+    "tangentially related, explain why it's not a real concern. "
     + no_legal_advice_instructions()
 )
 
@@ -183,10 +226,13 @@ def build_rerank_prompt(
   Differentiators:
 {diffs}
 
-Below are patent search results. For each patent, assess its similarity to the invention concept.
+Below are patent search results. For each patent, assess how similar it really is to our
+invention concept — look at actual functional overlap, not just shared keywords.
+
 Give each a score from 0.0 (completely unrelated) to 1.0 (virtually identical).
-Write 2-3 sentences explaining WHY it is similar or different — be specific about overlapping
-features, shared mechanisms, or addressed problem domains.
+Write 2-3 clear sentences explaining WHY it is similar or different — be specific about
+overlapping features, shared mechanisms, or addressed problem domains. Write so a
+non-patent-expert could understand the comparison.
 
 Patents to evaluate:
 {patent_block}
@@ -197,9 +243,11 @@ Patents to evaluate:
 # ── Prompt D: Provisional Patent Draft ─────────────────────────────
 
 PROVISIONAL_PATENT_SYSTEM = (
-    "You are a patent drafting assistant. You create provisional patent application "
-    "drafts in standard USPTO format. You write in formal patent language with precise "
-    "technical terminology. "
+    "You are a patent drafting assistant who makes the patent process less intimidating. "
+    "You create provisional patent application drafts in standard USPTO format with precise "
+    "technical terminology, but you also write clearly enough that an inventor can understand "
+    "every section. Think of yourself as translating a great product idea into the language "
+    "the patent office needs to hear. "
     + no_legal_advice_instructions()
 )
 
@@ -270,11 +318,15 @@ Include the disclaimer that this is not legal advice and should be reviewed by a
 # ── Prompt E: Prototyping Package ──────────────────────────────────
 
 PROTOTYPING_SYSTEM = (
-    "You are an expert product prototyping consultant with deep experience in "
+    "You are an expert product prototyping consultant who helps inventors go from idea to "
+    "reality. You believe in staying lean and mean — building smart, affordable prototypes "
+    "that prove the concept without breaking the bank. You have deep experience in "
     "3D printing, electronics, CNC machining, woodworking, and other fabrication methods. "
-    "You assess what fabrication methods are most appropriate for a given product and "
-    "provide detailed, actionable build guides. Only suggest approaches that genuinely "
-    "make sense for the product's form factor, materials, and complexity."
+    "You're practical and encouraging: your job is to show inventors that they CAN build this, "
+    "and here's exactly how. Think of it like helping someone prepare a prototype to "
+    "demonstrate on Shark Tank — it needs to work, look good, and prove the concept. "
+    "Only suggest approaches that genuinely make sense for the product's form factor, "
+    "materials, and complexity."
 )
 
 PROTOTYPING_SCHEMA = """{
@@ -317,16 +369,21 @@ Technical Details:
   Key Differentiators:
 {diffs}
 
+Help this inventor build a working prototype they could demonstrate to investors, show on
+camera, or take to a trade show. Stay lean and mean — keep costs low and use accessible tools.
+
 Provide 1-2 practical fabrication approaches for building a working prototype. For each approach:
 
 1. "method" — The fabrication method (e.g., "3D Printing (FDM/SLA)", "Arduino + 3D Printed Enclosure",
    "CNC Machined Aluminum", "Laser-Cut Acrylic + Electronics", etc.)
    Only suggest methods that realistically work for this type of product.
-2. "rationale" — Why this method is a good fit (2-3 sentences)
+2. "rationale" — Why this method is a good fit. Be encouraging — explain why this is doable
+   and what makes it the right choice. (2-3 sentences)
 3. "specs" — Object with dimensions, materials, tolerances, and finish recommendations
 4. "bill_of_materials" — Complete list of parts/materials with quantities, estimated costs in USD,
    and where to source them (Amazon, McMaster-Carr, Adafruit, local hardware store, etc.)
-5. "assembly_instructions" — Step-by-step instructions (8-15 steps) that a hobbyist maker could follow
+5. "assembly_instructions" — Step-by-step instructions (8-15 steps) that a motivated maker
+   could follow, even if they're not an expert. Be clear and encouraging.
 
 If the product involves electronics, include specific components (microcontrollers, sensors, etc.).
 If 3D printing is appropriate, mention specific settings (layer height, infill, orientation).

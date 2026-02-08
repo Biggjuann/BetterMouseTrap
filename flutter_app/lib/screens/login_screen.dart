@@ -47,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _isRegisterMode ? 'Create your account' : 'Sign in to continue',
+                  _isRegisterMode ? 'Join the club!' : 'Welcome back!',
                   style: Theme.of(context)
                       .textTheme
                       .bodyMedium
