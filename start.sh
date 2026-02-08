@@ -1,11 +1,13 @@
 #!/bin/bash
 set -e
 
-echo "=== Debug: Database env vars ==="
-echo "DATABASE_URL set: ${DATABASE_URL:+(yes)}"
-echo "DATABASE_URL first 30 chars: ${DATABASE_URL:0:30}"
-env | grep -i -E "database|postgres|pghost|pgport|pguser|pgpass|pgdatabase" | sed 's/=.*/=***/' || true
-echo "=== End debug ==="
+# Railway provides the Postgres URL as RAILWAY_SERVICE_POSTGRES_URL
+if [ -z "$DATABASE_URL" ] && [ -n "$RAILWAY_SERVICE_POSTGRES_URL" ]; then
+    export DATABASE_URL="$RAILWAY_SERVICE_POSTGRES_URL"
+    echo "Using RAILWAY_SERVICE_POSTGRES_URL as DATABASE_URL"
+fi
+
+echo "DATABASE_URL scheme: ${DATABASE_URL%%://*}"
 echo "Running database migrations..."
 cd /app && alembic upgrade head
 
