@@ -19,7 +19,9 @@ class AuthService {
   String get _baseUrl {
     const configured = String.fromEnvironment('API_BASE_URL', defaultValue: '');
     if (configured.isNotEmpty) return configured;
-    return kIsWeb ? 'http://localhost:8000' : 'http://10.0.2.2:8000';
+    // On web: empty string = relative URLs (same origin as the page)
+    // On mobile: Android emulator localhost alias
+    return kIsWeb ? '' : 'http://10.0.2.2:8000';
   }
 
   Future<void> init() async {
