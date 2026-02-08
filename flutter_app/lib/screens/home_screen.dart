@@ -4,6 +4,7 @@ import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../widgets/disclaimer_banner.dart';
 import '../widgets/loading_overlay.dart';
+import 'history_screen.dart';
 import 'ideas_list_screen.dart';
 import 'login_screen.dart';
 
@@ -52,6 +53,14 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Better Mousetrap'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'History',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HistoryScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Sign out',
@@ -183,12 +192,32 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _generate({required bool random}) async {
     setState(() => _isLoading = true);
     try {
-      final text =
-          random ? '' : _productController.text.trim();
+      final text = random ? '' : _productController.text.trim();
+      final productUrl = _urlController.text.trim().isEmpty
+          ? null
+          : _urlController.text.trim();
+
       final variants = await ApiClient.instance.generateIdeas(
         text: text,
         random: random,
       );
+
+      // Create session and save variants
+      String? sessionId;
+      try {
+        final sessionData = await ApiClient.instance.createSession(
+          productText: _productController.text.trim(),
+          productUrl: productUrl,
+        );
+        sessionId = sessionData['id'] as String;
+        await ApiClient.instance.updateSession(sessionId, {
+          'variants_json': variants.map((v) => v.toJson()).toList(),
+          'status': 'ideas_generated',
+        });
+      } catch (_) {
+        // Session save failure shouldn't block the flow
+      }
+
       if (!mounted) return;
       Navigator.push(
         context,
@@ -196,15 +225,12 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (_) => IdeasListScreen(
             variants: variants,
             productText: _productController.text.trim(),
-            productURL:
-                _urlController.text.trim().isEmpty
-                    ? null
-                    : _urlController.text.trim(),
+            productURL: productUrl,
+            sessionId: sessionId,
           ),
         ),
       );
     } on UnauthorizedException {
-      // handled by onUnauthorized callback
       return;
     } catch (e) {
       if (mounted) {

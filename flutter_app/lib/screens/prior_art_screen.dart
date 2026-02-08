@@ -10,6 +10,7 @@ import '../widgets/confidence_badge.dart';
 import '../widgets/disclaimer_banner.dart';
 import '../widgets/loading_overlay.dart';
 import '../widgets/score_badge.dart';
+import 'build_this_screen.dart';
 import 'export_screen.dart';
 
 class PriorArtScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class PriorArtScreen extends StatefulWidget {
   final IdeaVariant variant;
   final IdeaSpec spec;
   final PatentSearchResponse patentResponse;
+  final String? sessionId;
 
   const PriorArtScreen({
     super.key,
@@ -24,6 +26,7 @@ class PriorArtScreen extends StatefulWidget {
     required this.variant,
     required this.spec,
     required this.patentResponse,
+    this.sessionId,
   });
 
   @override
@@ -33,6 +36,11 @@ class PriorArtScreen extends StatefulWidget {
 class _PriorArtScreenState extends State<PriorArtScreen> {
   bool _isLoading = false;
   String? _errorMessage;
+
+  bool get _canBuildThis {
+    if (widget.patentResponse.hits.isEmpty) return true;
+    return widget.patentResponse.hits.every((h) => h.score < 0.70);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,12 +106,41 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
                   minimumSize: const Size(double.infinity, 52),
                 ),
               ),
+
+              // Build This button (only when low patent overlap)
+              if (_canBuildThis) ...[
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _isLoading ? null : _navigateToBuildThis,
+                  icon: const Icon(Icons.build),
+                  label: const Text('Build This'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 52),
+                    backgroundColor: Colors.green,
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
             ],
           ),
           if (_isLoading)
             const LoadingOverlay(message: 'Building export...'),
         ],
+      ),
+    );
+  }
+
+  void _navigateToBuildThis() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BuildThisScreen(
+          productText: widget.product.text,
+          variant: widget.variant,
+          spec: widget.spec,
+          hits: widget.patentResponse.hits,
+          sessionId: widget.sessionId,
+        ),
       ),
     );
   }
@@ -117,6 +154,16 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
         spec: widget.spec,
         hits: widget.patentResponse.hits,
       );
+
+      // Save export to session (fire and forget)
+      if (widget.sessionId != null) {
+        ApiClient.instance.updateSession(widget.sessionId!, {
+          'export_markdown': response.markdown,
+          'export_plain_text': response.plainText,
+          'status': 'exported',
+        }).catchError((_) {});
+      }
+
       if (!mounted) return;
       Navigator.push(
         context,

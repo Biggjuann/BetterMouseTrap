@@ -13,12 +13,14 @@ class IdeaDetailScreen extends StatefulWidget {
   final IdeaVariant variant;
   final String productText;
   final String? productURL;
+  final String? sessionId;
 
   const IdeaDetailScreen({
     super.key,
     required this.variant,
     required this.productText,
     this.productURL,
+    this.sessionId,
   });
 
   @override
@@ -203,7 +205,16 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
         productText: widget.productText,
         variant: widget.variant,
       );
-      if (mounted) setState(() => _spec = spec);
+      if (mounted) {
+        setState(() => _spec = spec);
+        // Save spec to session (fire and forget)
+        if (widget.sessionId != null) {
+          ApiClient.instance.updateSession(widget.sessionId!, {
+            'spec_json': spec.toJson(),
+            'status': 'spec_generated',
+          }).catchError((_) {});
+        }
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _errorMessage = e.toString());
@@ -223,6 +234,17 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
         queries: spec.searchQueries,
         keywords: spec.keywords,
       );
+
+      // Save patent results to session (fire and forget)
+      if (widget.sessionId != null) {
+        ApiClient.instance.updateSession(widget.sessionId!, {
+          'patent_hits_json':
+              response.hits.map((h) => h.toJson()).toList(),
+          'patent_confidence': response.confidence,
+          'status': 'patents_searched',
+        }).catchError((_) {});
+      }
+
       if (!mounted) return;
       Navigator.push(
         context,
@@ -235,6 +257,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             variant: widget.variant,
             spec: spec,
             patentResponse: response,
+            sessionId: widget.sessionId,
           ),
         ),
       );

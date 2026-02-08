@@ -158,3 +158,144 @@ Patents to evaluate:
 {patent_block}
 
 {safe_json_instructions()}"""
+
+
+# ── Prompt D: Provisional Patent Draft ─────────────────────────────
+
+PROVISIONAL_PATENT_SYSTEM = (
+    "You are a patent drafting assistant. You create provisional patent application "
+    "drafts in standard USPTO format. You write in formal patent language with precise "
+    "technical terminology. "
+    + no_legal_advice_instructions()
+)
+
+PROVISIONAL_PATENT_SCHEMA = """{
+  "title": "<invention title>",
+  "abstract": "<150-word abstract>",
+  "claims": {
+    "independent": ["<independent claim 1>", "..."],
+    "dependent": ["<dependent claim referencing an independent claim>", "..."]
+  },
+  "detailed_description": "<multi-paragraph detailed description of the invention>",
+  "prior_art_discussion": "<discussion of known prior art and how this invention differs>"
+}"""
+
+
+def build_provisional_patent_prompt(
+    product_text: str,
+    variant_title: str,
+    variant_summary: str,
+    spec_novelty: str,
+    spec_mechanism: str,
+    spec_baseline: str,
+    spec_differentiators: list[str],
+    patent_hits: list[dict],
+) -> str:
+    diffs = "\n".join(f"  - {d}" for d in spec_differentiators)
+
+    prior_art_block = ""
+    if patent_hits:
+        for p in patent_hits[:5]:
+            prior_art_block += (
+                f"\n  - {p.get('title', 'Unknown')} ({p.get('patent_id', '')}): "
+                f"Score {p.get('score', 0):.2f} — {p.get('why_similar', '')}"
+            )
+    else:
+        prior_art_block = "\n  No significant prior art found."
+
+    return f"""Create a provisional patent application draft for this invention.
+
+Product: {product_text}
+Invention: {variant_title}
+Summary: {variant_summary}
+
+Technical Details:
+  Novelty: {spec_novelty}
+  Mechanism: {spec_mechanism}
+  Baseline: {spec_baseline}
+  Differentiators:
+{diffs}
+
+Prior Art Search Results:{prior_art_block}
+
+Draft a complete provisional patent application with:
+1. "title" — A formal invention title (descriptive, not marketing language)
+2. "abstract" — A 150-word abstract in patent style
+3. "claims" — An object with:
+   - "independent": 2-3 independent claims covering the core invention
+   - "dependent": 3-5 dependent claims adding specific features
+   Claims should use standard patent claim language ("A method comprising...", "The method of claim 1, wherein...")
+4. "detailed_description" — 3-5 paragraphs covering: field of invention, background, summary, detailed description of embodiments
+5. "prior_art_discussion" — 1-2 paragraphs discussing the prior art found and how this invention differs
+
+Include the disclaimer that this is not legal advice and should be reviewed by a patent attorney.
+
+{safe_json_instructions()}"""
+
+
+# ── Prompt E: Prototyping Package ──────────────────────────────────
+
+PROTOTYPING_SYSTEM = (
+    "You are an expert product prototyping consultant with deep experience in "
+    "3D printing, electronics, CNC machining, woodworking, and other fabrication methods. "
+    "You assess what fabrication methods are most appropriate for a given product and "
+    "provide detailed, actionable build guides. Only suggest approaches that genuinely "
+    "make sense for the product's form factor, materials, and complexity."
+)
+
+PROTOTYPING_SCHEMA = """{
+  "approaches": [
+    {
+      "method": "<fabrication method, e.g., '3D Printing (FDM)', 'Arduino + 3D Printed Enclosure'>",
+      "rationale": "<why this method fits this product>",
+      "specs": {
+        "dimensions": "<approximate dimensions>",
+        "materials": "<recommended materials>",
+        "tolerances": "<relevant tolerances if applicable>",
+        "finish": "<surface finish recommendations>"
+      },
+      "bill_of_materials": [
+        {"item": "<component name>", "quantity": "<qty>", "estimated_cost": "<USD>", "source": "<where to buy>"}
+      ],
+      "assembly_instructions": ["<step 1>", "<step 2>", "..."]
+    }
+  ]
+}"""
+
+
+def build_prototyping_prompt(
+    product_text: str,
+    variant_title: str,
+    variant_summary: str,
+    spec_mechanism: str,
+    spec_differentiators: list[str],
+) -> str:
+    diffs = "\n".join(f"  - {d}" for d in spec_differentiators)
+
+    return f"""Design a prototyping package for this product invention.
+
+Product: {product_text}
+Invention: {variant_title}
+Summary: {variant_summary}
+
+Technical Details:
+  Mechanism: {spec_mechanism}
+  Key Differentiators:
+{diffs}
+
+Provide 1-2 practical fabrication approaches for building a working prototype. For each approach:
+
+1. "method" — The fabrication method (e.g., "3D Printing (FDM/SLA)", "Arduino + 3D Printed Enclosure",
+   "CNC Machined Aluminum", "Laser-Cut Acrylic + Electronics", etc.)
+   Only suggest methods that realistically work for this type of product.
+2. "rationale" — Why this method is a good fit (2-3 sentences)
+3. "specs" — Object with dimensions, materials, tolerances, and finish recommendations
+4. "bill_of_materials" — Complete list of parts/materials with quantities, estimated costs in USD,
+   and where to source them (Amazon, McMaster-Carr, Adafruit, local hardware store, etc.)
+5. "assembly_instructions" — Step-by-step instructions (8-15 steps) that a hobbyist maker could follow
+
+If the product involves electronics, include specific components (microcontrollers, sensors, etc.).
+If 3D printing is appropriate, mention specific settings (layer height, infill, orientation).
+Keep total prototype cost under $200 if possible.
+
+{safe_json_instructions()}"""

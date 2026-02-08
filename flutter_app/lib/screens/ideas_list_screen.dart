@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/idea_variant.dart';
+import '../services/api_client.dart';
 import '../widgets/keyword_tag.dart';
 import '../widgets/mode_badge.dart';
 import 'idea_detail_screen.dart';
@@ -9,12 +10,14 @@ class IdeasListScreen extends StatelessWidget {
   final List<IdeaVariant> variants;
   final String productText;
   final String? productURL;
+  final String? sessionId;
 
   const IdeasListScreen({
     super.key,
     required this.variants,
     required this.productText,
     this.productURL,
+    this.sessionId,
   });
 
   @override
@@ -28,6 +31,14 @@ class IdeasListScreen extends StatelessWidget {
           return _VariantTile(
             variant: variant,
             onTap: () {
+              // Save selected variant (fire and forget)
+              if (sessionId != null) {
+                ApiClient.instance.updateSession(sessionId!, {
+                  'selected_variant_json': variant.toJson(),
+                  'title': variant.title,
+                }).catchError((_) {});
+              }
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -35,6 +46,7 @@ class IdeasListScreen extends StatelessWidget {
                     variant: variant,
                     productText: productText,
                     productURL: productURL,
+                    sessionId: sessionId,
                   ),
                 ),
               );
