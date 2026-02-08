@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/idea_variant.dart';
 import '../services/api_client.dart';
+import '../theme.dart';
 import '../widgets/keyword_tag.dart';
 import '../widgets/loading_overlay.dart';
 import '../widgets/mode_badge.dart';
@@ -131,12 +132,15 @@ class _VariantTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.base,
+        vertical: AppSpacing.xs,
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.base),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

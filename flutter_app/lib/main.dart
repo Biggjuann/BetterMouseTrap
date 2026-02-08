@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'services/auth_service.dart';
+import 'theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,16 +19,8 @@ class MouseTrapApp extends StatelessWidget {
     return MaterialApp(
       title: 'MouseTrap',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: Colors.amber,
-        useMaterial3: true,
-        brightness: Brightness.light,
-      ),
-      darkTheme: ThemeData(
-        colorSchemeSeed: Colors.amber,
-        useMaterial3: true,
-        brightness: Brightness.dark,
-      ),
+      theme: buildLightTheme(),
+      darkTheme: buildDarkTheme(),
       home: AuthService.instance.isLoggedIn
           ? const HomeScreen()
           : const LoginScreen(),

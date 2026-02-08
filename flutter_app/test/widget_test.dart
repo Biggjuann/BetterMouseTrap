@@ -6,6 +6,6 @@ void main() {
   testWidgets('App renders home screen', (WidgetTester tester) async {
     await tester.pumpWidget(const MouseTrapApp());
     expect(find.text('MouseTrap'), findsOneWidget);
-    expect(find.text('Make it better'), findsOneWidget);
+    expect(find.text('Make it a Hero'), findsOneWidget);
   });
 }

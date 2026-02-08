@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
+
 class KeywordTag extends StatelessWidget {
   final String text;
   const KeywordTag({super.key, required this.text});
@@ -7,14 +9,23 @@ class KeywordTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.softCream,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(
+          color: AppColors.lightWarmGray.withValues(alpha: 0.4),
+        ),
       ),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.labelSmall,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.richBrown,
+              fontWeight: FontWeight.w500,
+            ),
       ),
     );
   }

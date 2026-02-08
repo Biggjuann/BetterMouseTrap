@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
+
 class DisclaimerBanner extends StatelessWidget {
   const DisclaimerBanner({super.key});
 
@@ -7,21 +9,28 @@ class DisclaimerBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
+        color: AppColors.softCream,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: AppColors.lightWarmGray.withValues(alpha: 0.4),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, color: Colors.orange, size: 20),
-          const SizedBox(width: 8),
+          Icon(
+            Icons.info_outline,
+            color: AppColors.heroOrange,
+            size: 18,
+          ),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               'This is not legal advice. Always consult a patent attorney before filing.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: AppColors.warmGray,
                   ),
             ),
           ),
