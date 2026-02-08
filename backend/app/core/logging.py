@@ -3,7 +3,7 @@ import sys
 
 
 def setup_logging(level: int = logging.INFO) -> logging.Logger:
-    logger = logging.getLogger("better_mousetrap")
+    logger = logging.getLogger("mousetrap")
     logger.setLevel(level)
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(

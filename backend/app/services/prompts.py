@@ -1,4 +1,4 @@
-"""Prompt templates and helpers for the Better Mousetrap LLM calls."""
+"""Prompt templates and helpers for the MouseTrap LLM calls."""
 
 
 # ── Shared helpers ───────────────────────────────────────────────────
@@ -55,7 +55,12 @@ def build_generate_variants_prompt(product_text: str, category: str | None = Non
             "closet organizers, travel pillows, cable organizers, shower caddies, etc."
         )
     else:
-        product_line = f"Product: {product_text}"
+        product_line = (
+            f"Product: {product_text}\n\n"
+            "Think about this product as a consumer would encounter it — on a store shelf, "
+            "in an Amazon listing, or in a friend's house. What would make someone pick up "
+            "this product and say 'this is way better than what I have now'?"
+        )
 
     cat_line = f"\nProduct category: {category}" if category else ""
 
@@ -64,20 +69,24 @@ def build_generate_variants_prompt(product_text: str, category: str | None = Non
 Generate exactly 10 creative "better version" variants of this product. Each variant should
 propose a meaningfully different improvement that a mass-market consumer would actually want.
 
-Keep ideas grounded and practical:
-- Products should be the kind of thing that could be a top seller on Amazon or at Target
-- Avoid overly scientific, industrial, or complex technical solutions
-- Think about what makes everyday consumers say "that's clever, I'd buy that"
-- Ideas should be simple enough to explain in one sentence to a friend
+CRITICAL — Keep ideas consumer-focused and sellable:
+- Every idea should feel like a real product listing on Amazon, Target, or Costco
+- Write titles like product names a shopper would search for (e.g., "Self-Draining Dish Rack with Built-In Drying Mat")
+- Focus on everyday pain points: mess, storage, portability, ease of cleaning, setup time, etc.
+- Avoid overly scientific, industrial, or technical solutions — no lab equipment, no industrial machinery
+- Each idea should be simple enough to explain in one sentence to a friend
+- Think about what makes a product go viral on TikTok or get featured on Shark Tank
+- Consider the "I didn't know I needed this" factor
 
+Make each variant meaningfully DIFFERENTIATED from the others — don't just tweak the same angle 10 times.
 Cover a diverse mix of improvement modes:
 cost_down, durability, safety, convenience, sustainability, performance, and mashup (combining
-ideas from other domains).
+ideas from other product domains in surprising ways).
 
 For each variant provide:
 - A unique UUID as the id
-- A concise, descriptive title (like a product listing name)
-- A 2-3 sentence summary written like a product description, not a technical paper
+- A concise, catchy title (like a product listing name shoppers would click on)
+- A 2-3 sentence summary written like a compelling product description, not a technical paper
 - The primary improvement mode
 - 3-5 keywords useful for patent searching (include technical synonyms)
 

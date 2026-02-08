@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Icon(Icons.tips_and_updates, size: 48, color: Colors.amber),
                 const SizedBox(height: 12),
                 Text(
-                  'Better Mousetrap',
+                  'MouseTrap',
                   style: Theme.of(context)
                       .textTheme
                       .headlineMedium

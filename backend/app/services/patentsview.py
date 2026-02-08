@@ -6,7 +6,7 @@ import httpx
 
 from app.core.config import settings
 
-log = logging.getLogger("better_mousetrap.patentsview")
+log = logging.getLogger("mousetrap.patentsview")
 
 PATENT_FIELDS = [
     "patent_id",

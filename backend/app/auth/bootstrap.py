@@ -9,7 +9,7 @@ from app.core.config import settings
 from app.models.database import async_session
 from app.models.user import User
 
-log = logging.getLogger("better_mousetrap.bootstrap")
+log = logging.getLogger("mousetrap.bootstrap")
 
 
 async def ensure_admin_user() -> None:

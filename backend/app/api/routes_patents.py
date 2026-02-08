@@ -13,7 +13,7 @@ from app.services.patentsview import (
 )
 from app.services.scoring import compute_confidence, rerank_with_llm, score_hits_heuristic
 
-log = logging.getLogger("better_mousetrap.routes_patents")
+log = logging.getLogger("mousetrap.routes_patents")
 
 router = APIRouter(prefix="/patents", tags=["patents"], dependencies=[Depends(get_current_user)])
 

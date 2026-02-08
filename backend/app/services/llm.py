@@ -9,7 +9,7 @@ import httpx
 
 from app.core.config import settings
 
-log = logging.getLogger("better_mousetrap.llm")
+log = logging.getLogger("mousetrap.llm")
 
 
 class LLMError(Exception):

@@ -31,7 +31,7 @@ if not settings.debug:
 else:
     logging.basicConfig(level=logging.DEBUG)
 
-log = logging.getLogger("better_mousetrap")
+log = logging.getLogger("mousetrap")
 
 app = FastAPI(title=settings.app_name, debug=settings.debug)
 

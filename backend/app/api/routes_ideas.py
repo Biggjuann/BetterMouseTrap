@@ -24,7 +24,7 @@ from app.services.prompts import (
     build_generate_variants_prompt,
 )
 
-log = logging.getLogger("better_mousetrap.routes_ideas")
+log = logging.getLogger("mousetrap.routes_ideas")
 
 router = APIRouter(prefix="/ideas", tags=["ideas"], dependencies=[Depends(get_current_user)])
 

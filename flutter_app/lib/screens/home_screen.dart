@@ -51,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Better Mousetrap'),
+        title: const Text('MouseTrap'),
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
@@ -84,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Better Mousetrap',
+                  'MouseTrap',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -227,6 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
             productText: _productController.text.trim(),
             productURL: productUrl,
             sessionId: sessionId,
+            random: random,
           ),
         ),
       );

@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 import '../models/idea_variant.dart';
 import '../services/api_client.dart';
 import '../widgets/keyword_tag.dart';
+import '../widgets/loading_overlay.dart';
 import '../widgets/mode_badge.dart';
 import 'idea_detail_screen.dart';
 
-class IdeasListScreen extends StatelessWidget {
+class IdeasListScreen extends StatefulWidget {
   final List<IdeaVariant> variants;
   final String productText;
   final String? productURL;
   final String? sessionId;
+  final bool random;
 
   const IdeasListScreen({
     super.key,
@@ -18,41 +20,103 @@ class IdeasListScreen extends StatelessWidget {
     required this.productText,
     this.productURL,
     this.sessionId,
+    this.random = false,
   });
+
+  @override
+  State<IdeasListScreen> createState() => _IdeasListScreenState();
+}
+
+class _IdeasListScreenState extends State<IdeasListScreen> {
+  late List<IdeaVariant> _variants;
+  bool _isLoading = false;
+  String? _sessionId;
+
+  @override
+  void initState() {
+    super.initState();
+    _variants = widget.variants;
+    _sessionId = widget.sessionId;
+  }
+
+  Future<void> _regenerate() async {
+    setState(() => _isLoading = true);
+    try {
+      final newVariants = await ApiClient.instance.generateIdeas(
+        text: widget.random ? '' : widget.productText,
+        random: widget.random,
+      );
+
+      // Update session with new variants (fire and forget)
+      if (_sessionId != null) {
+        ApiClient.instance.updateSession(_sessionId!, {
+          'variants_json': newVariants.map((v) => v.toJson()).toList(),
+          'status': 'ideas_generated',
+        }).catchError((_) {});
+      }
+
+      if (mounted) {
+        setState(() => _variants = newVariants);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ideas')),
-      body: ListView.builder(
-        itemCount: variants.length,
-        itemBuilder: (context, index) {
-          final variant = variants[index];
-          return _VariantTile(
-            variant: variant,
-            onTap: () {
-              // Save selected variant (fire and forget)
-              if (sessionId != null) {
-                ApiClient.instance.updateSession(sessionId!, {
-                  'selected_variant_json': variant.toJson(),
-                  'title': variant.title,
-                }).catchError((_) {});
-              }
+      appBar: AppBar(
+        title: const Text('Ideas'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Generate new ideas',
+            onPressed: _isLoading ? null : _regenerate,
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          ListView.builder(
+            itemCount: _variants.length,
+            itemBuilder: (context, index) {
+              final variant = _variants[index];
+              return _VariantTile(
+                variant: variant,
+                onTap: () {
+                  // Save selected variant (fire and forget)
+                  if (_sessionId != null) {
+                    ApiClient.instance.updateSession(_sessionId!, {
+                      'selected_variant_json': variant.toJson(),
+                      'title': variant.title,
+                    }).catchError((_) {});
+                  }
 
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => IdeaDetailScreen(
-                    variant: variant,
-                    productText: productText,
-                    productURL: productURL,
-                    sessionId: sessionId,
-                  ),
-                ),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => IdeaDetailScreen(
+                        variant: variant,
+                        productText: widget.productText,
+                        productURL: widget.productURL,
+                        sessionId: _sessionId,
+                      ),
+                    ),
+                  );
+                },
               );
             },
-          );
-        },
+          ),
+          if (_isLoading)
+            const LoadingOverlay(message: 'Generating new ideas...'),
+        ],
       ),
     );
   }

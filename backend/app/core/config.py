@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     admin_password: str = ""
 
     # App
-    app_name: str = "Better Mousetrap"
+    app_name: str = "MouseTrap"
     debug: bool = False
     allowed_origins: str = "*"
 

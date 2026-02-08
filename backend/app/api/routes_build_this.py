@@ -22,7 +22,7 @@ from app.services.prompts import (
     build_prototyping_prompt,
 )
 
-log = logging.getLogger("better_mousetrap.routes_build_this")
+log = logging.getLogger("mousetrap.routes_build_this")
 
 router = APIRouter(prefix="/build", tags=["build"], dependencies=[Depends(get_current_user)])
 

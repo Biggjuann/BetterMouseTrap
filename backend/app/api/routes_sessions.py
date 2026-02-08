@@ -16,7 +16,7 @@ from app.schemas.session import (
     SessionUpdate,
 )
 
-log = logging.getLogger("better_mousetrap.routes_sessions")
+log = logging.getLogger("mousetrap.routes_sessions")
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 

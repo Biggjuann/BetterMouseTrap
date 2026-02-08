@@ -6,7 +6,7 @@ from datetime import datetime
 from app.services.llm import LLMError, call_llm
 from app.services.prompts import RERANK_SCHEMA, RERANK_SYSTEM, build_rerank_prompt
 
-log = logging.getLogger("better_mousetrap.scoring")
+log = logging.getLogger("mousetrap.scoring")
 
 
 def _keyword_overlap_score(keywords: list[str], title: str, abstract: str) -> float:

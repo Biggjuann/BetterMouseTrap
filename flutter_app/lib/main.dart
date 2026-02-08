@@ -7,16 +7,16 @@ import 'services/auth_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AuthService.instance.init();
-  runApp(const BetterMousetrapApp());
+  runApp(const MouseTrapApp());
 }
 
-class BetterMousetrapApp extends StatelessWidget {
-  const BetterMousetrapApp({super.key});
+class MouseTrapApp extends StatelessWidget {
+  const MouseTrapApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Better Mousetrap',
+      title: 'MouseTrap',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorSchemeSeed: Colors.amber,
