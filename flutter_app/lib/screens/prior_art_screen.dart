@@ -447,7 +447,7 @@ class _PatentHitCardState extends State<_PatentHitCard> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 13, color: AppColors.stone),
+        Icon(icon, size: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
         const SizedBox(width: 4),
         Flexible(
           child: Text(

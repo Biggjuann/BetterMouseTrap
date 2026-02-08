@@ -141,7 +141,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             Text(
               'Breaking down what makes this clever...',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.stone,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
             ),
           ],

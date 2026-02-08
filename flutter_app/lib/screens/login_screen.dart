@@ -62,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     _isRegisterMode ? 'Join the club!' : 'Welcome back!',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: AppColors.stone,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                   ),
                   const SizedBox(height: AppSpacing.xxl),

@@ -143,7 +143,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               'Every great product starts with an idea.\nGo create one!',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.stone,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     height: 1.5,
                   ),
             ),
@@ -226,7 +226,7 @@ class _SessionTile extends StatelessWidget {
                 ),
                 IconButton(
                   icon: Icon(Icons.delete_outline_rounded,
-                      size: 20, color: AppColors.mist),
+                      size: 20, color: Theme.of(context).colorScheme.outline),
                   onPressed: onDelete,
                 ),
               ],

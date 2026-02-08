@@ -106,7 +106,7 @@ class _IdeasListScreenState extends State<IdeasListScreen> {
                   child: Text(
                     '${_variants.length} hero ideas generated',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.stone,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w500,
                         ),
                   ),
@@ -292,7 +292,7 @@ class _VariantTile extends StatelessWidget {
                     padding: const EdgeInsets.only(right: AppSpacing.md),
                     child: Icon(
                       Icons.chevron_right_rounded,
-                      color: AppColors.mist,
+                      color: Theme.of(context).colorScheme.outline,
                       size: 24,
                     ),
                   ),

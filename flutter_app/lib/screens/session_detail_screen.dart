@@ -59,7 +59,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                   child: Text(
                     'Session not found',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: AppColors.stone,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                   ),
                 )
