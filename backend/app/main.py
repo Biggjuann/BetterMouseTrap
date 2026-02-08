@@ -99,4 +99,7 @@ if os.path.isdir(static_dir):
         file_path = os.path.join(static_dir, full_path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)
-        return FileResponse(os.path.join(static_dir, "index.html"))
+        return FileResponse(
+            os.path.join(static_dir, "index.html"),
+            headers={"Cache-Control": "no-cache"},
+        )
