@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+
+# Python venv
+backend/.venv/
+
+# Environment / secrets
+.env
+*.env.local
+*.env.production
+
+# Flutter SDK (bundled locally, too large for git)
+flutter/
+
+# Flutter build artifacts
+flutter_app/.dart_tool/
+flutter_app/.packages
+flutter_app/build/
+flutter_app/.flutter-plugins
+flutter_app/.flutter-plugins-dependencies
+
+# iOS (reference only, not deploying)
+ios/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+nul
+
+# Claude Code
+.claude/
+
+# Windows Flutter symlink artifacts
+flutter_app/windows/flutter/ephemeral/
