@@ -6,6 +6,7 @@ httpx>=0.27,<1
 anthropic>=0.25,<1
 
 # Auth
+python-multipart>=0.0.9,<1
 python-jose[cryptography]>=3.3,<4
 passlib[bcrypt]>=1.7,<2
 
