@@ -1,0 +1,10 @@
+flutter/
+ios/
+.claude/
+.git/
+.env
+*.md
+backend/.venv/
+flutter_app/build/
+flutter_app/.dart_tool/
+flutter_app/windows/
