@@ -8,7 +8,7 @@ anthropic>=0.25,<1
 # Auth
 python-multipart>=0.0.9,<1
 python-jose[cryptography]>=3.3,<4
-passlib[bcrypt]>=1.7,<2
+bcrypt>=4.0,<5
 
 # Database
 sqlalchemy>=2.0,<3
