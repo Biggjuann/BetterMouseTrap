@@ -38,15 +38,9 @@ def do_run_migrations(connection):
 
 
 async def run_async_migrations() -> None:
-    import ssl as _ssl
-
-    # Railway Postgres needs SSL without strict cert verification
-    ssl_context = _ssl.create_default_context()
-    ssl_context.check_hostname = False
-    ssl_context.verify_mode = _ssl.CERT_NONE
-
+    # Railway private networking does NOT support SSL — disable it entirely
     is_remote = not any(h in settings.database_url for h in ["localhost", "127.0.0.1", "::1"])
-    connect_args = {"ssl": ssl_context} if is_remote else {}
+    connect_args = {"ssl": False} if is_remote else {}
 
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
