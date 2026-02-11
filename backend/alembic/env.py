@@ -38,10 +38,23 @@ def do_run_migrations(connection):
 
 
 async def run_async_migrations() -> None:
+    import ssl as _ssl
+
+    # Railway public proxy uses direct TLS (not PostgreSQL SSLRequest)
+    is_remote = not any(h in settings.database_url for h in ["localhost", "127.0.0.1", "::1"])
+    connect_args: dict = {}
+    if is_remote:
+        ctx = _ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = _ssl.CERT_NONE
+        connect_args["ssl"] = ctx
+        connect_args["direct_tls"] = True
+
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
