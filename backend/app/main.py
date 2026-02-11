@@ -1,10 +1,11 @@
 import logging
 import os
 import sys
+import traceback
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -58,19 +59,44 @@ app.include_router(sessions_router)
 app.include_router(build_router)
 
 
+# ── Global exception handler — surface real errors ────────────────
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    tb = traceback.format_exception(type(exc), exc, exc.__traceback__)
+    log.error("Unhandled %s on %s %s:\n%s", type(exc).__name__, request.method, request.url.path, "".join(tb))
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"{type(exc).__name__}: {exc}"},
+    )
+
+
 # ── Health ──────────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
     db_ok = False
+    db_err = None
     try:
         async with async_session() as session:
             await session.execute(text("SELECT 1"))
             db_ok = True
-    except Exception:
+    except Exception as e:
+        db_err = f"{type(e).__name__}: {e}"
         log.exception("Health check: database unreachable")
 
+    has_llm = bool(
+        (settings.llm_provider == "anthropic" and settings.anthropic_api_key)
+        or (settings.llm_provider == "openai" and settings.openai_api_key)
+    )
+
     overall = "ok" if db_ok else "degraded"
-    return {"status": overall, "database": "connected" if db_ok else "unreachable"}
+    return {
+        "status": overall,
+        "database": "connected" if db_ok else "unreachable",
+        "database_error": db_err,
+        "llm_provider": settings.llm_provider,
+        "llm_key_set": has_llm,
+        "db_url_prefix": settings.database_url[:30] + "..." if len(settings.database_url) > 30 else settings.database_url,
+    }
 
 
 # ── Startup ─────────────────────────────────────────────────────────
