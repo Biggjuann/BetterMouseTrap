@@ -24,32 +24,31 @@ def build_query_payload(
 ) -> dict:
     """Build a PatentsView API query payload.
 
-    Uses _text_any on patent_title and patent_abstract to find patents
-    matching the provided queries and keywords.
+    Uses _text_phrase for each search query (exact phrase match) and
+    _text_all for keywords (all keywords must appear). Results matching
+    any of these clauses are returned.
     """
-    # Combine all query terms and keywords into a single token list
-    all_terms = []
+    clauses = []
+
+    # Each search query becomes a phrase search on title and abstract
     for q in queries:
-        all_terms.extend(q.split())
-    all_terms.extend(keywords)
+        q = q.strip()
+        if q:
+            clauses.append({"_text_phrase": {"patent_title": q}})
+            clauses.append({"_text_phrase": {"patent_abstract": q}})
 
-    # Deduplicate while preserving order, lowercase
-    seen = set()
-    unique_terms = []
-    for t in all_terms:
-        t_lower = t.lower().strip()
-        if t_lower and t_lower not in seen and len(t_lower) > 2:
-            seen.add(t_lower)
-            unique_terms.append(t_lower)
+    # Keywords combined with _text_all (all must appear)
+    if keywords:
+        kw_string = " ".join(k.lower().strip() for k in keywords if len(k.strip()) > 2)
+        if kw_string:
+            clauses.append({"_text_all": {"patent_abstract": kw_string}})
 
-    search_string = " ".join(unique_terms[:30])  # cap to avoid overly long queries
+    if not clauses:
+        # Fallback: use first query as simple text search
+        fallback = queries[0] if queries else " ".join(keywords[:5])
+        clauses.append({"_text_all": {"patent_abstract": fallback}})
 
-    query = {
-        "_or": [
-            {"_text_any": {"patent_title": search_string}},
-            {"_text_any": {"patent_abstract": search_string}},
-        ]
-    }
+    query = {"_or": clauses}
 
     return {
         "q": query,
