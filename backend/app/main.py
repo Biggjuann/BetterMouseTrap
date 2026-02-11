@@ -78,7 +78,10 @@ async def health():
 async def on_startup():
     if not settings.debug and settings.jwt_secret_key == "CHANGE-ME-IN-PRODUCTION":
         raise RuntimeError("JWT_SECRET_KEY must be changed in production!")
-    await ensure_admin_user()
+    try:
+        await ensure_admin_user()
+    except Exception:
+        log.warning("Could not ensure admin user (database may be unreachable). Will retry on first request.")
 
 
 # ── Static file serving (for production Docker build) ───────────────
