@@ -41,6 +41,11 @@ class Settings(BaseSettings):
             url = url.replace("postgres://", "postgresql+asyncpg://", 1)
         elif url.startswith("postgresql://"):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        # Railway private networking doesn't support SSL.
+        # Append sslmode=disable so asyncpg skips the SSL handshake.
+        is_remote = not any(h in url for h in ["localhost", "127.0.0.1", "::1"])
+        if is_remote and "sslmode" not in url:
+            url += "&sslmode=disable" if "?" in url else "?sslmode=disable"
         return url
 
 
