@@ -1,10 +1,23 @@
+import ssl
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import settings
 
-engine = create_async_engine(settings.async_database_url, echo=settings.debug)
+# Railway Postgres requires SSL but uses certs that fail strict verification.
+# Create a permissive SSL context so asyncpg connects without cert validation.
+_ssl_context = ssl.create_default_context()
+_ssl_context.check_hostname = False
+_ssl_context.verify_mode = ssl.CERT_NONE
+
+_connect_args = {"ssl": _ssl_context} if "railway" in settings.database_url else {}
+
+engine = create_async_engine(
+    settings.async_database_url,
+    echo=settings.debug,
+    connect_args=_connect_args,
+)
 
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

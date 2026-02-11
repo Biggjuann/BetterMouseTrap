@@ -38,10 +38,20 @@ def do_run_migrations(connection):
 
 
 async def run_async_migrations() -> None:
+    import ssl as _ssl
+
+    # Railway Postgres needs SSL without strict cert verification
+    ssl_context = _ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = _ssl.CERT_NONE
+
+    connect_args = {"ssl": ssl_context} if "railway" in settings.database_url else {}
+
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
