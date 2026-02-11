@@ -11,7 +11,8 @@ _ssl_context = ssl.create_default_context()
 _ssl_context.check_hostname = False
 _ssl_context.verify_mode = ssl.CERT_NONE
 
-_connect_args = {"ssl": _ssl_context} if "railway" in settings.database_url else {}
+_is_remote = not any(h in settings.database_url for h in ["localhost", "127.0.0.1", "::1"])
+_connect_args = {"ssl": _ssl_context} if _is_remote else {}
 
 engine = create_async_engine(
     settings.async_database_url,

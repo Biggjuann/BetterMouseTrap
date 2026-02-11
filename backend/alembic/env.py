@@ -45,7 +45,8 @@ async def run_async_migrations() -> None:
     ssl_context.check_hostname = False
     ssl_context.verify_mode = _ssl.CERT_NONE
 
-    connect_args = {"ssl": ssl_context} if "railway" in settings.database_url else {}
+    is_remote = not any(h in settings.database_url for h in ["localhost", "127.0.0.1", "::1"])
+    connect_args = {"ssl": ssl_context} if is_remote else {}
 
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
