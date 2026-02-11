@@ -5,14 +5,18 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.core.config import settings
 
-# Railway's public proxy (caboose.proxy.rlwy.net) uses direct TLS,
-# not PostgreSQL's STARTTLS-style SSL negotiation.  We must:
-#   1. Create a permissive SSL context (proxy certs fail strict verification)
-#   2. Set direct_tls=True so asyncpg wraps the socket in TLS immediately
-#      instead of sending an SSLRequest that the proxy doesn't understand
-_is_remote = not any(h in settings.database_url for h in ["localhost", "127.0.0.1", "::1"])
+# Build connect_args based on the database host:
+#   - railway.internal (private networking) → no SSL needed
+#   - proxy.rlwy.net  (public proxy)       → SSL with direct TLS
+#   - localhost                             → no SSL
 _connect_args: dict = {"timeout": 10}
-if _is_remote:
+_db_url = settings.database_url.lower()
+
+if ".railway.internal" in _db_url:
+    # Private networking — plain TCP, no SSL
+    _connect_args["ssl"] = False
+elif not any(h in _db_url for h in ["localhost", "127.0.0.1", "::1"]):
+    # Public proxy — needs TLS
     _ctx = _ssl.create_default_context()
     _ctx.check_hostname = False
     _ctx.verify_mode = _ssl.CERT_NONE

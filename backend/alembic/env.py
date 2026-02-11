@@ -40,10 +40,11 @@ def do_run_migrations(connection):
 async def run_async_migrations() -> None:
     import ssl as _ssl
 
-    # Railway public proxy uses direct TLS (not PostgreSQL SSLRequest)
-    is_remote = not any(h in settings.database_url for h in ["localhost", "127.0.0.1", "::1"])
+    db_url = settings.database_url.lower()
     connect_args: dict = {}
-    if is_remote:
+    if ".railway.internal" in db_url:
+        connect_args["ssl"] = False
+    elif not any(h in db_url for h in ["localhost", "127.0.0.1", "::1"]):
         ctx = _ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = _ssl.CERT_NONE

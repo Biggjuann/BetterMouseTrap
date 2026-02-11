@@ -1,8 +1,15 @@
 #!/bin/bash
 
-# Railway provides the Postgres URL as RAILWAY_SERVICE_POSTGRES_URL
-if [ -z "$DATABASE_URL" ] && [ -n "$RAILWAY_SERVICE_POSTGRES_URL" ]; then
+# Prefer Railway private networking (bypasses proxy, no SSL needed).
+# Fall back to public DATABASE_URL if private isn't available.
+if [ -n "$DATABASE_PRIVATE_URL" ]; then
+    export DATABASE_URL="$DATABASE_PRIVATE_URL"
+    echo "Using DATABASE_PRIVATE_URL (private networking)"
+elif [ -z "$DATABASE_URL" ] && [ -n "$RAILWAY_SERVICE_POSTGRES_URL" ]; then
     export DATABASE_URL="$RAILWAY_SERVICE_POSTGRES_URL"
+    echo "Using RAILWAY_SERVICE_POSTGRES_URL"
+else
+    echo "Using DATABASE_URL"
 fi
 
 # ── Diagnostics: understand DB connectivity before trying migrations ──
