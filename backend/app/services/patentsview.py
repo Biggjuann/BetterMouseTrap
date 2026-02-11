@@ -23,41 +23,40 @@ ENHANCED_PATENT_FIELDS = [
     "patent_abstract",
     "patent_date",
     "assignees.assignee_organization",
+    "cpc_current.cpc_section",
+    "cpc_current.cpc_subclass",
     "cpc_current.cpc_group",
-    "cpc_current.cpc_subgroup",
 ]
 
 
 def build_query_payload(
     queries: list[str],
     keywords: list[str],
-    limit: int = 20,
+    limit: int = 25,
 ) -> dict:
     """Build a PatentsView API query payload.
 
-    Uses _text_phrase for each search query (exact phrase match) and
-    _text_all for keywords (all keywords must appear). Results matching
-    any of these clauses are returned.
+    Uses _text_any on title+abstract for recall, plus _text_all on
+    keywords for precision. Results matching any clause are returned.
     """
     clauses = []
 
-    # Each search query becomes a phrase search on title and abstract
+    # Each search query: broad _text_any on title + abstract
     for q in queries:
         q = q.strip()
         if q:
-            clauses.append({"_text_phrase": {"patent_title": q}})
-            clauses.append({"_text_phrase": {"patent_abstract": q}})
+            clauses.append({"_text_any": {"patent_title": q}})
+            clauses.append({"_text_any": {"patent_abstract": q}})
 
-    # Keywords combined with _text_all (all must appear)
+    # Keywords: use _text_any (any keyword match) for broad recall
     if keywords:
         kw_string = " ".join(k.lower().strip() for k in keywords if len(k.strip()) > 2)
         if kw_string:
-            clauses.append({"_text_all": {"patent_abstract": kw_string}})
+            clauses.append({"_text_any": {"patent_abstract": kw_string}})
 
     if not clauses:
-        # Fallback: use first query as simple text search
         fallback = queries[0] if queries else " ".join(keywords[:5])
-        clauses.append({"_text_all": {"patent_abstract": fallback}})
+        clauses.append({"_text_any": {"patent_abstract": fallback}})
 
     query = {"_or": clauses}
 
@@ -142,11 +141,11 @@ def normalize_enhanced_hits(raw_patents: list[dict], source_phase: str) -> list[
         if isinstance(cpc_current, list):
             for cpc in cpc_current:
                 group = cpc.get("cpc_group", "")
-                subgroup = cpc.get("cpc_subgroup", "")
-                if subgroup:
-                    cpc_codes.append(subgroup)
-                elif group:
+                subclass = cpc.get("cpc_subclass", "")
+                if group:
                     cpc_codes.append(group)
+                elif subclass:
+                    cpc_codes.append(subclass)
             cpc_codes = list(dict.fromkeys(cpc_codes))[:10]  # dedup, limit
 
         hits.append({
@@ -163,11 +162,22 @@ def normalize_enhanced_hits(raw_patents: list[dict], source_phase: str) -> list[
 
 # ── CPC-based search ────────────────────────────────────────────────
 
-def build_cpc_query(cpc_code: str, limit: int = 20) -> dict:
-    """Build a PatentsView query to search by CPC classification code."""
-    # CPC codes can be searched at group or subgroup level
+def build_cpc_query(cpc_code: str, limit: int = 25) -> dict:
+    """Build a PatentsView query to search by CPC classification code.
+
+    Uses _begins for prefix matching — e.g. "A47J36" finds A47J36/02, /04, etc.
+    Searches both cpc_current.cpc_group (specific) and cpc_subclass (broad).
+    """
+    code = cpc_code.strip().rstrip("/")
+    # If it looks like a full group code (has /), search group; otherwise search subclass
+    if "/" in code:
+        return {
+            "q": {"_begins": {"cpc_current.cpc_group": code}},
+            "f": ENHANCED_PATENT_FIELDS,
+            "o": {"size": min(limit, 100)},
+        }
     return {
-        "q": {"_text_any": {"cpc_current.cpc_subgroup": cpc_code}},
+        "q": {"_begins": {"cpc_current.cpc_subclass": code}},
         "f": ENHANCED_PATENT_FIELDS,
         "o": {"size": min(limit, 100)},
     }
@@ -182,13 +192,14 @@ async def search_patents_async(payload: dict) -> list[dict]:
     if settings.patentsview_api_key:
         headers["X-Api-Key"] = settings.patentsview_api_key
 
-    log.info("Async querying PatentsView: %s", url)
+    q_str = _json_param(payload["q"])
+    log.info("Async querying PatentsView — q=%s", q_str[:200])
 
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             url,
             params={
-                "q": _json_param(payload["q"]),
+                "q": q_str,
                 "f": _json_param(payload["f"]),
                 "o": _json_param(payload["o"]),
             },
@@ -197,7 +208,7 @@ async def search_patents_async(payload: dict) -> list[dict]:
         )
 
     if resp.status_code != 200:
-        log.error("PatentsView returned %s: %s", resp.status_code, resp.text[:500])
+        log.error("PatentsView %s for q=%s: %s", resp.status_code, q_str[:150], resp.text[:300])
         return []
 
     data = resp.json()
@@ -206,11 +217,16 @@ async def search_patents_async(payload: dict) -> list[dict]:
     return patents
 
 
-async def search_keyword_async(query: str, target_field: str, limit: int = 20) -> list[dict]:
-    """Run a single keyword query against PatentsView asynchronously."""
-    field = "patent_abstract" if target_field == "abstract" else "patent_title"
+async def search_keyword_async(query: str, target_field: str, limit: int = 25) -> list[dict]:
+    """Run a keyword query using _text_any on both title AND abstract.
+
+    Casts a wide net — any word from the query matching in either field.
+    """
     payload = {
-        "q": {"_text_phrase": {field: query}},
+        "q": {"_or": [
+            {"_text_any": {"patent_title": query}},
+            {"_text_any": {"patent_abstract": query}},
+        ]},
         "f": ENHANCED_PATENT_FIELDS,
         "o": {"size": min(limit, 50)},
     }
@@ -218,8 +234,8 @@ async def search_keyword_async(query: str, target_field: str, limit: int = 20) -
     return normalize_enhanced_hits(raw, "keyword")
 
 
-async def search_keyword_broad_async(query: str, limit: int = 20) -> list[dict]:
-    """Run a broader keyword query using _text_all on abstract."""
+async def search_keyword_focused_async(query: str, limit: int = 25) -> list[dict]:
+    """Run a focused query requiring all words to appear in the abstract."""
     payload = {
         "q": {"_text_all": {"patent_abstract": query}},
         "f": ENHANCED_PATENT_FIELDS,
@@ -239,15 +255,23 @@ async def search_cpc_async(cpc_code: str, limit: int = 20) -> list[dict]:
 # ── Deduplication ────────────────────────────────────────────────────
 
 def deduplicate_hits(all_hits: list[dict]) -> tuple[list[dict], int]:
-    """Deduplicate patent hits by patent_id, keeping first occurrence.
+    """Deduplicate patent hits by patent_id, keeping richest version.
 
+    Prefers hits that have CPC codes and more metadata.
     Returns (deduplicated_list, num_duplicates_removed).
     """
-    seen = set()
-    unique = []
+    best: dict[str, dict] = {}
     for hit in all_hits:
         pid = hit.get("patent_id", "")
-        if pid and pid not in seen:
-            seen.add(pid)
-            unique.append(hit)
+        if not pid:
+            continue
+        if pid not in best:
+            best[pid] = hit
+        else:
+            # Keep the version with more CPC codes
+            existing_cpcs = len(best[pid].get("cpc_codes", []))
+            new_cpcs = len(hit.get("cpc_codes", []))
+            if new_cpcs > existing_cpcs:
+                best[pid] = hit
+    unique = list(best.values())
     return unique, len(all_hits) - len(unique)

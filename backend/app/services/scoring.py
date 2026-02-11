@@ -1,6 +1,7 @@
 """Scoring service — keyword overlap heuristic + optional LLM rerank."""
 
 import logging
+import re
 from datetime import datetime
 
 from app.services.llm import LLMError, call_llm
@@ -8,14 +9,68 @@ from app.services.prompts import RERANK_SCHEMA, RERANK_SYSTEM, build_rerank_prom
 
 log = logging.getLogger("mousetrap.scoring")
 
+# Common suffixes for naive stemming
+_SUFFIXES = re.compile(r"(ing|ed|tion|ment|ness|able|ible|ity|ous|ive|al|ly|er|est|ize|ise)$")
+
+
+def _normalize_word(word: str) -> str:
+    """Naive stemming: strip common English suffixes for matching."""
+    w = word.lower().strip()
+    if len(w) > 5:
+        return _SUFFIXES.sub("", w)
+    return w
+
+
+def _expand_keywords(keywords: list[str]) -> list[str]:
+    """Expand keywords with common patent-language variants."""
+    expanded = list(keywords)
+    for kw in keywords:
+        low = kw.lower()
+        # Expand compound words: "lunchbox" → also try "lunch box"
+        # and "lunch box" → also try "lunchbox"
+        if " " not in low and len(low) > 6:
+            # Try splitting at common break points
+            for i in range(3, len(low) - 2):
+                left, right = low[:i], low[i:]
+                if len(left) >= 3 and len(right) >= 3:
+                    expanded.append(f"{left} {right}")
+        elif " " in low:
+            expanded.append(low.replace(" ", ""))
+    return expanded
+
 
 def _keyword_overlap_score(keywords: list[str], title: str, abstract: str) -> float:
-    """Score 0-1 based on fraction of keywords found in title + abstract."""
+    """Score 0-1 based on keyword matches in title + abstract.
+
+    Uses normalized (stemmed) matching and caps denominator at 6
+    so that having many keywords doesn't dilute the score.
+    """
     if not keywords:
         return 0.0
     text = (title + " " + abstract).lower()
-    matches = sum(1 for kw in keywords if kw.lower() in text)
-    return min(matches / max(len(keywords), 1), 1.0)
+    text_words = set(re.findall(r"\w+", text))
+    text_stems = {_normalize_word(w) for w in text_words}
+
+    matches = 0
+    for kw in keywords:
+        kw_low = kw.lower()
+        # Direct substring match
+        if kw_low in text:
+            matches += 1
+            continue
+        # Stemmed match: check if stem of keyword matches any word stem
+        kw_stem = _normalize_word(kw_low)
+        if len(kw_stem) >= 3 and kw_stem in text_stems:
+            matches += 1
+            continue
+        # Multi-word keyword: check if all parts appear
+        parts = kw_low.split()
+        if len(parts) > 1 and all(p in text for p in parts):
+            matches += 1
+
+    # Cap denominator at 6 so large keyword lists don't dilute scores
+    denominator = min(len(keywords), 6)
+    return min(matches / max(denominator, 1), 1.0)
 
 
 def _recency_bonus(date_str: str | None) -> float:
@@ -40,17 +95,22 @@ def score_hits_heuristic(
 ) -> list[dict]:
     """Apply keyword-overlap + recency scoring to normalized patent hits.
 
-    Mutates each hit dict in-place, adding 'score' and 'why_similar' keys.
-    Returns hits sorted by score descending.
+    Expands keywords with variants, uses stemmed matching, and caps
+    denominator so large keyword lists don't dilute scores.
     """
+    expanded = _expand_keywords(keywords)
+
     for h in hits:
-        kw_score = _keyword_overlap_score(keywords, h.get("title", ""), h.get("abstract", ""))
+        kw_score = _keyword_overlap_score(expanded, h.get("title", ""), h.get("abstract", ""))
         recency = _recency_bonus(h.get("date"))
         h["score"] = round(min(kw_score + recency, 1.0), 3)
 
-        matched = [kw for kw in keywords if kw.lower() in (h.get("title", "") + " " + h.get("abstract", "")).lower()]
+        text = (h.get("title", "") + " " + h.get("abstract", "")).lower()
+        matched = [kw for kw in keywords if kw.lower() in text]
         if matched:
-            h["why_similar"] = f"Shares keywords: {', '.join(matched[:4])}. Addresses a related problem domain."
+            h["why_similar"] = f"Shares keywords: {', '.join(matched[:5])}. Addresses a related problem domain."
+        elif h["score"] > 0.2:
+            h["why_similar"] = "Related technology — matched via stemmed/variant keywords."
         else:
             h["why_similar"] = "Low keyword overlap. May be tangentially related."
 

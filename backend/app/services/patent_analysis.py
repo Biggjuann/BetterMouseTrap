@@ -28,7 +28,7 @@ from app.services.patentsview import (
     deduplicate_hits,
     search_cpc_async,
     search_keyword_async,
-    search_keyword_broad_async,
+    search_keyword_focused_async,
 )
 from app.services.prompts import (
     INVENTION_ANALYSIS_SCHEMA,
@@ -66,12 +66,13 @@ async def run_patent_analysis(req: PatentAnalysisRequest) -> PatentAnalysisRespo
         "phases_completed": metadata["phases"],
     }
 
-    # Combine all keywords for scoring
-    all_keywords = list(set(
-        req.variant.keywords + req.spec.keywords + invention.get("keywords_extra", [])
+    # Combine all keywords for scoring — include essential elements from invention
+    extra_kw = invention.get("essential_elements", [])
+    all_keywords = list(dict.fromkeys(
+        req.variant.keywords + req.spec.keywords + extra_kw
     ))
     scored = score_hits_heuristic(all_hits, all_keywords)
-    scored = scored[: req.limit]
+    scored = scored[: max(req.limit, 20)]
 
     # ── Step 4: LLM Professional Analysis ────────────────────────────
     log.info("Step 4: Running professional analysis via LLM on %d hits", len(scored))
@@ -144,7 +145,7 @@ def _fallback_invention_analysis(req: PatentAnalysisRequest) -> dict:
 async def _step2_multi_phase_search(
     req: PatentAnalysisRequest, invention: dict
 ) -> tuple[list[dict], dict]:
-    """Run keyword + CPC searches in parallel, then combine."""
+    """Run broad keyword + focused keyword + CPC searches in parallel."""
     metadata = {
         "total_queries": 0,
         "keyword_hits": 0,
@@ -153,22 +154,29 @@ async def _step2_multi_phase_search(
     }
     all_hits: list[dict] = []
 
-    # Phase A: Keyword searches from LLM strategies + spec queries
+    # Phase A: Broad keyword searches (recall-oriented, _text_any)
+    # Uses LLM strategies which search both title AND abstract
     strategies = invention.get("search_strategies", [])
-    spec_queries = req.spec.search_queries
-
-    # Build keyword tasks
     keyword_tasks = []
     for s in strategies[:8]:
         query = s.get("query", "")
         target = s.get("target_field", "abstract")
         if query:
-            keyword_tasks.append(search_keyword_async(query, target, limit=15))
+            keyword_tasks.append(search_keyword_async(query, target, limit=25))
 
-    # Also add spec queries as broad searches
+    # Phase B: Focused keyword searches (precision, _text_all)
+    # Uses spec search queries — require all words to appear
+    spec_queries = req.spec.search_queries
     for q in spec_queries[:4]:
         if q:
-            keyword_tasks.append(search_keyword_broad_async(q, limit=15))
+            keyword_tasks.append(search_keyword_focused_async(q, limit=25))
+
+    # Also add a combined keyword search from variant + spec keywords
+    combined_kw = " ".join(
+        list(dict.fromkeys(req.variant.keywords + req.spec.keywords))[:8]
+    )
+    if combined_kw:
+        keyword_tasks.append(search_keyword_async(combined_kw, "abstract", limit=25))
 
     if keyword_tasks:
         metadata["total_queries"] += len(keyword_tasks)
@@ -181,13 +189,13 @@ async def _step2_multi_phase_search(
                 log.warning("Keyword search failed: %s", result)
         metadata["phases"].append("keyword")
 
-    # Phase B: CPC classification searches
+    # Phase C: CPC classification searches (up to 5 codes)
     cpc_codes = invention.get("cpc_codes", [])
     cpc_tasks = []
-    for cpc in cpc_codes[:3]:
+    for cpc in cpc_codes[:5]:
         code = cpc.get("code", "") if isinstance(cpc, dict) else str(cpc)
         if code:
-            cpc_tasks.append(search_cpc_async(code, limit=15))
+            cpc_tasks.append(search_cpc_async(code, limit=25))
 
     if cpc_tasks:
         metadata["total_queries"] += len(cpc_tasks)
@@ -200,6 +208,7 @@ async def _step2_multi_phase_search(
                 log.warning("CPC search failed: %s", result)
         metadata["phases"].append("cpc")
 
+    log.info("Search complete: %d total hits from %d queries", len(all_hits), metadata["total_queries"])
     return all_hits, metadata
 
 
