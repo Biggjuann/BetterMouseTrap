@@ -36,19 +36,19 @@ def build_query_payload(
 ) -> dict:
     """Build a PatentsView API query payload.
 
-    Uses _text_any on title+abstract for recall, plus _text_all on
-    keywords for precision. Results matching any clause are returned.
+    Uses _text_all on title+abstract for each query (all words must appear),
+    plus _text_any for keywords (any keyword match). OR across clauses.
     """
     clauses = []
 
-    # Each search query: broad _text_any on title + abstract
+    # Each search query: _text_all on title + abstract (all words must match)
     for q in queries:
         q = q.strip()
         if q:
-            clauses.append({"_text_any": {"patent_title": q}})
-            clauses.append({"_text_any": {"patent_abstract": q}})
+            clauses.append({"_text_all": {"patent_title": q}})
+            clauses.append({"_text_all": {"patent_abstract": q}})
 
-    # Keywords: use _text_any (any keyword match) for broad recall
+    # Keywords: use _text_any (any keyword match) for broader recall
     if keywords:
         kw_string = " ".join(k.lower().strip() for k in keywords if len(k.strip()) > 2)
         if kw_string:
@@ -56,7 +56,7 @@ def build_query_payload(
 
     if not clauses:
         fallback = queries[0] if queries else " ".join(keywords[:5])
-        clauses.append({"_text_any": {"patent_abstract": fallback}})
+        clauses.append({"_text_all": {"patent_abstract": fallback}})
 
     query = {"_or": clauses}
 
@@ -64,6 +64,7 @@ def build_query_payload(
         "q": query,
         "f": PATENT_FIELDS,
         "o": {"size": min(limit, 100)},
+        "s": [{"patent_date": "desc"}],
     }
 
 
@@ -77,13 +78,19 @@ def search_patents(payload: dict) -> list[dict]:
     log.info("Querying PatentsView: %s", url)
     log.debug("Payload: %s", payload)
 
+    params = {
+        "q": _json_param(payload["q"]),
+        "f": _json_param(payload["f"]),
+        "o": _json_param(payload["o"]),
+    }
+    if "s" in payload:
+        params["s"] = _json_param(payload["s"])
+    else:
+        params["s"] = _json_param([{"patent_date": "desc"}])
+
     resp = httpx.get(
         url,
-        params={
-            "q": _json_param(payload["q"]),
-            "f": _json_param(payload["f"]),
-            "o": _json_param(payload["o"]),
-        },
+        params=params,
         headers=headers,
         timeout=30,
     )
@@ -195,14 +202,21 @@ async def search_patents_async(payload: dict) -> list[dict]:
     q_str = _json_param(payload["q"])
     log.info("Async querying PatentsView — q=%s", q_str[:200])
 
+    params = {
+        "q": q_str,
+        "f": _json_param(payload["f"]),
+        "o": _json_param(payload["o"]),
+    }
+    # Add sort parameter — newest patents first for better relevance
+    if "s" in payload:
+        params["s"] = _json_param(payload["s"])
+    else:
+        params["s"] = _json_param([{"patent_date": "desc"}])
+
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             url,
-            params={
-                "q": q_str,
-                "f": _json_param(payload["f"]),
-                "o": _json_param(payload["o"]),
-            },
+            params=params,
             headers=headers,
             timeout=30,
         )
@@ -218,9 +232,28 @@ async def search_patents_async(payload: dict) -> list[dict]:
 
 
 async def search_keyword_async(query: str, target_field: str, limit: int = 25) -> list[dict]:
-    """Run a keyword query using _text_any on both title AND abstract.
+    """Run a keyword query using _text_all on both title AND abstract.
 
-    Casts a wide net — any word from the query matching in either field.
+    Requires all words to appear (in either title or abstract), which
+    balances precision with recall for multi-word patent queries.
+    """
+    payload = {
+        "q": {"_or": [
+            {"_text_all": {"patent_title": query}},
+            {"_text_all": {"patent_abstract": query}},
+        ]},
+        "f": ENHANCED_PATENT_FIELDS,
+        "o": {"size": min(limit, 50)},
+    }
+    raw = await search_patents_async(payload)
+    return normalize_enhanced_hits(raw, "keyword")
+
+
+async def search_keyword_broad_async(query: str, limit: int = 25) -> list[dict]:
+    """Run a broad search using _text_any — for short, specific term lists.
+
+    Use only with 2-4 specific/technical words, NOT generic phrases.
+    Searches both title and abstract.
     """
     payload = {
         "q": {"_or": [

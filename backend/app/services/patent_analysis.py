@@ -28,6 +28,7 @@ from app.services.patentsview import (
     deduplicate_hits,
     search_cpc_async,
     search_keyword_async,
+    search_keyword_broad_async,
     search_keyword_focused_async,
 )
 from app.services.prompts import (
@@ -171,12 +172,18 @@ async def _step2_multi_phase_search(
         if q:
             keyword_tasks.append(search_keyword_focused_async(q, limit=25))
 
-    # Also add a combined keyword search from variant + spec keywords
-    combined_kw = " ".join(
-        list(dict.fromkeys(req.variant.keywords + req.spec.keywords))[:8]
-    )
-    if combined_kw:
-        keyword_tasks.append(search_keyword_async(combined_kw, "abstract", limit=25))
+    # Also add a broad keyword search using only the most specific terms
+    # Filter out generic words that match too many patents
+    _generic = {"system", "method", "device", "apparatus", "process", "tool",
+                "machine", "unit", "module", "assembly", "platform", "product",
+                "application", "interface", "mechanism", "component", "element"}
+    specific_kw = [
+        kw for kw in dict.fromkeys(req.variant.keywords + req.spec.keywords)
+        if kw.lower() not in _generic and len(kw) > 3
+    ][:6]
+    if specific_kw:
+        broad_query = " ".join(specific_kw)
+        keyword_tasks.append(search_keyword_broad_async(broad_query, limit=25))
 
     if keyword_tasks:
         metadata["total_queries"] += len(keyword_tasks)
