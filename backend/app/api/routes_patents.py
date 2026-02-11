@@ -5,7 +5,15 @@ from fastapi import APIRouter, Depends
 from app.auth.dependencies import get_current_user
 
 from app.core.config import settings
-from app.schemas.patent import PatentHit, PatentSearchRequest, PatentSearchResponse
+from app.schemas.patent import (
+    EnhancedPatentHit,
+    PatentAnalysisRequest,
+    PatentAnalysisResponse,
+    PatentHit,
+    PatentSearchRequest,
+    PatentSearchResponse,
+)
+from app.services.patent_analysis import run_patent_analysis
 from app.services.patentsview import (
     build_query_payload,
     normalize_hits,
@@ -95,3 +103,112 @@ async def search_patents(req: PatentSearchRequest):
     ]
 
     return PatentSearchResponse(hits=patent_hits, confidence=confidence)
+
+
+# ── New: Professional Patent Analysis ────────────────────────────────
+
+def _mock_analysis_response(req: PatentAnalysisRequest) -> PatentAnalysisResponse:
+    """Return a mock analysis when no API keys are configured."""
+    from app.schemas.patent import (
+        ClaimStrategy,
+        CpcSuggestion,
+        EligibilityNote,
+        InventionAnalysis,
+        NoveltyAssessment,
+        ObviousnessAssessment,
+        PriorArtSummary,
+        SearchMetadata,
+        SearchStrategy,
+    )
+
+    mock_hits = [
+        EnhancedPatentHit(
+            patent_id=f"US{10000000 + i}",
+            title=f"Mock Patent {i + 1}: {req.variant.title} related apparatus",
+            abstract=f"An apparatus and method relating to {', '.join(req.variant.keywords[:3])}.",
+            assignee="Example Corp",
+            date="2023-06-15",
+            cpc_codes=["A47J36/00"],
+            score=round(0.55 - i * 0.08, 2),
+            why_similar=f"Shares keywords: {', '.join(req.variant.keywords[:2])}. "
+            "Addresses a similar problem domain.",
+            source_phase="keyword" if i < 3 else "cpc",
+        )
+        for i in range(min(req.limit, 5))
+    ]
+
+    return PatentAnalysisResponse(
+        invention_analysis=InventionAnalysis(
+            core_concept=req.spec.novelty,
+            essential_elements=req.spec.differentiators[:4],
+            alternative_implementations=["Alternative approach using different materials"],
+            cpc_codes=[CpcSuggestion(
+                code="A47J36/02",
+                description="Cooking vessels with integrated features",
+                rationale="Relevant to the product category",
+            )],
+            search_strategies=[SearchStrategy(
+                query=q,
+                approach="use_case",
+                target_field="abstract",
+            ) for q in req.spec.search_queries[:3]],
+        ),
+        hits=mock_hits,
+        search_metadata=SearchMetadata(
+            total_queries_run=6,
+            keyword_hits=3,
+            cpc_hits=2,
+            citation_hits=0,
+            duplicates_removed=1,
+            phases_completed=["keyword", "cpc"],
+        ),
+        novelty_assessment=NoveltyAssessment(
+            risk_level="low",
+            summary="Mock analysis — no real patents were searched. "
+            "Configure API keys for real results.",
+            closest_reference=None,
+            missing_elements=req.spec.differentiators[:2],
+        ),
+        obviousness_assessment=ObviousnessAssessment(
+            risk_level="low",
+            summary="Mock analysis — configure API keys for real results.",
+            combination_refs=[],
+        ),
+        eligibility_note=EligibilityNote(
+            applies=False,
+            summary="No §101 concerns for this type of consumer product.",
+        ),
+        prior_art_summary=PriorArtSummary(
+            overall_risk="low",
+            narrative="This is a mock analysis. Configure your PATENTSVIEW_API_KEY "
+            "and LLM API key to get real patent search results and professional analysis.",
+            key_findings=["Mock data — no real search performed"],
+        ),
+        claim_strategy=ClaimStrategy(
+            recommended_filing="provisional",
+            rationale="Mock recommendation. Real analysis requires API keys.",
+            suggested_independent_claims=[],
+            risk_areas=[],
+        ),
+        confidence="low",
+        disclaimer="This is mock data. Configure API keys for real analysis. "
+        "This does not constitute legal advice.",
+    )
+
+
+@router.post("/analyze", response_model=PatentAnalysisResponse)
+async def analyze_patents(req: PatentAnalysisRequest):
+    """Professional patent analysis: invention analysis → multi-phase search → assessment."""
+
+    # Fall back to mocks if no API keys
+    has_pv_key = bool(settings.patentsview_api_key)
+    has_llm_key = (
+        (settings.llm_provider == "anthropic" and settings.anthropic_api_key)
+        or (settings.llm_provider == "openai" and settings.openai_api_key)
+    )
+
+    if not has_pv_key and not has_llm_key:
+        log.warning("No API keys configured — returning mock analysis")
+        return _mock_analysis_response(req)
+
+    return await run_patent_analysis(req)

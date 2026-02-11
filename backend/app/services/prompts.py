@@ -390,3 +390,251 @@ If 3D printing is appropriate, mention specific settings (layer height, infill, 
 Keep total prototype cost under $200 if possible.
 
 {safe_json_instructions()}"""
+
+
+# ── Prompt F: Invention Analysis (Pre-Search) ────────────────────────
+
+INVENTION_ANALYSIS_SYSTEM = (
+    "You are an expert patent search strategist. Before searching any database, you "
+    "thoroughly analyze an invention to understand its core concept, essential elements, "
+    "and the multiple angles from which prior art might exist. You think like a patent "
+    "examiner — considering not just what the invention IS, but what it DOES, how it "
+    "works, what problem it solves, and what alternative implementations could achieve "
+    "the same result. You are an expert in CPC (Cooperative Patent Classification) codes "
+    "and know how to construct diverse search strategies that cover keyword variations, "
+    "technical structure, use cases, and functional synonyms. "
+    + no_legal_advice_instructions()
+)
+
+INVENTION_ANALYSIS_SCHEMA = """{
+  "core_concept": "<1-2 sentences describing the fundamental inventive concept>",
+  "essential_elements": ["<element 1>", "<element 2>", "..."],
+  "alternative_implementations": ["<alt 1>", "<alt 2>", "..."],
+  "cpc_codes": [
+    {
+      "code": "<CPC code, e.g., A47J36/02>",
+      "description": "<what this classification covers>",
+      "rationale": "<why this is relevant to the invention>"
+    }
+  ],
+  "search_strategies": [
+    {
+      "query": "<patent search query>",
+      "approach": "function_words|technical_structure|use_case|synonyms",
+      "target_field": "title|abstract"
+    }
+  ]
+}"""
+
+
+def build_invention_analysis_prompt(
+    product_text: str,
+    variant_title: str,
+    variant_summary: str,
+    variant_keywords: list[str],
+    spec_novelty: str,
+    spec_mechanism: str,
+    spec_baseline: str,
+    spec_differentiators: list[str],
+    spec_keywords: list[str],
+) -> str:
+    v_kw = ", ".join(variant_keywords)
+    s_kw = ", ".join(spec_keywords)
+    diffs = "\n".join(f"  - {d}" for d in spec_differentiators)
+
+    return f"""Analyze this invention BEFORE we search any patent database. Your analysis will
+guide our multi-phase patent search strategy.
+
+Product: {product_text}
+Invention: {variant_title}
+Summary: {variant_summary}
+Variant Keywords: {v_kw}
+
+Concept Specification:
+  Novelty: {spec_novelty}
+  Mechanism: {spec_mechanism}
+  Baseline (what exists today): {spec_baseline}
+  Differentiators:
+{diffs}
+  Technical Keywords: {s_kw}
+
+Perform a thorough invention analysis:
+
+1. "core_concept" — Distill the invention into its fundamental inventive concept in 1-2 sentences.
+   Focus on what is truly new — the combination of elements, the mechanism, or the application
+   that makes this different from what exists.
+
+2. "essential_elements" — List 4-6 essential elements that define this invention. These are the
+   features that, taken together, make this invention novel. Think like a patent examiner
+   identifying claim elements.
+
+3. "alternative_implementations" — List 3-5 alternative ways someone might achieve the same
+   result or solve the same problem. This helps us find prior art that approaches the problem
+   from different angles but achieves similar outcomes.
+
+4. "cpc_codes" — Suggest 3-5 CPC classification codes that are most likely to contain relevant
+   prior art. For each, provide the code (e.g., A47J36/02), a brief description of what that
+   classification covers, and why it's relevant to this invention. Be specific — don't just
+   use top-level codes. Think about both the primary technology area AND secondary areas
+   where related solutions might be classified.
+
+5. "search_strategies" — Generate 8-12 diverse search queries using four different approaches:
+   - "function_words": Queries using functional language (e.g., "apparatus for heating liquid
+     while maintaining temperature"). 2-3 queries.
+   - "technical_structure": Queries describing the physical/technical structure (e.g., "insulated
+     container with integrated heating element"). 2-3 queries.
+   - "use_case": Queries describing the use case or problem solved (e.g., "portable beverage
+     temperature maintenance system"). 2-3 queries.
+   - "synonyms": Queries using alternative terminology and synonyms (e.g., "thermal vessel
+     with resistive warming component"). 2-3 queries.
+
+   For each query, specify whether it should target the patent "title" or "abstract" field.
+   Title searches are more precise; abstract searches cast a wider net.
+
+Make queries specific enough to find relevant results but not so narrow that they miss
+important prior art. Vary the terminology across queries to maximize coverage.
+
+{safe_json_instructions()}"""
+
+
+# ── Prompt G: Professional Patent Analysis (Post-Search) ─────────────
+
+PROFESSIONAL_ANALYSIS_SYSTEM = (
+    "You are a patent analysis professional who evaluates prior art search results to "
+    "provide a comprehensive risk assessment. You think like a patent examiner conducting "
+    "a novelty and non-obviousness analysis under 35 U.S.C. §§ 102 and 103. You assess "
+    "each piece of prior art on its merits and produce a clear, structured evaluation. "
+    "You are thorough but practical — your analysis helps inventors make informed decisions "
+    "about whether and how to pursue patent protection. You write clearly enough for a "
+    "non-lawyer to understand, but with enough rigor for a patent attorney to use as a "
+    "starting point. "
+    + no_legal_advice_instructions() + " "
+    + lori_tone_instructions()
+)
+
+PROFESSIONAL_ANALYSIS_SCHEMA = """{
+  "novelty_assessment": {
+    "risk_level": "low|medium|high",
+    "summary": "<2-3 sentence assessment of novelty risk>",
+    "closest_reference": "<patent_id of closest prior art, or null>",
+    "missing_elements": ["<elements of the invention NOT found in any prior art>"]
+  },
+  "obviousness_assessment": {
+    "risk_level": "low|medium|high",
+    "summary": "<2-3 sentence assessment of obviousness risk>",
+    "combination_refs": ["<patent_ids that could be combined to render obvious>"]
+  },
+  "eligibility_note": {
+    "applies": true/false,
+    "summary": "<1-2 sentences on §101 eligibility concerns, if any>"
+  },
+  "prior_art_summary": {
+    "overall_risk": "low|medium|high",
+    "narrative": "<3-5 sentence narrative summarizing the prior art landscape>",
+    "key_findings": ["<finding 1>", "<finding 2>", "..."]
+  },
+  "claim_strategy": {
+    "recommended_filing": "provisional|non_provisional|design_patent|defer|abandon",
+    "rationale": "<2-3 sentence explanation of the recommendation>",
+    "suggested_independent_claims": ["<claim 1 in patent language>", "..."],
+    "risk_areas": ["<area of risk 1>", "..."]
+  },
+  "scored_hits": [
+    {
+      "patent_id": "<patent_id>",
+      "score": 0.0,
+      "why_similar": "<2-3 sentences>"
+    }
+  ],
+  "disclaimer": "This is an automated preliminary analysis and does not constitute legal advice. This search is not exhaustive. Consult a registered patent attorney for a professional patentability opinion."
+}"""
+
+
+def build_professional_analysis_prompt(
+    product_text: str,
+    variant_title: str,
+    variant_summary: str,
+    spec_novelty: str,
+    spec_mechanism: str,
+    spec_baseline: str,
+    spec_differentiators: list[str],
+    essential_elements: list[str],
+    patents: list[dict],
+) -> str:
+    diffs = "\n".join(f"  - {d}" for d in spec_differentiators)
+    elements = "\n".join(f"  - {e}" for e in essential_elements)
+
+    patent_block = ""
+    for p in patents:
+        cpc_str = ", ".join(p.get("cpc_codes", []))
+        patent_block += (
+            f"\n--- Patent {p.get('patent_id', 'Unknown')} (Source: {p.get('source_phase', 'unknown')}) ---\n"
+            f"Title: {p.get('title', '')}\n"
+            f"Abstract: {p.get('abstract', '')}\n"
+            f"Assignee: {p.get('assignee', 'Unknown')}\n"
+            f"Date: {p.get('date', 'Unknown')}\n"
+        )
+        if cpc_str:
+            patent_block += f"CPC Codes: {cpc_str}\n"
+
+    return f"""Perform a comprehensive patent analysis based on the invention and prior art below.
+
+INVENTION:
+  Product: {product_text}
+  Title: {variant_title}
+  Summary: {variant_summary}
+
+SPECIFICATION:
+  Novelty: {spec_novelty}
+  Mechanism: {spec_mechanism}
+  Baseline: {spec_baseline}
+  Differentiators:
+{diffs}
+
+ESSENTIAL ELEMENTS (from invention analysis):
+{elements}
+
+PRIOR ART FOUND ({len(patents)} patents):
+{patent_block if patent_block else "  No prior art found in the search."}
+
+Analyze the prior art and provide:
+
+1. "novelty_assessment" — Assess novelty risk (low/medium/high).
+   - LOW: No single prior art reference discloses all essential elements.
+   - MEDIUM: One reference comes close but is missing 1-2 key elements.
+   - HIGH: A single reference appears to disclose substantially all elements.
+   Identify the closest reference and list which essential elements are NOT found in prior art.
+
+2. "obviousness_assessment" — Assess non-obviousness risk (low/medium/high).
+   - LOW: The combination of elements would not be obvious to someone skilled in the art.
+   - MEDIUM: 2-3 references could plausibly be combined to arrive at the invention.
+   - HIGH: The invention seems like an obvious combination of known elements.
+   List which patents could be combined to render the invention obvious.
+
+3. "eligibility_note" — Flag any §101 patent eligibility concerns.
+   Set "applies" to true only if there's a genuine concern (abstract ideas, laws of nature,
+   natural phenomena). Most consumer products are eligible — don't flag unless there's a real issue.
+
+4. "prior_art_summary" — Provide an overall risk assessment (low/medium/high).
+   Write a 3-5 sentence narrative summarizing the prior art landscape in plain language —
+   warm, direct, and encouraging where appropriate. Like explaining to a friend whether their
+   idea has a clear path forward. List 3-5 key findings.
+
+5. "claim_strategy" — Recommend a filing strategy:
+   - "provisional" — Good idea with some risk; file provisional to establish priority date.
+   - "non_provisional" — Strong idea with low risk; worth investing in a full application.
+   - "design_patent" — Utility claims risky but the design/appearance is protectable.
+   - "defer" — More research needed before filing.
+   - "abandon" — Very high risk; prior art substantially covers the invention.
+   Provide 2-3 suggested independent claims in standard patent language.
+   List specific risk areas to address.
+
+6. "scored_hits" — For each patent, provide a relevance score (0.0-1.0) and a 2-3 sentence
+   explanation of how it compares to the invention. Be specific about overlapping and
+   different features.
+
+7. "disclaimer" — Always include: "This is an automated preliminary analysis and does not
+   constitute legal advice. This search is not exhaustive. Consult a registered patent
+   attorney for a professional patentability opinion."
+
+{safe_json_instructions()}"""

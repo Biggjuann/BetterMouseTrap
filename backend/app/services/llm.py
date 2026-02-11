@@ -131,3 +131,11 @@ def call_llm(prompt: str, json_schema_hint: str = "", system: str | None = None)
 
     log.debug("Raw LLM response: %s", raw[:300])
     return _extract_json(raw)
+
+
+async def call_llm_async(
+    prompt: str, json_schema_hint: str = "", system: str | None = None
+) -> dict:
+    """Async wrapper around call_llm using asyncio.to_thread."""
+    import asyncio
+    return await asyncio.to_thread(call_llm, prompt, json_schema_hint, system)

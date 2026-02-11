@@ -116,7 +116,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
           ),
           if (_isLoadingPatents)
             const LoadingOverlay(
-                message: 'Checking what\'s already out there...'),
+                message: 'Analyzing invention & searching patents...\nThis takes 30-60 seconds.'),
         ],
       ),
     );
@@ -357,16 +357,17 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
   Future<void> _searchPatents(IdeaSpec spec) async {
     setState(() => _isLoadingPatents = true);
     try {
-      final response = await ApiClient.instance.searchPatents(
-        queries: spec.searchQueries,
-        keywords: spec.keywords,
+      final analysisResponse = await ApiClient.instance.analyzePatents(
+        productText: widget.productText,
+        variant: widget.variant,
+        spec: spec,
       );
 
       if (widget.sessionId != null) {
         ApiClient.instance.updateSession(widget.sessionId!, {
           'patent_hits_json':
-              response.hits.map((h) => h.toJson()).toList(),
-          'patent_confidence': response.confidence,
+              analysisResponse.hits.map((h) => h.toJson()).toList(),
+          'patent_confidence': analysisResponse.confidence,
           'status': 'patents_searched',
         }).catchError((_) {});
       }
@@ -382,7 +383,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             ),
             variant: widget.variant,
             spec: spec,
-            patentResponse: response,
+            analysisResponse: analysisResponse,
             sessionId: widget.sessionId,
           ),
         ),

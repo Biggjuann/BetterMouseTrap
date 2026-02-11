@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../models/api_responses.dart';
 import '../models/idea_spec.dart';
 import '../models/idea_variant.dart';
+import '../models/patent_analysis.dart';
 import '../models/patent_hit.dart';
 import '../models/product_input.dart';
 import '../models/provisional_patent.dart';
@@ -84,6 +85,34 @@ class ApiClient {
     };
     final data = await _post('/patents/search', body);
     return PatentSearchResponse.fromJson(data);
+  }
+
+  Future<PatentAnalysisResponse> analyzePatents({
+    required String productText,
+    required IdeaVariant variant,
+    required IdeaSpec spec,
+    int limit = 15,
+  }) async {
+    final body = {
+      'product_text': productText,
+      'variant': {
+        'title': variant.title,
+        'summary': variant.summary,
+        'improvement_mode': variant.improvementMode,
+        'keywords': variant.keywords,
+      },
+      'spec': {
+        'novelty': spec.novelty,
+        'mechanism': spec.mechanism,
+        'baseline': spec.baseline,
+        'differentiators': spec.differentiators,
+        'keywords': spec.keywords,
+        'search_queries': spec.searchQueries,
+      },
+      'limit': limit,
+    };
+    final data = await _post('/patents/analyze', body);
+    return PatentAnalysisResponse.fromJson(data);
   }
 
   Future<ExportResponse> exportOnePager({
