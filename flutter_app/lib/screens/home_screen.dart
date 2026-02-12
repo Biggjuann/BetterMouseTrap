@@ -9,6 +9,7 @@ import '../widgets/loading_overlay.dart';
 import 'history_screen.dart';
 import 'ideas_list_screen.dart';
 import 'login_screen.dart';
+import 'market_trends_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,11 +22,14 @@ class _HomeScreenState extends State<HomeScreen> {
   final _productController = TextEditingController();
   final _urlController = TextEditingController();
   bool _isLoading = false;
+  String _insightText = '';
+  bool _insightLoading = true;
 
   @override
   void initState() {
     super.initState();
     ApiClient.instance.onUnauthorized = _goToLogin;
+    _loadInsight();
   }
 
   @override
@@ -33,6 +37,23 @@ class _HomeScreenState extends State<HomeScreen> {
     _productController.dispose();
     _urlController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadInsight() async {
+    try {
+      final insight = await ApiClient.instance.getDailyInsight();
+      if (!mounted) return;
+      setState(() {
+        _insightText = insight;
+        _insightLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _insightText = 'Sustainable packaging is trending in the luxury cosmetics sector. Refill models are creating built-in recurring revenue for scrappy consumer brands.';
+        _insightLoading = false;
+      });
+    }
   }
 
   void _goToLogin() {
@@ -234,20 +255,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: AppSpacing.xxl),
 
-                    // Quick action row — Stitch: 3 circles with labels
+                    // Quick action row — 2 items: Recent Ideas + Market Trends
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _QuickAction(
-                          icon: Icons.analytics,
-                          label: 'Patent\nAnalysis',
-                          onTap: () {},
-                        ),
-                        Container(
-                          width: 1,
-                          height: 40,
-                          color: AppColors.primary.withValues(alpha: 0.2),
-                        ),
                         _QuickAction(
                           icon: Icons.history,
                           label: 'Recent\nIdeas',
@@ -264,7 +275,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         _QuickAction(
                           icon: Icons.lightbulb,
                           label: 'Market\nTrends',
-                          onTap: () {},
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const MarketTrendsScreen()),
+                          ),
                         ),
                       ],
                     ),
@@ -291,12 +305,36 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           const SizedBox(height: AppSpacing.sm),
-                          Text(
-                            'Sustainable packaging is trending in the luxury cosmetics sector. Tap to explore.',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
+                          if (_insightLoading)
+                            Row(
+                              children: [
+                                SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                Text(
+                                  'Loading fresh insight...',
+                                  style: TextStyle(
+                                    color: AppColors.mist,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            )
+                          else
+                            Text(
+                              _insightText,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.ink,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),

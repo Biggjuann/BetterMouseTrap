@@ -15,6 +15,7 @@ from sqlalchemy import text
 from app.api.routes_build_this import router as build_router
 from app.api.routes_export import router as export_router
 from app.api.routes_ideas import router as ideas_router
+from app.api.routes_insights import router as insights_router
 from app.api.routes_patents import router as patents_router
 from app.api.routes_sessions import router as sessions_router
 from app.auth.bootstrap import ensure_admin_user
@@ -57,6 +58,7 @@ app.include_router(patents_router)
 app.include_router(export_router)
 app.include_router(sessions_router)
 app.include_router(build_router)
+app.include_router(insights_router)
 
 
 # ── Global exception handler — surface real errors ────────────────

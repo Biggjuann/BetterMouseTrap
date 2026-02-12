@@ -446,6 +446,89 @@ Keep total prototype cost under $200 if possible.
 {safe_json_instructions()}"""
 
 
+# ── Prompt H: Daily Insight ───────────────────────────────────────────
+
+DAILY_INSIGHT_SYSTEM = (
+    "You are a retail trend analyst and go-to-market strategist. "
+    "You produce a single punchy, actionable insight about consumer product trends, "
+    "retail go-to-market strategies, or product innovation opportunities. "
+    + lori_tone_instructions()
+)
+
+DAILY_INSIGHT_SCHEMA = """{
+  "insight": "<2-3 sentence insight about a current retail/product trend or go-to-market tip>"
+}"""
+
+
+def build_daily_insight_prompt() -> str:
+    import random
+    topics = [
+        "a surprising consumer product trend gaining traction right now",
+        "a go-to-market strategy that's working for new consumer products",
+        "an underserved product category with high demand",
+        "a retail channel strategy tip for new product launches",
+        "a pricing or packaging insight for consumer goods",
+        "a social media or influencer strategy for product launches",
+        "a D2C vs retail distribution insight",
+        "a product bundling or subscription model trend",
+    ]
+    topic = random.choice(topics)
+    return f"""Generate ONE fresh, specific insight about: {topic}
+
+The insight should be:
+- Specific (name a real category, channel, or tactic — not generic advice)
+- Actionable (something an inventor or entrepreneur could act on this week)
+- Current (feels like 2025/2026 market intelligence)
+- Concise (2-3 punchy sentences max)
+
+{safe_json_instructions()}"""
+
+
+# ── Prompt I: Market Trends ──────────────────────────────────────────
+
+MARKET_TRENDS_SYSTEM = (
+    "You are a consumer product market analyst who tracks trending product "
+    "categories, emerging consumer behaviors, and high-growth opportunities. "
+    "You combine data-driven thinking with consumer intuition. "
+    + lori_tone_instructions()
+)
+
+MARKET_TRENDS_SCHEMA = """{
+  "trends": [
+    {
+      "rank": 1,
+      "title": "<trend name>",
+      "category": "<product category>",
+      "description": "<2-3 sentence description of the trend>",
+      "opportunity": "<1 sentence about the product opportunity>",
+      "growth_signal": "<what data or signal indicates this is growing>"
+    }
+  ]
+}"""
+
+
+def build_market_trends_prompt() -> str:
+    return f"""Generate the TOP 10 current market trends for consumer-focused products.
+
+Focus on:
+- Product categories with high growth or emerging demand
+- Consumer behavior shifts creating new product opportunities
+- Categories where innovative products could win big
+
+For each trend provide:
+1. "rank" — 1 through 10 (most impactful first)
+2. "title" — Short, punchy trend name (3-6 words)
+3. "category" — The product category (e.g., "Home & Kitchen", "Pet Tech", "Personal Wellness")
+4. "description" — 2-3 sentences on what's happening and why it matters
+5. "opportunity" — 1 sentence on the product opportunity for an inventor/entrepreneur
+6. "growth_signal" — What data point or signal indicates this trend is real and growing
+
+Make these feel current and specific — not generic "AI is growing" type observations.
+Think categories where a scrappy inventor could actually launch something.
+
+{safe_json_instructions()}"""
+
+
 # ── Prompt F: Invention Analysis (Pre-Search) ────────────────────────
 
 INVENTION_ANALYSIS_SYSTEM = (

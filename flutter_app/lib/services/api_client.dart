@@ -131,6 +131,19 @@ class ApiClient {
     return ExportResponse.fromJson(data);
   }
 
+  // ── Insight endpoints ──────────────────────────────────────────
+
+  Future<String> getDailyInsight() async {
+    final data = await _get('/insights/daily');
+    return data['insight'] as String? ?? '';
+  }
+
+  Future<List<Map<String, dynamic>>> getMarketTrends() async {
+    final data = await _get('/insights/trends');
+    final list = data['trends'] as List? ?? [];
+    return list.cast<Map<String, dynamic>>();
+  }
+
   // ── Session endpoints ───────────────────────────────────────────
 
   Future<Map<String, dynamic>> createSession({
