@@ -49,7 +49,7 @@ class _ProvisionalPatentScreenState extends State<ProvisionalPatentScreen> {
           ),
           Column(
             children: [
-              // Nav bar
+              // ── Stitch nav bar ──────────────────────────────────────
               Container(
                 decoration: BoxDecoration(
                   color: AppColors.cream.withValues(alpha: 0.8),
@@ -69,26 +69,69 @@ class _ProvisionalPatentScreenState extends State<ProvisionalPatentScreen> {
                     child: Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.chevron_left, size: 28),
-                          color: AppColors.primary,
+                          icon: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: AppColors.cardWhite,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.primary.withValues(alpha: 0.05),
+                              ),
+                              boxShadow: AppShadows.card,
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_ios_new,
+                              color: AppColors.primary,
+                              size: 18,
+                            ),
+                          ),
                           onPressed: () => Navigator.pop(context),
                         ),
-                        const Expanded(
-                          child: Text(
-                            'Patent Application Draft',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.ink,
-                            ),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Text(
+                                'PATENT APPLICATION',
+                                style: TextStyle(
+                                  color: AppColors.primary.withValues(alpha: 0.6),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                              Text(
+                                widget.variant.title,
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.ink,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
                         ),
                         if (_draft != null)
                           IconButton(
-                            icon: const Icon(Icons.copy_rounded, size: 22),
-                            color: AppColors.primary,
-                            onPressed: _copyToClipboard,
+                            icon: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: AppColors.cardWhite,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.primary.withValues(alpha: 0.05),
+                                ),
+                                boxShadow: AppShadows.card,
+                              ),
+                              child: const Icon(
+                                Icons.picture_as_pdf,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
+                            ),
+                            onPressed: _downloadPdf,
                           )
                         else
                           const SizedBox(width: 48),
@@ -98,97 +141,281 @@ class _ProvisionalPatentScreenState extends State<ProvisionalPatentScreen> {
                 ),
               ),
 
-              // Body
+              // ── Body ────────────────────────────────────────────────
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header card explaining provisional patents
-                      _buildHeaderCard(),
+                      // Info card
+                      _buildInfoCard(),
                       const SizedBox(height: AppSpacing.lg),
 
                       if (_draft == null) ...[
-                        _buildGenerateButton(),
+                        // What you'll get section
+                        _buildWhatYouGetSection(),
+                        const SizedBox(height: AppSpacing.lg),
+                        const DisclaimerBanner(),
+                        // Extra spacing for fixed button
+                        const SizedBox(height: 120),
                       ] else ...[
                         // Action bar: Copy + PDF
                         _buildActionBar(),
                         const SizedBox(height: AppSpacing.sm),
-                        // Rendered markdown
+                        // Rendered markdown in Stitch card
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(AppSpacing.lg),
                           decoration: BoxDecoration(
                             color: AppColors.cardWhite,
-                            borderRadius: BorderRadius.circular(AppRadius.lg),
-                            border: Border.all(color: AppColors.border),
+                            borderRadius: BorderRadius.circular(AppRadius.xl),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.05),
+                            ),
                             boxShadow: AppShadows.elevated,
                           ),
                           child: MarkdownBody(
                             data: _draft!.markdown,
                             selectable: true,
+                            styleSheet: MarkdownStyleSheet(
+                              h1: const TextStyle(
+                                fontFamily: 'Manrope',
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.ink,
+                                height: 1.3,
+                              ),
+                              h2: TextStyle(
+                                fontFamily: 'Manrope',
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                                letterSpacing: 0.3,
+                                height: 1.4,
+                              ),
+                              h3: const TextStyle(
+                                fontFamily: 'Manrope',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.ink,
+                                height: 1.4,
+                              ),
+                              h4: TextStyle(
+                                fontFamily: 'Manrope',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.ink.withValues(alpha: 0.8),
+                                fontStyle: FontStyle.italic,
+                                height: 1.4,
+                              ),
+                              p: const TextStyle(
+                                fontFamily: 'Manrope',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.ink,
+                                height: 1.6,
+                              ),
+                              strong: const TextStyle(
+                                fontFamily: 'Manrope',
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.ink,
+                              ),
+                              em: const TextStyle(
+                                fontFamily: 'Manrope',
+                                fontStyle: FontStyle.italic,
+                                color: AppColors.ink,
+                              ),
+                              listBullet: const TextStyle(
+                                fontFamily: 'Manrope',
+                                fontSize: 14,
+                                color: AppColors.primary,
+                              ),
+                              horizontalRuleDecoration: BoxDecoration(
+                                border: Border(
+                                  top: BorderSide(
+                                    color: AppColors.primary.withValues(alpha: 0.15),
+                                  ),
+                                ),
+                              ),
+                              h1Padding: const EdgeInsets.only(
+                                top: AppSpacing.sm,
+                                bottom: AppSpacing.md,
+                              ),
+                              h2Padding: const EdgeInsets.only(
+                                top: AppSpacing.lg,
+                                bottom: AppSpacing.sm,
+                              ),
+                              h3Padding: const EdgeInsets.only(
+                                top: AppSpacing.md,
+                                bottom: AppSpacing.xs,
+                              ),
+                            ),
                           ),
                         ),
+                        const SizedBox(height: AppSpacing.lg),
+                        const DisclaimerBanner(),
+                        const SizedBox(height: AppSpacing.lg),
                       ],
-
-                      const SizedBox(height: AppSpacing.lg),
-                      const DisclaimerBanner(),
-                      const SizedBox(height: AppSpacing.lg),
                     ],
                   ),
                 ),
               ),
             ],
           ),
+
+          // ── Fixed bottom Generate button ──────────────────────────
+          if (_draft == null && !_isLoading)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, AppSpacing.base, AppSpacing.lg, AppSpacing.xl,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  border: Border(
+                    top: BorderSide(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                    ),
+                  ),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      boxShadow: AppShadows.button,
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
+                    ),
+                    child: FilledButton(
+                      onPressed: _generateDraft,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.teal,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.gavel, size: 20),
+                          SizedBox(width: AppSpacing.sm),
+                          Text('Draft Patent Application'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
           if (_isLoading)
             const LoadingOverlay(
-                message: 'Drafting your provisional patent application...'),
+              message: 'Drafting your provisional patent application...\nThis may take 30-60 seconds.',
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildHeaderCard() {
+  // ── Info card: what is a provisional patent ──────────────────────
+
+  Widget _buildInfoCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.warmWhite,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
+        color: AppColors.cardWhite,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.05),
+        ),
+        boxShadow: AppShadows.card,
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            decoration: BoxDecoration(
-              color: const Color(0xFF7B1FA2),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: const Icon(Icons.gavel, color: Colors.white, size: 22),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'USPTO Provisional Patent',
-                  style: Theme.of(context).textTheme.titleMedium,
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.teal.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Generates a draft provisional patent application '
-                  'following USPTO guidelines under 35 U.S.C. \u00A7111(b). '
-                  'Filing establishes a priority date with a 12-month '
-                  'pendency period.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        height: 1.5,
+                child: const Icon(Icons.gavel, color: AppColors.teal, size: 24),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'USPTO PROVISIONAL PATENT',
+                      style: TextStyle(
+                        color: AppColors.slateLight,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 2,
                       ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Protect Your Idea',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.ink,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'A provisional patent application establishes your priority date — '
+            'proving you had the idea first. You then have 12 months to file '
+            'a full (nonprovisional) application.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              height: 1.6,
+              color: AppColors.ink,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          // Key facts row
+          Row(
+            children: [
+              _factChip(Icons.schedule, '12-month window'),
+              const SizedBox(width: AppSpacing.sm),
+              _factChip(Icons.flag, 'Priority date'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _factChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.teal.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: AppColors.teal),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.teal,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -196,35 +423,92 @@ class _ProvisionalPatentScreenState extends State<ProvisionalPatentScreen> {
     );
   }
 
-  Widget _buildGenerateButton() {
-    return SizedBox(
+  // ── What You'll Get section ─────────────────────────────────────
+
+  Widget _buildWhatYouGetSection() {
+    final sections = [
+      ('Cover Sheet', 'Formal invention title and filing notes', Icons.article_outlined),
+      ('Specification', 'Background, summary, and detailed description', Icons.description_outlined),
+      ('Abstract', '~150-word technical summary', Icons.short_text),
+      ('Claims', 'Independent and dependent patent claims', Icons.checklist),
+      ('Drawings Guide', 'Recommended figures to prepare', Icons.draw_outlined),
+    ];
+
+    return Container(
       width: double.infinity,
-      height: 56,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          boxShadow: AppShadows.button,
-          borderRadius: BorderRadius.circular(AppRadius.xl),
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.cardWhite,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.05),
         ),
-        child: FilledButton(
-          onPressed: _isLoading ? null : _generateDraft,
-          style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF7B1FA2),
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Icon(Icons.description_outlined, size: 20),
-              SizedBox(width: AppSpacing.sm),
+              Icon(Icons.list_alt, color: AppColors.primary, size: 22),
+              const SizedBox(width: AppSpacing.md),
               Text(
-                'Draft Patent Application',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                'WHAT YOU\'LL GET',
+                style: TextStyle(
+                  color: AppColors.slateLight,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: AppSpacing.md),
+          ...sections.map((s) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: AppColors.teal.withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(s.$3, size: 16, color: AppColors.teal),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        s.$1,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.ink,
+                        ),
+                      ),
+                      Text(
+                        s.$2,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.stone,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
       ),
     );
   }
+
+  // ── Action bar (after generation) ───────────────────────────────
 
   Widget _buildActionBar() {
     return Row(
@@ -244,6 +528,8 @@ class _ProvisionalPatentScreenState extends State<ProvisionalPatentScreen> {
       ],
     );
   }
+
+  // ── Actions ─────────────────────────────────────────────────────
 
   void _copyToClipboard() {
     if (_draft == null) return;
@@ -315,14 +601,46 @@ class _ProvisionalPatentScreenState extends State<ProvisionalPatentScreen> {
         ),
         title: Row(
           children: [
-            Icon(Icons.error_outline, color: AppColors.error, size: 24),
+            Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 24),
             const SizedBox(width: AppSpacing.sm),
-            const Text('Generation Failed'),
+            const Expanded(
+              child: Text(
+                'Generation Failed',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                ),
+              ),
+            ),
           ],
         ),
-        content: Text(
-          error,
-          style: Theme.of(context).textTheme.bodyMedium,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'The patent draft could not be generated. This usually means the AI service is temporarily busy.',
+              style: TextStyle(color: AppColors.ink, height: 1.5),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.cream,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Text(
+                error.length > 200 ? '${error.substring(0, 200)}...' : error,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                  color: AppColors.slateLight,
+                ),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -334,6 +652,7 @@ class _ProvisionalPatentScreenState extends State<ProvisionalPatentScreen> {
               Navigator.pop(ctx);
               _generateDraft();
             },
+            style: FilledButton.styleFrom(backgroundColor: AppColors.teal),
             child: const Text('Retry'),
           ),
         ],

@@ -18,12 +18,12 @@ class LLMError(Exception):
 
 # ── Anthropic ────────────────────────────────────────────────────────
 
-def _call_anthropic(prompt: str, system: str | None = None) -> str:
+def _call_anthropic(prompt: str, system: str | None = None, max_tokens: int | None = None) -> str:
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     messages = [{"role": "user", "content": prompt}]
     kwargs: dict = {
         "model": settings.llm_model,
-        "max_tokens": settings.llm_max_tokens,
+        "max_tokens": max_tokens or settings.llm_max_tokens,
         "messages": messages,
     }
     if system:
@@ -34,7 +34,7 @@ def _call_anthropic(prompt: str, system: str | None = None) -> str:
 
 # ── OpenAI ───────────────────────────────────────────────────────────
 
-def _call_openai(prompt: str, system: str | None = None) -> str:
+def _call_openai(prompt: str, system: str | None = None, max_tokens: int | None = None) -> str:
     headers = {
         "Authorization": f"Bearer {settings.openai_api_key}",
         "Content-Type": "application/json",
@@ -45,14 +45,14 @@ def _call_openai(prompt: str, system: str | None = None) -> str:
     messages.append({"role": "user", "content": prompt})
     body = {
         "model": settings.llm_model,
-        "max_tokens": settings.llm_max_tokens,
+        "max_tokens": max_tokens or settings.llm_max_tokens,
         "messages": messages,
     }
     resp = httpx.post(
         "https://api.openai.com/v1/chat/completions",
         headers=headers,
         json=body,
-        timeout=60,
+        timeout=120,
     )
     resp.raise_for_status()
     return resp.json()["choices"][0]["message"]["content"]
@@ -98,7 +98,12 @@ def _extract_json(text: str) -> dict:
     raise LLMError(f"Could not extract JSON from LLM response:\n{text[:500]}")
 
 
-def call_llm(prompt: str, json_schema_hint: str = "", system: str | None = None) -> dict:
+def call_llm(
+    prompt: str,
+    json_schema_hint: str = "",
+    system: str | None = None,
+    max_tokens: int | None = None,
+) -> dict:
     """Call the configured LLM provider and return parsed JSON.
 
     Args:
@@ -106,6 +111,7 @@ def call_llm(prompt: str, json_schema_hint: str = "", system: str | None = None)
         json_schema_hint: A JSON schema example appended to the prompt so the
             model knows the expected output shape.
         system: Optional system prompt.
+        max_tokens: Override the default max_tokens for this call.
 
     Returns:
         Parsed dict from the LLM's JSON output.
@@ -123,9 +129,9 @@ def call_llm(prompt: str, json_schema_hint: str = "", system: str | None = None)
             f"{json_schema_hint}"
         )
 
-    log.info("Calling %s (model=%s)", provider, settings.llm_model)
+    log.info("Calling %s (model=%s, max_tokens=%s)", provider, settings.llm_model, max_tokens or settings.llm_max_tokens)
     try:
-        raw = call_fn(full_prompt, system=system)
+        raw = call_fn(full_prompt, system=system, max_tokens=max_tokens)
     except Exception as exc:
         raise LLMError(f"LLM call failed: {exc}") from exc
 
@@ -134,8 +140,11 @@ def call_llm(prompt: str, json_schema_hint: str = "", system: str | None = None)
 
 
 async def call_llm_async(
-    prompt: str, json_schema_hint: str = "", system: str | None = None
+    prompt: str,
+    json_schema_hint: str = "",
+    system: str | None = None,
+    max_tokens: int | None = None,
 ) -> dict:
     """Async wrapper around call_llm using asyncio.to_thread."""
     import asyncio
-    return await asyncio.to_thread(call_llm, prompt, json_schema_hint, system)
+    return await asyncio.to_thread(call_llm, prompt, json_schema_hint, system, max_tokens)
