@@ -76,6 +76,8 @@ async def run_patent_analysis(req: PatentAnalysisRequest) -> PatentAnalysisRespo
         product_words + req.variant.keywords + req.spec.keywords + extra_kw
     ))
     scored = score_hits_heuristic(all_hits, all_keywords)
+    # Filter out completely irrelevant results (no keyword overlap at all)
+    scored = [h for h in scored if h.get("score", 0) > 0.0]
     scored = scored[: max(req.limit, 25)]
 
     # ── Step 4: LLM Professional Analysis ────────────────────────────

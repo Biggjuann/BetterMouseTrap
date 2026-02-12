@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/idea_spec.dart';
 import '../models/idea_variant.dart';
 import '../models/product_input.dart';
 import '../services/api_client.dart';
 import '../theme.dart';
+import '../utils/pdf_downloader.dart';
+import '../utils/pdf_generator.dart';
 import '../widgets/keyword_tag.dart';
 import '../widgets/loading_overlay.dart';
 import 'prior_art_screen.dart';
@@ -110,12 +113,43 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                         boxShadow: AppShadows.card,
                       ),
                       child: const Icon(
-                        Icons.more_horiz,
+                        Icons.copy_rounded,
                         color: AppColors.primary,
-                        size: 20,
+                        size: 18,
                       ),
                     ),
-                    onPressed: () {},
+                    tooltip: 'Copy',
+                    onPressed: () {
+                      final md = _buildMarkdown();
+                      Clipboard.setData(ClipboardData(text: md));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Copied to clipboard!'),
+                          backgroundColor: AppColors.success,
+                        ),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.cardWhite,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.05),
+                        ),
+                        boxShadow: AppShadows.card,
+                      ),
+                      child: const Icon(
+                        Icons.picture_as_pdf,
+                        color: AppColors.primary,
+                        size: 18,
+                      ),
+                    ),
+                    tooltip: 'Download PDF',
+                    onPressed: () => _downloadPdf(),
                   ),
                 ],
               ),
@@ -789,6 +823,161 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
         ],
       ),
     );
+  }
+
+  String _buildMarkdown() {
+    final v = widget.variant;
+    final buf = StringBuffer();
+    buf.writeln('# ${v.title}');
+    buf.writeln();
+    buf.writeln('**Product:** ${widget.productText}');
+    buf.writeln();
+    buf.writeln('## Summary');
+    buf.writeln(v.summary);
+    buf.writeln();
+
+    if (v.keywords.isNotEmpty) {
+      buf.writeln('**Keywords:** ${v.keywords.join(", ")}');
+      buf.writeln();
+    }
+
+    if (v.isDetailed) {
+      if (v.scores != null) {
+        buf.writeln('## Idea Scores');
+        final s = v.scores!;
+        buf.writeln('- Urgency: ${s.urgency}/10');
+        buf.writeln('- Differentiation: ${s.differentiation}/10');
+        buf.writeln('- Speed to Revenue: ${s.speedToRevenue}/10');
+        buf.writeln('- Margin: ${s.margin}/10');
+        buf.writeln('- Defensibility: ${s.defensibility}/10');
+        buf.writeln('- Distribution: ${s.distribution}/10');
+        buf.writeln();
+      }
+
+      if (v.targetCustomer != null && v.targetCustomer!.isNotEmpty) {
+        buf.writeln('## Target Customer');
+        buf.writeln(v.targetCustomer!);
+        buf.writeln();
+      }
+
+      if (v.coreProblem != null && v.coreProblem!.isNotEmpty) {
+        buf.writeln('## Core Problem');
+        buf.writeln(v.coreProblem!);
+        buf.writeln();
+      }
+
+      if (v.solution != null && v.solution!.isNotEmpty) {
+        buf.writeln('## Solution');
+        buf.writeln(v.solution!);
+        buf.writeln();
+      }
+
+      if (v.whyItWins.isNotEmpty) {
+        buf.writeln('## Why It Wins');
+        for (final w in v.whyItWins) {
+          buf.writeln('- $w');
+        }
+        buf.writeln();
+      }
+
+      if (v.monetization != null && v.monetization!.isNotEmpty) {
+        buf.writeln('## Monetization');
+        buf.writeln(v.monetization!);
+        buf.writeln();
+      }
+
+      if (v.unitEconomics != null && v.unitEconomics!.isNotEmpty) {
+        buf.writeln('### Unit Economics');
+        buf.writeln(v.unitEconomics!);
+        buf.writeln();
+      }
+
+      if (v.defensibilityNote != null && v.defensibilityNote!.isNotEmpty) {
+        buf.writeln('## Defensibility');
+        buf.writeln(v.defensibilityNote!);
+        buf.writeln();
+      }
+
+      if (v.mvp90Days != null && v.mvp90Days!.isNotEmpty) {
+        buf.writeln('## MVP in 90 Days');
+        buf.writeln(v.mvp90Days!);
+        buf.writeln();
+      }
+
+      if (v.goToMarket.isNotEmpty) {
+        buf.writeln('## Go-to-Market');
+        for (final g in v.goToMarket) {
+          buf.writeln('- $g');
+        }
+        buf.writeln();
+      }
+
+      if (v.risks.isNotEmpty) {
+        buf.writeln('## Risks & Mitigations');
+        for (final r in v.risks) {
+          buf.writeln('- $r');
+        }
+        buf.writeln();
+      }
+    }
+
+    if (_spec != null) {
+      buf.writeln('---');
+      buf.writeln();
+      buf.writeln('## Concept Spec');
+      buf.writeln();
+      buf.writeln('### What Makes It Unique');
+      buf.writeln(_spec!.novelty);
+      buf.writeln();
+      buf.writeln('### How It Works');
+      buf.writeln(_spec!.mechanism);
+      buf.writeln();
+      buf.writeln('### What Exists Today');
+      buf.writeln(_spec!.baseline);
+      buf.writeln();
+      buf.writeln('### Key Differentiators');
+      for (final d in _spec!.differentiators) {
+        buf.writeln('- $d');
+      }
+      buf.writeln();
+      buf.writeln('### Keywords');
+      buf.writeln(_spec!.keywords.join(', '));
+      buf.writeln();
+    }
+
+    buf.writeln('---');
+    buf.writeln('*Generated by Better Mousetrap*');
+
+    return buf.toString();
+  }
+
+  Future<void> _downloadPdf() async {
+    try {
+      final md = _buildMarkdown();
+      final bytes = await PdfGenerator.generateFromMarkdown(
+        title: widget.variant.title,
+        content: md,
+      );
+      final safeName = widget.variant.title
+          .replaceAll(RegExp(r'[^\w\s-]'), '')
+          .replaceAll(RegExp(r'\s+'), '_')
+          .toLowerCase();
+      downloadPdfBytes(bytes, '$safeName.pdf');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('PDF downloaded!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF failed: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _loadSpec() async {
