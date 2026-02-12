@@ -67,13 +67,16 @@ async def run_patent_analysis(req: PatentAnalysisRequest) -> PatentAnalysisRespo
         "phases_completed": metadata["phases"],
     }
 
-    # Combine all keywords for scoring — include essential elements from invention
+    # Combine all keywords for scoring — include product text, essential elements,
+    # and baseline product terms so existing products score properly
     extra_kw = invention.get("essential_elements", [])
+    # Split product_text into individual words for keyword matching
+    product_words = [w for w in req.product_text.split() if len(w) > 2]
     all_keywords = list(dict.fromkeys(
-        req.variant.keywords + req.spec.keywords + extra_kw
+        product_words + req.variant.keywords + req.spec.keywords + extra_kw
     ))
     scored = score_hits_heuristic(all_hits, all_keywords)
-    scored = scored[: max(req.limit, 20)]
+    scored = scored[: max(req.limit, 25)]
 
     # ── Step 4: LLM Professional Analysis ────────────────────────────
     log.info("Step 4: Running professional analysis via LLM on %d hits", len(scored))
@@ -129,15 +132,21 @@ async def _step1_invention_analysis(req: PatentAnalysisRequest) -> dict:
 
 def _fallback_invention_analysis(req: PatentAnalysisRequest) -> dict:
     """Fallback when LLM is unavailable — use spec data directly."""
+    strategies = [
+        # Always include baseline product search
+        {"query": req.product_text, "approach": "baseline_product", "target_field": "title"},
+        {"query": req.variant.title, "approach": "baseline_product", "target_field": "title"},
+    ]
+    strategies.extend([
+        {"query": q, "approach": "use_case", "target_field": "abstract"}
+        for q in req.spec.search_queries[:6]
+    ])
     return {
         "core_concept": req.spec.novelty,
         "essential_elements": req.spec.differentiators,
         "alternative_implementations": [],
         "cpc_codes": [],
-        "search_strategies": [
-            {"query": q, "approach": "use_case", "target_field": "abstract"}
-            for q in req.spec.search_queries[:6]
-        ],
+        "search_strategies": strategies,
     }
 
 
@@ -155,25 +164,45 @@ async def _step2_multi_phase_search(
     }
     all_hits: list[dict] = []
 
-    # Phase A: Broad keyword searches (recall-oriented, _text_any)
-    # Uses LLM strategies which search both title AND abstract
+    # Phase A: Baseline product search (MOST IMPORTANT — finds existing products)
+    # Search for the base product category using simple consumer terms
     strategies = invention.get("search_strategies", [])
     keyword_tasks = []
-    for s in strategies[:8]:
+
+    # A1: Direct product text search — the most obvious thing to search
+    product_text = req.product_text.strip()
+    if product_text and len(product_text) > 2:
+        keyword_tasks.append(search_keyword_broad_async(product_text, limit=30))
+        # Also search title specifically for the product category
+        keyword_tasks.append(search_keyword_async(product_text, "title", limit=30))
+
+    # A2: Baseline product queries from LLM strategies
+    baseline_queries = [
+        s.get("query", "") for s in strategies
+        if s.get("approach") == "baseline_product" and s.get("query", "")
+    ]
+    for q in baseline_queries[:4]:
+        keyword_tasks.append(search_keyword_async(q, "title", limit=25))
+
+    # Phase B: Novelty-focused searches (LLM strategies)
+    non_baseline = [
+        s for s in strategies
+        if s.get("approach") != "baseline_product"
+    ]
+    for s in non_baseline[:8]:
         query = s.get("query", "")
         target = s.get("target_field", "abstract")
         if query:
             keyword_tasks.append(search_keyword_async(query, target, limit=25))
 
-    # Phase B: Focused keyword searches (precision, _text_all)
+    # Phase C: Focused keyword searches (precision, _text_all)
     # Uses spec search queries — require all words to appear
     spec_queries = req.spec.search_queries
     for q in spec_queries[:4]:
         if q:
             keyword_tasks.append(search_keyword_focused_async(q, limit=25))
 
-    # Also add a broad keyword search using only the most specific terms
-    # Filter out generic words that match too many patents
+    # Phase D: Broad keyword sweep using specific terms
     _generic = {"system", "method", "device", "apparatus", "process", "tool",
                 "machine", "unit", "module", "assembly", "platform", "product",
                 "application", "interface", "mechanism", "component", "element"}

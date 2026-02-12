@@ -232,16 +232,27 @@ async def search_patents_async(payload: dict) -> list[dict]:
 
 
 async def search_keyword_async(query: str, target_field: str, limit: int = 25) -> list[dict]:
-    """Run a keyword query using _text_all on both title AND abstract.
+    """Run a keyword query on title and abstract.
 
-    Requires all words to appear (in either title or abstract), which
-    balances precision with recall for multi-word patent queries.
+    For short queries (1-3 words), requires ALL words to appear (_text_all)
+    for precision. For longer queries, uses _text_any for broader recall.
     """
-    payload = {
-        "q": {"_or": [
+    word_count = len(query.strip().split())
+    op = "_text_all" if word_count <= 3 else "_text_any"
+
+    if target_field == "title":
+        q_clause = {"_or": [
+            {op: {"patent_title": query}},
             {"_text_all": {"patent_title": query}},
-            {"_text_all": {"patent_abstract": query}},
-        ]},
+        ]} if op == "_text_any" else {op: {"patent_title": query}}
+    else:
+        q_clause = {"_or": [
+            {op: {"patent_title": query}},
+            {op: {"patent_abstract": query}},
+        ]}
+
+    payload = {
+        "q": q_clause,
         "f": ENHANCED_PATENT_FIELDS,
         "o": {"size": min(limit, 50)},
     }

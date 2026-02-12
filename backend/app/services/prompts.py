@@ -532,21 +532,30 @@ Perform a thorough invention analysis:
    use top-level codes. Think about both the primary technology area AND secondary areas
    where related solutions might be classified.
 
-5. "search_strategies" — Generate 8-12 diverse search queries using four different approaches:
-   - "function_words": Queries using functional language (e.g., "apparatus for heating liquid
-     while maintaining temperature"). 2-3 queries.
-   - "technical_structure": Queries describing the physical/technical structure (e.g., "insulated
-     container with integrated heating element"). 2-3 queries.
-   - "use_case": Queries describing the use case or problem solved (e.g., "portable beverage
-     temperature maintenance system"). 2-3 queries.
-   - "synonyms": Queries using alternative terminology and synonyms (e.g., "thermal vessel
-     with resistive warming component"). 2-3 queries.
+5. "search_strategies" — Generate 12-16 diverse search queries using FIVE different approaches:
+   - "baseline_product": Queries for the BASE PRODUCT CATEGORY that already exists on the market.
+     These should find EXISTING competing products and their patents. Use simple, common product
+     terms that real consumers and companies use. For example, if the invention is a "smart dog
+     collar with geofencing", the baseline queries should be "GPS pet tracker", "dog location
+     tracking collar", "pet GPS tracking device". 3-4 queries. THIS IS THE MOST IMPORTANT
+     CATEGORY — if you skip this, we will miss the most obvious prior art.
+   - "function_words": Queries using functional language (e.g., "apparatus for tracking animal
+     location using wireless signals"). 2-3 queries.
+   - "technical_structure": Queries describing the physical/technical structure (e.g., "wearable
+     collar with integrated GPS receiver and cellular transmitter"). 2-3 queries.
+   - "use_case": Queries describing the use case or problem solved (e.g., "pet escape prevention
+     and recovery system"). 2-3 queries.
+   - "synonyms": Queries using alternative terminology and synonyms (e.g., "companion animal
+     monitoring apparatus with geofence boundary detection"). 2-3 queries.
 
    For each query, specify whether it should target the patent "title" or "abstract" field.
    Title searches are more precise; abstract searches cast a wider net.
+   IMPORTANT: baseline_product queries should target "title" for precision.
 
-Make queries specific enough to find relevant results but not so narrow that they miss
-important prior art. Vary the terminology across queries to maximize coverage.
+CRITICAL: Do NOT only search for the NOVEL features of the invention. You MUST also search for
+the BASE PRODUCT CATEGORY. A patent examiner always starts by finding what already exists in
+the product space before evaluating what is new. The most relevant prior art is often the
+existing product that this invention improves upon.
 
 {safe_json_instructions()}"""
 
