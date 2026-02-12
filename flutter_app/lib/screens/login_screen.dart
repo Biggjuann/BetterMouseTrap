@@ -29,141 +29,212 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Logo
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.ink,
-                      borderRadius: BorderRadius.circular(AppRadius.xl),
-                    ),
-                    child: const Icon(
-                      Icons.tips_and_updates_outlined,
-                      size: 40,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    'MouseTrap',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    _isRegisterMode ? 'Join the club!' : 'Welcome back!',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                  const SizedBox(height: AppSpacing.xxl),
-
-                  // Form card
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardWhite,
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      border: Border.all(color: AppColors.border),
-                      boxShadow: AppShadows.elevated,
-                    ),
-                    child: Column(
-                      children: [
-                        TextField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: Icon(Icons.email_outlined),
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
+          ),
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Hero icon — Stitch: rotated bg + icon (matches home)
+                    SizedBox(
+                      width: 96,
+                      height: 96,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: Transform.rotate(
+                              angle: 0.1,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.base),
-
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          textInputAction: _isRegisterMode
-                              ? TextInputAction.next
-                              : TextInputAction.done,
-                          onSubmitted:
-                              _isRegisterMode ? null : (_) => _submit(),
-                          decoration: const InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: Icon(Icons.lock_outlined),
-                          ),
-                        ),
-
-                        if (_isRegisterMode) ...[
-                          const SizedBox(height: AppSpacing.base),
-                          TextField(
-                            controller: _inviteCodeController,
-                            textInputAction: TextInputAction.done,
-                            onSubmitted: (_) => _submit(),
-                            decoration: const InputDecoration(
-                              labelText: 'Invite Code',
-                              prefixIcon: Icon(Icons.vpn_key_outlined),
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(AppRadius.xl),
+                                boxShadow: AppShadows.button,
+                              ),
+                              child: const Icon(
+                                Icons.precision_manufacturing,
+                                size: 48,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
 
-                        const SizedBox(height: AppSpacing.lg),
-
-                        // Dark pill CTA (Etsy)
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: FilledButton(
-                            onPressed: _isLoading ? null : _submit,
-                            child: _isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : Text(
-                                    _isRegisterMode ? 'Register' : 'Sign In',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                          ),
+                    // Title — "MouseTrap" with gold accent
+                    RichText(
+                      text: const TextSpan(
+                        style: TextStyle(
+                          fontFamily: 'Manrope',
+                          fontSize: 40,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                          color: AppColors.ink,
                         ),
-                      ],
+                        children: [
+                          TextSpan(text: 'Mouse'),
+                          TextSpan(
+                            text: 'Trap',
+                            style: TextStyle(color: AppColors.primary),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: AppSpacing.md),
 
-                  const SizedBox(height: AppSpacing.lg),
-                  TextButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () => setState(() {
-                              _isRegisterMode = !_isRegisterMode;
-                            }),
-                    child: Text(
-                      _isRegisterMode
-                          ? 'Already have an account? Sign in'
-                          : 'Have an invite code? Register',
+                    // Subtitle
+                    Text(
+                      _isRegisterMode ? 'Join the club!' : 'Welcome back!',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: AppColors.ink,
+                            fontWeight: FontWeight.w500,
+                          ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: AppSpacing.xxl),
+
+                    // Form card — Stitch: white, primary/5 border, xl radius
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardWhite,
+                        borderRadius: BorderRadius.circular(AppRadius.xl),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.05),
+                        ),
+                        boxShadow: AppShadows.elevated,
+                      ),
+                      child: Column(
+                        children: [
+                          TextField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            decoration: InputDecoration(
+                              hintText: 'Email address',
+                              prefixIcon: Icon(
+                                Icons.email_outlined,
+                                color: AppColors.primary.withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.base),
+
+                          TextField(
+                            controller: _passwordController,
+                            obscureText: true,
+                            textInputAction: _isRegisterMode
+                                ? TextInputAction.next
+                                : TextInputAction.done,
+                            onSubmitted:
+                                _isRegisterMode ? null : (_) => _submit(),
+                            decoration: InputDecoration(
+                              hintText: 'Password',
+                              prefixIcon: Icon(
+                                Icons.lock_outlined,
+                                color: AppColors.primary.withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ),
+
+                          if (_isRegisterMode) ...[
+                            const SizedBox(height: AppSpacing.base),
+                            TextField(
+                              controller: _inviteCodeController,
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) => _submit(),
+                              decoration: InputDecoration(
+                                hintText: 'Invite code',
+                                prefixIcon: Icon(
+                                  Icons.vpn_key_outlined,
+                                  color: AppColors.primary.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ),
+                          ],
+
+                          const SizedBox(height: AppSpacing.lg),
+
+                          // Primary CTA — Stitch gold button with shadow
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                boxShadow: _isLoading ? [] : AppShadows.button,
+                                borderRadius: BorderRadius.circular(AppRadius.xl),
+                              ),
+                              child: FilledButton(
+                                onPressed: _isLoading ? null : _submit,
+                                child: _isLoading
+                                    ? SizedBox(
+                                        height: 22,
+                                        width: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          strokeCap: StrokeCap.round,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            _isRegisterMode
+                                                ? Icons.person_add
+                                                : Icons.login,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: AppSpacing.sm),
+                                          Text(
+                                            _isRegisterMode ? 'Register' : 'Sign In',
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.lg),
+
+                    // Toggle link
+                    TextButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () => setState(() {
+                                _isRegisterMode = !_isRegisterMode;
+                              }),
+                      child: Text(
+                        _isRegisterMode
+                            ? 'Already have an account? Sign in'
+                            : 'Have an invite code? Register',
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
