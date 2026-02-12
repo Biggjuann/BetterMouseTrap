@@ -231,7 +231,7 @@ async def generate_patent_draft(req: ProvisionalPatentRequest):
             prompt,
             json_schema_hint=PROVISIONAL_PATENT_SCHEMA,
             system=PROVISIONAL_PATENT_SYSTEM,
-            max_tokens=8192,
+            max_tokens=16000,
         )
     except LLMError as exc:
         log.error("LLM call failed: %s", exc)

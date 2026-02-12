@@ -66,6 +66,104 @@ _PROVIDERS = {
 }
 
 
+def _repair_truncated_json(text: str) -> dict | None:
+    """Attempt to repair JSON that was truncated mid-output by closing open brackets."""
+    # Find the first { or [
+    start = -1
+    for i, ch in enumerate(text):
+        if ch in ('{', '['):
+            start = i
+            break
+    if start == -1:
+        return None
+
+    fragment = text[start:]
+
+    # Walk through the fragment tracking open structures, respecting strings
+    stack: list[str] = []
+    in_string = False
+    escape_next = False
+    last_valid = start  # track last position that could end a value
+
+    for i, ch in enumerate(fragment):
+        if escape_next:
+            escape_next = False
+            continue
+        if ch == '\\' and in_string:
+            escape_next = True
+            continue
+        if ch == '"' and not escape_next:
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch in ('{', '['):
+            stack.append('}' if ch == '{' else ']')
+        elif ch in ('}', ']'):
+            if stack:
+                stack.pop()
+            if not stack:
+                # Fully closed — try parsing
+                try:
+                    return json.loads(fragment[: i + 1])
+                except json.JSONDecodeError:
+                    pass
+
+    # If we get here, JSON was truncated. Try to close it.
+    if not stack:
+        return None
+
+    # Trim trailing incomplete key/value: remove back to last complete value
+    repair = fragment.rstrip()
+    # Remove trailing comma or colon (incomplete pair)
+    while repair and repair[-1] in (',', ':', '"'):
+        if repair[-1] == '"':
+            # Remove the incomplete string value back to the opening quote
+            repair = repair[:-1]
+            quote_pos = repair.rfind('"')
+            if quote_pos >= 0:
+                repair = repair[:quote_pos]
+            repair = repair.rstrip().rstrip(',').rstrip(':')
+            # If we stripped a key, also remove its preceding quote
+            if repair.endswith('"'):
+                repair = repair[:-1]
+                qp = repair.rfind('"')
+                if qp >= 0:
+                    repair = repair[:qp]
+                repair = repair.rstrip().rstrip(',')
+            break
+        repair = repair[:-1].rstrip()
+
+    # Close all open brackets
+    closing = "".join(reversed(stack))
+    candidate = repair + closing
+
+    try:
+        result = json.loads(candidate)
+        log.warning("Repaired truncated JSON (closed %d open brackets)", len(stack))
+        return result
+    except json.JSONDecodeError:
+        pass
+
+    # Last resort: more aggressive trim — find last complete value boundary
+    # Look for last occurrence of `"` followed by `,` or `}` or `]`
+    for trim_to in range(len(repair) - 1, max(0, len(repair) - 500), -1):
+        ch = repair[trim_to]
+        if ch in ('}', ']', '"') and trim_to > 0:
+            candidate = repair[: trim_to + 1]
+            # Remove trailing comma if any
+            candidate = candidate.rstrip().rstrip(',')
+            candidate += closing
+            try:
+                result = json.loads(candidate)
+                log.warning("Repaired truncated JSON with aggressive trim")
+                return result
+            except json.JSONDecodeError:
+                continue
+
+    return None
+
+
 def _extract_json(text: str) -> dict:
     """Extract the first JSON object or array from LLM text output."""
     # Try the whole string first
@@ -94,6 +192,11 @@ def _extract_json(text: str) -> dict:
                 return json.loads(text[start : end + 1])
             except json.JSONDecodeError:
                 continue
+
+    # Try to repair truncated JSON (common when max_tokens cuts off output)
+    repaired = _repair_truncated_json(text)
+    if repaired is not None:
+        return repaired
 
     raise LLMError(f"Could not extract JSON from LLM response:\n{text[:500]}")
 
