@@ -3,6 +3,7 @@ workflows:
     name: iOS Release
     max_build_duration: 30
     instance_type: mac_mini_m2
+    working_directory: flutter_app
     environment:
       flutter: stable
       xcode: latest
@@ -21,23 +22,16 @@ workflows:
         - pattern: main
           include: true
     scripts:
-      - name: Set up local properties
-        script: echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/flutter_app/android/local.properties"
       - name: Get Flutter packages
-        script: |
-          cd $CM_BUILD_DIR/flutter_app
-          flutter packages pub get
+        script: flutter packages pub get
       - name: Install CocoaPods
         script: |
-          cd $CM_BUILD_DIR/flutter_app/ios
+          cd ios
           pod install
       - name: Flutter analyze
-        script: |
-          cd $CM_BUILD_DIR/flutter_app
-          flutter analyze --no-pub
+        script: flutter analyze --no-pub
       - name: Build IPA
         script: |
-          cd $CM_BUILD_DIR/flutter_app
           flutter build ipa --release \
             --build-name=1.0.0 \
             --build-number=$PROJECT_BUILD_NUMBER \
@@ -50,12 +44,13 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
-        submit_to_app_store: false  # Set to true when ready for App Store review
+        submit_to_app_store: false
 
   ios-testflight:
     name: iOS TestFlight (Manual)
     max_build_duration: 30
     instance_type: mac_mini_m2
+    working_directory: flutter_app
     environment:
       flutter: stable
       xcode: latest
@@ -69,16 +64,13 @@ workflows:
         bundle_identifier: com.mousetrap.app
     scripts:
       - name: Get Flutter packages
-        script: |
-          cd $CM_BUILD_DIR/flutter_app
-          flutter packages pub get
+        script: flutter packages pub get
       - name: Install CocoaPods
         script: |
-          cd $CM_BUILD_DIR/flutter_app/ios
+          cd ios
           pod install
       - name: Build IPA
         script: |
-          cd $CM_BUILD_DIR/flutter_app
           flutter build ipa --release \
             --build-name=1.0.0 \
             --build-number=$PROJECT_BUILD_NUMBER \
