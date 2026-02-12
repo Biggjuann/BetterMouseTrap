@@ -23,8 +23,8 @@ flutter_app/build/
 flutter_app/.flutter-plugins
 flutter_app/.flutter-plugins-dependencies
 
-# iOS (reference only, not deploying)
-ios/
+# iOS SwiftUI reference code (root level only, not flutter_app/ios/)
+/ios/
 
 # IDE
 .idea/

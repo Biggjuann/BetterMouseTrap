@@ -1,0 +1,92 @@
+workflows:
+  ios-release:
+    name: iOS Release
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - app_store_credentials  # Set in Codemagic dashboard
+      vars:
+        BUNDLE_ID: "com.mousetrap.app"
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.mousetrap.app
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Set up local properties
+        script: echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/flutter_app/android/local.properties"
+      - name: Get Flutter packages
+        script: |
+          cd $CM_BUILD_DIR/flutter_app
+          flutter packages pub get
+      - name: Install CocoaPods
+        script: |
+          cd $CM_BUILD_DIR/flutter_app/ios
+          pod install
+      - name: Flutter analyze
+        script: |
+          cd $CM_BUILD_DIR/flutter_app
+          flutter analyze --no-pub
+      - name: Build IPA
+        script: |
+          cd $CM_BUILD_DIR/flutter_app
+          flutter build ipa --release \
+            --build-name=1.0.0 \
+            --build-number=$PROJECT_BUILD_NUMBER \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - flutter_app/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_app/build/ios/ipa/*ExportOptions.plist
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false  # Set to true when ready for App Store review
+
+  ios-testflight:
+    name: iOS TestFlight (Manual)
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - app_store_credentials
+      vars:
+        BUNDLE_ID: "com.mousetrap.app"
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.mousetrap.app
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          cd $CM_BUILD_DIR/flutter_app
+          flutter packages pub get
+      - name: Install CocoaPods
+        script: |
+          cd $CM_BUILD_DIR/flutter_app/ios
+          pod install
+      - name: Build IPA
+        script: |
+          cd $CM_BUILD_DIR/flutter_app
+          flutter build ipa --release \
+            --build-name=1.0.0 \
+            --build-number=$PROJECT_BUILD_NUMBER \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - flutter_app/build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
