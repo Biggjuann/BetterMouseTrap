@@ -204,6 +204,15 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                 ),
               ),
 
+              // Rich variant details (for top/moonshot tiers)
+              if (widget.variant.isDetailed)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: _variantDetailsSection(),
+                  ),
+                ),
+
               // Spec content or loading
               if (_isLoadingSpec)
                 SliverToBoxAdapter(child: _buildLoadingState())
@@ -272,6 +281,345 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                     'Analyzing invention & searching patents...\nThis takes 30-60 seconds.'),
         ],
       ),
+    );
+  }
+
+  Widget _variantDetailsSection() {
+    final v = widget.variant;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Scores bar
+        if (v.scores != null) ...[
+          _sectionCard(
+            icon: Icons.bar_chart,
+            title: 'Idea Scores',
+            child: _scoresGrid(v.scores!),
+          ),
+          const SizedBox(height: AppSpacing.base),
+        ],
+
+        // Target Customer & Core Problem
+        if (v.targetCustomer != null || v.coreProblem != null)
+          ...[
+            _sectionCard(
+              icon: Icons.people_alt,
+              title: 'Target Customer',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (v.targetCustomer != null && v.targetCustomer!.isNotEmpty)
+                    Text(
+                      v.targetCustomer!,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            height: 1.6,
+                            color: AppColors.ink,
+                          ),
+                    ),
+                  if (v.coreProblem != null && v.coreProblem!.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'CORE PROBLEM',
+                      style: TextStyle(
+                        color: AppColors.slateLight,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      v.coreProblem!,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            height: 1.6,
+                            color: AppColors.ink,
+                          ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.base),
+          ],
+
+        // Solution
+        if (v.solution != null && v.solution!.isNotEmpty) ...[
+          _sectionCard(
+            icon: Icons.lightbulb,
+            title: 'Solution',
+            child: Text(
+              v.solution!,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    height: 1.6,
+                    color: AppColors.ink,
+                  ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.base),
+        ],
+
+        // Why It Wins
+        if (v.whyItWins.isNotEmpty) ...[
+          _sectionCard(
+            icon: Icons.emoji_events,
+            title: 'Why It Wins',
+            child: Column(
+              children: v.whyItWins
+                  .asMap()
+                  .entries
+                  .map((entry) => Padding(
+                        padding: EdgeInsets.only(
+                          bottom: entry.key < v.whyItWins.length - 1 ? 10 : 0,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.check_circle,
+                                size: 18, color: AppColors.teal),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: Text(
+                                entry.value,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      height: 1.5,
+                                      color: AppColors.ink,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.base),
+        ],
+
+        // Monetization & Unit Economics
+        if (v.monetization != null || v.unitEconomics != null) ...[
+          _sectionCard(
+            icon: Icons.attach_money,
+            title: 'Monetization',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (v.monetization != null && v.monetization!.isNotEmpty)
+                  Text(
+                    v.monetization!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          height: 1.6,
+                          color: AppColors.ink,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                if (v.unitEconomics != null &&
+                    v.unitEconomics!.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    v.unitEconomics!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          height: 1.5,
+                          color: AppColors.ink,
+                        ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.base),
+        ],
+
+        // Defensibility
+        if (v.defensibilityNote != null && v.defensibilityNote!.isNotEmpty) ...[
+          _sectionCard(
+            icon: Icons.shield,
+            title: 'Defensibility',
+            child: Text(
+              v.defensibilityNote!,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    height: 1.6,
+                    color: AppColors.ink,
+                  ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.base),
+        ],
+
+        // MVP in 90 Days
+        if (v.mvp90Days != null && v.mvp90Days!.isNotEmpty) ...[
+          _sectionCard(
+            icon: Icons.rocket_launch,
+            title: 'MVP in 90 Days',
+            child: Text(
+              v.mvp90Days!,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    height: 1.6,
+                    color: AppColors.ink,
+                  ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.base),
+        ],
+
+        // Go-to-Market
+        if (v.goToMarket.isNotEmpty) ...[
+          _sectionCard(
+            icon: Icons.storefront,
+            title: 'Go-to-Market',
+            child: Column(
+              children: v.goToMarket
+                  .asMap()
+                  .entries
+                  .map((entry) => Padding(
+                        padding: EdgeInsets.only(
+                          bottom:
+                              entry.key < v.goToMarket.length - 1 ? 10 : 0,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.arrow_right,
+                                size: 20, color: AppColors.primary),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                entry.value,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      height: 1.5,
+                                      color: AppColors.ink,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.base),
+        ],
+
+        // Risks
+        if (v.risks.isNotEmpty) ...[
+          _sectionCard(
+            icon: Icons.warning_amber,
+            title: 'Risks & Mitigations',
+            child: Column(
+              children: v.risks
+                  .asMap()
+                  .entries
+                  .map((entry) => Padding(
+                        padding: EdgeInsets.only(
+                          bottom: entry.key < v.risks.length - 1 ? 10 : 0,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.info_outline,
+                                size: 18, color: AppColors.primary),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: Text(
+                                entry.value,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      height: 1.5,
+                                      color: AppColors.ink,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _scoresGrid(IdeaScores scores) {
+    final items = [
+      ('Urgency', scores.urgency),
+      ('Differentiation', scores.differentiation),
+      ('Speed to Revenue', scores.speedToRevenue),
+      ('Margin', scores.margin),
+      ('Defensibility', scores.defensibility),
+      ('Distribution', scores.distribution),
+    ];
+
+    return Column(
+      children: [
+        for (var i = 0; i < items.length; i += 2)
+          Padding(
+            padding: EdgeInsets.only(bottom: i < items.length - 2 ? 10 : 0),
+            child: Row(
+              children: [
+                Expanded(child: _scoreBar(items[i].$1, items[i].$2)),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: i + 1 < items.length
+                      ? _scoreBar(items[i + 1].$1, items[i + 1].$2)
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _scoreBar(String label, int score) {
+    final color = score >= 8
+        ? AppColors.emeraldText
+        : score >= 5
+            ? AppColors.primary
+            : AppColors.error;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: AppColors.ink,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              '$score/10',
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: score / 10.0,
+            backgroundColor: color.withValues(alpha: 0.1),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 6,
+          ),
+        ),
+      ],
     );
   }
 

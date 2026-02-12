@@ -37,31 +37,79 @@ def lori_tone_instructions() -> str:
     )
 
 
-# ── Prompt A: Generate Idea Variants ─────────────────────────────────
+# ── Prompt A: Generate Idea Variants (Sellable Ideas Engine) ─────────
 
 GENERATE_VARIANTS_SYSTEM = (
-    "You are a world-class consumer product innovator with the instincts of Lori Greiner — "
-    "the 'Queen of QVC' and Shark Tank's warm-blooded shark. You have an innate gut feel "
-    "for what everyday people need and want. You specialize in clever, unique products "
-    "that solve real problems — the kind of items that fly off shelves at Target, Amazon, "
-    "Walmart, and Costco. Think kitchen gadgets, home organization, fitness accessories, "
-    "pet products, travel gear, phone accessories, kids' products, and similar mass-market goods. "
-    "Your ideas should be practical, manufacturable, and make people say 'I need that!' "
-    "Every idea should feel fresh and necessary — a utilitarian luxury that makes life better "
-    "and has people questioning why it wasn't already part of their routine. "
-    + lori_tone_instructions() + " "
-    + no_legal_advice_instructions()
+    'You are the "Sellable Ideas Engine" — a product invention and commercialization expert. '
+    "Your job: when a user inputs an existing product, app idea, or problem, you must generate "
+    "ONLY the most sellable, high-quality upgrade ideas and adjacent product opportunities.\n\n"
+    "PRIMARY OBJECTIVE — Generate ideas that are:\n"
+    "- Highly desirable to real customers (painkiller > vitamin)\n"
+    "- Realistic to build in < 12 months for an MVP and < 24 months for full product\n"
+    "- Monetizable with clear pricing and strong margins\n"
+    "- Differentiated with defensibility (patentable mechanism, data moat, network effects, distribution edge)\n"
+    "- Written clearly enough to pitch to a retailer, investor, or engineering team immediately\n\n"
+    "NON-NEGOTIABLE QUALITY BAR (FAIL FAST) — Before presenting ANY idea, silently reject it if:\n"
+    "1) No clear target customer with urgent need\n"
+    "2) No clear 'why this wins' vs alternatives\n"
+    "3) No plausible path to $10M+ revenue\n"
+    "4) No obvious monetization/pricing\n"
+    '5) Too generic ("AI app for X") without a specific proprietary mechanism\n'
+    "6) Depends on unrealistic behavior change or vague adoption\n\n"
+    "GUARDRAILS:\n"
+    "- Do not include copyrighted brands, trademarks, or cloning existing famous products.\n"
+    "- Do not invent medical claims; if health-related, use 'wellness' language and suggest validation.\n"
+    "- Avoid unsafe/illegal products.\n"
+    "- Avoid ideas that require huge capex or regulated manufacturing unless user asked for it.\n"
+    "- Prefer simple, shippable, high-margin ideas."
 )
 
 GENERATE_VARIANTS_SCHEMA = """{
-  "variants": [
+  "customer_truth": {
+    "buyer": "<who buys this>",
+    "job_to_be_done": "<main job-to-be-done>",
+    "purchase_drivers": ["driver1", "driver2", "driver3", "driver4", "driver5"],
+    "complaints": ["complaint1", "complaint2", "complaint3", "complaint4", "complaint5"]
+  },
+  "top_ideas": [
     {
-      "id": "<uuid string>",
-      "title": "<short title>",
-      "summary": "<2-3 sentence description>",
-      "improvementMode": "cost_down|durability|safety|convenience|sustainability|performance|mashup",
-      "keywords": ["keyword1", "keyword2", "..."]
+      "name": "<brandable 1-3 word name>",
+      "one_line_pitch": "<one sentence pitch>",
+      "target_customer": "<who specifically>",
+      "core_problem": "<the pain point>",
+      "solution": "<how it works>",
+      "why_it_wins": ["<reason1>", "<reason2>", "<reason3>"],
+      "monetization": "<price + model>",
+      "unit_economics": "<COGS / margin notes>",
+      "defensibility": "<what is claimable / moat>",
+      "mvp_90_days": "<what to build first>",
+      "go_to_market": ["<channel1>", "<channel2>", "<channel3>"],
+      "risks": ["<risk + mitigation 1>", "<risk + mitigation 2>"],
+      "scores": {
+        "urgency": 8, "differentiation": 7, "speed_to_revenue": 9,
+        "margin": 8, "defensibility": 6, "distribution": 7
+      },
+      "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]
     }
+  ],
+  "moonshot": {
+    "name": "...", "one_line_pitch": "...", "target_customer": "...",
+    "core_problem": "...", "solution": "...",
+    "why_it_wins": ["...", "...", "..."],
+    "monetization": "...", "unit_economics": "...", "defensibility": "...",
+    "mvp_90_days": "...", "go_to_market": ["...", "...", "..."],
+    "risks": ["...", "..."],
+    "scores": { "urgency": 0, "differentiation": 0, "speed_to_revenue": 0, "margin": 0, "defensibility": 0, "distribution": 0 },
+    "keywords": ["...", "...", "..."]
+  },
+  "more_upgrades": [
+    { "name": "...", "one_line_pitch": "...", "why_it_wins": "..." }
+  ],
+  "adjacent_products": [
+    { "name": "...", "one_line_pitch": "...", "why_it_sells": "..." }
+  ],
+  "recurring_revenue": [
+    { "name": "...", "model": "...", "why_retention": "..." }
   ]
 }"""
 
@@ -73,52 +121,58 @@ def build_generate_variants_prompt(product_text: str, category: str | None = Non
             "typical household, kitchen, office, gym bag, car, or backpack. "
             "Think items like: water bottles, phone stands, lunch boxes, pet bowls, "
             "closet organizers, travel pillows, cable organizers, shower caddies, etc. "
-            "Pick something that a wide cross-section of people use every single day."
+            "Pick something that a wide cross-section of people use every single day. "
+            "State which product you picked, then proceed with the full analysis."
         )
     else:
-        product_line = (
-            f"Product: {product_text}\n\n"
-            "Put yourself in the consumer's shoes. Picture this product on a store shelf, "
-            "in an Amazon listing, or in a friend's house. Ask yourself: Does it solve a real "
-            "problem? Is it unique? Does it have broad mass appeal? What would make someone "
-            "pick this up and say 'this is way better than what I have now — I need this!'?"
-        )
+        product_line = f"Product: {product_text}"
 
     cat_line = f"\nProduct category: {category}" if category else ""
 
     return f"""{product_line}{cat_line}
 
-Generate exactly 10 creative "better version" variants of this product. Each one should be
-a potential HERO — a product that solves a real problem in a way people haven't seen before.
+Follow this exact process:
 
-Use the Lori Greiner "Hero or Zero" test for every idea:
-- Does it SOLVE A REAL PROBLEM that everyday people actually have?
-- Is it UNIQUE AND DIFFERENT from what's already out there?
-- Does it have BROAD MASS APPEAL — not just for a niche, but for a wide cross-section of people?
-- Is it DEMONSTRABLE — can you show someone why it's amazing in 30 seconds?
-- Would someone see it and say "I didn't know I needed this, but now I can't live without it"?
+STEP 1 — Define the starting point:
+- What the product is
+- Who buys it
+- The top 5 purchase drivers (what people actually pay for)
+- The top 5 complaints/frictions
 
-Keep ideas grounded and sellable:
-- Every idea should feel like a real product listing on Amazon, at Target, or on QVC
-- Write titles like catchy product names a shopper would click on
-- Focus on everyday pain points: mess, clutter, wasted time, frustration, safety, convenience
-- Avoid overly scientific, industrial, or technical solutions
-- Each idea should be simple enough to explain in one sentence to a friend
-- Think about what would make Lori Greiner say "I'm in!" on Shark Tank
+STEP 2 — Find the "unfair advantages":
+Generate 10-15 candidate differentiators using:
+- Convenience multipliers (time saved, steps removed)
+- Reliability improvements (less failure, fewer errors)
+- Status/aesthetics/identity
+- Personalization
+- Bundling/attachment/consumables
+- Subscription/refill economics
+- Marketplace/network effect possibilities
+- Sensor/data/automation opportunities
+- Regulatory or compliance angles (if relevant)
 
-Make each variant meaningfully DIFFERENTIATED — don't just tweak the same angle 10 times.
-Cover a diverse mix of improvement modes:
-cost_down, durability, safety, convenience, sustainability, performance, and mashup (combining
-ideas from other product domains in clever, surprising ways).
+STEP 3 — Generate only BEST-IN-CLASS outputs:
+A) 8 "Upgrade the product" concepts (next-gen versions)
+B) 5 "Adjacent products" that this buyer would also want
+C) 3 "Platform/recurring revenue" plays (subscription, consumables, services, data)
 
-For each variant provide:
-- A unique UUID as the id
-- A concise, catchy title (like a product name that sells itself)
-- A 2-3 sentence summary written like a compelling product pitch — warm, enthusiastic,
-  and focused on the consumer benefit. Write it like you're describing it to a friend,
-  not like a technical spec sheet.
-- The primary improvement mode
-- 3-5 keywords useful for patent searching (include technical synonyms)
+STEP 4 — Score and select winners:
+For every idea, score 1-10 on: Customer urgency, Differentiation strength, Speed to revenue,
+Margin potential, Defensibility, Distribution advantage.
+Then choose:
+- Top 3 "Most Sellable Now"
+- Top 1 "Moonshot but Plausible"
+
+OUTPUT REQUIREMENTS:
+- "customer_truth": buyer analysis from Step 1
+- "top_ideas": exactly 3 most sellable ideas with FULL detail (all fields filled)
+- "moonshot": 1 moonshot idea with FULL detail
+- "more_upgrades": 5 remaining upgrade ideas (name + pitch + why)
+- "adjacent_products": 5 adjacent products (name + pitch + why)
+- "recurring_revenue": 3 recurring revenue plays (name + model + why)
+
+For each top idea and moonshot, include 3-5 keywords useful for patent searching
+(include technical synonyms).
 
 {safe_json_instructions()}"""
 

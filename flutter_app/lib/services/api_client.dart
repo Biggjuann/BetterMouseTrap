@@ -45,7 +45,7 @@ class ApiClient {
 
   // ── Idea endpoints ──────────────────────────────────────────────
 
-  Future<List<IdeaVariant>> generateIdeas({
+  Future<GenerateIdeasResponse> generateIdeas({
     required String text,
     String? category,
     bool random = false,
@@ -57,7 +57,7 @@ class ApiClient {
     if (category != null) body['category'] = category;
 
     final data = await _post('/ideas/generate', body);
-    return GenerateIdeasResponse.fromJson(data).variants;
+    return GenerateIdeasResponse.fromJson(data);
   }
 
   Future<IdeaSpec> generateSpec({

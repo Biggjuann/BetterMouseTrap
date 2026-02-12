@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/api_responses.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../theme.dart';
@@ -328,7 +329,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ? null
           : _urlController.text.trim();
 
-      final variants = await ApiClient.instance.generateIdeas(
+      final response = await ApiClient.instance.generateIdeas(
         text: text,
         random: random,
       );
@@ -342,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
         sessionId = sessionData['id'] as String;
         await ApiClient.instance.updateSession(sessionId, {
-          'variants_json': variants.map((v) => v.toJson()).toList(),
+          'variants_json': response.variants.map((v) => v.toJson()).toList(),
           'status': 'ideas_generated',
         });
       } catch (_) {
@@ -354,7 +355,8 @@ class _HomeScreenState extends State<HomeScreen> {
         context,
         MaterialPageRoute(
           builder: (_) => IdeasListScreen(
-            variants: variants,
+            variants: response.variants,
+            customerTruth: response.customerTruth,
             productText: _productController.text.trim(),
             productURL: productUrl,
             sessionId: sessionId,

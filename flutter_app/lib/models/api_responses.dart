@@ -2,16 +2,46 @@ import 'idea_variant.dart';
 import 'idea_spec.dart';
 import 'patent_hit.dart';
 
+class CustomerTruth {
+  final String buyer;
+  final String jobToBeDone;
+  final List<String> purchaseDrivers;
+  final List<String> complaints;
+
+  const CustomerTruth({
+    required this.buyer,
+    required this.jobToBeDone,
+    required this.purchaseDrivers,
+    required this.complaints,
+  });
+
+  factory CustomerTruth.fromJson(Map<String, dynamic> json) => CustomerTruth(
+        buyer: json['buyer'] as String? ?? '',
+        jobToBeDone: json['job_to_be_done'] as String? ?? '',
+        purchaseDrivers: json['purchase_drivers'] != null
+            ? List<String>.from(json['purchase_drivers'] as List)
+            : [],
+        complaints: json['complaints'] != null
+            ? List<String>.from(json['complaints'] as List)
+            : [],
+      );
+}
+
 class GenerateIdeasResponse {
   final List<IdeaVariant> variants;
+  final CustomerTruth? customerTruth;
 
-  const GenerateIdeasResponse({required this.variants});
+  const GenerateIdeasResponse({required this.variants, this.customerTruth});
 
   factory GenerateIdeasResponse.fromJson(Map<String, dynamic> json) =>
       GenerateIdeasResponse(
         variants: (json['variants'] as List)
             .map((v) => IdeaVariant.fromJson(v as Map<String, dynamic>))
             .toList(),
+        customerTruth: json['customer_truth'] != null
+            ? CustomerTruth.fromJson(
+                json['customer_truth'] as Map<String, dynamic>)
+            : null,
       );
 }
 
