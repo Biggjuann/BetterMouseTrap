@@ -53,208 +53,261 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Subtle page gradient (Calm-style)
           Container(
             decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
           ),
-          CustomScrollView(
-            slivers: [
-              // Hero header
-              SliverToBoxAdapter(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: AppGradients.hero,
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(AppRadius.xl),
-                      bottomRight: Radius.circular(AppRadius.xl),
+          SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                child: Column(
+                  children: [
+                    const SizedBox(height: AppSpacing.lg),
+
+                    // Top bar — history + logout
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.history_rounded, color: AppColors.primary),
+                          tooltip: 'My Ideas',
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.logout_rounded, color: AppColors.mist),
+                          tooltip: 'Sign out',
+                          onPressed: _logout,
+                        ),
+                      ],
                     ),
-                  ),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.lg, AppSpacing.base, AppSpacing.lg, AppSpacing.xxl,
-                      ),
-                      child: Column(
+                    const SizedBox(height: AppSpacing.xxl),
+
+                    // Hero icon — Stitch: rotated bg + icon
+                    SizedBox(
+                      width: 96,
+                      height: 96,
+                      child: Stack(
                         children: [
-                          // Top bar
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Icon(
-                                Icons.tips_and_updates_outlined,
-                                size: 26,
+                          Positioned.fill(
+                            child: Transform.rotate(
+                              angle: 0.1,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(AppRadius.xl),
+                                boxShadow: AppShadows.button,
+                              ),
+                              child: const Icon(
+                                Icons.precision_manufacturing,
+                                size: 48,
                                 color: Colors.white,
                               ),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.history_rounded, color: Colors.white),
-                                    tooltip: 'My Ideas',
-                                    onPressed: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const HistoryScreen(),
-                                      ),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.logout_rounded, color: Colors.white),
-                                    tooltip: 'Sign out',
-                                    onPressed: _logout,
-                                  ),
-                                ],
-                              ),
-                            ],
+                            ),
                           ),
-                          const SizedBox(height: AppSpacing.xxl),
-
-                          // Hero text — Calm-style generous spacing
-                          Text(
-                            'MouseTrap',
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineLarge
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.5,
-                                ),
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          Text(
-                            'Got a product idea?\nLet\'s find out if it\'s a Hero or a Zero.',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyLarge
-                                ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  height: 1.5,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                          ),
-                          const SizedBox(height: AppSpacing.lg),
                         ],
                       ),
                     ),
-                  ),
-                ),
-              ),
+                    const SizedBox(height: AppSpacing.lg),
 
-              // Form content — Calm generous spacing
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.lg,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Product input
-                      Text(
-                        'Describe your product',
-                        style: Theme.of(context).textTheme.titleMedium,
+                    // Title — Stitch: "Mouse<primary>Trap</primary>"
+                    RichText(
+                      text: TextStyle(
+                        fontFamily: 'Manrope',
+                        fontSize: 40,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                        color: AppColors.ink,
+                      ).let((s) => TextSpan(
+                        children: [
+                          TextSpan(text: 'Mouse', style: s),
+                          TextSpan(
+                            text: 'Trap',
+                            style: s.copyWith(color: AppColors.primary),
+                          ),
+                        ],
+                      )),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Subtitle
+                    Text(
+                      'Turn any product into your\nnext big idea.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppColors.ink.withValues(alpha: 0.7),
+                        height: 1.5,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(height: AppSpacing.sm),
-                      TextField(
-                        controller: _productController,
-                        maxLines: 3,
-                        decoration: const InputDecoration(
-                          hintText:
-                              'e.g. "travel coffee mug", "shower caddy", "bike lock"',
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+
+                    // Search input — Stitch: icon + rounded-xl
+                    TextField(
+                      controller: _productController,
+                      maxLines: 1,
+                      style: const TextStyle(fontSize: 18),
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: AppColors.primary.withValues(alpha: 0.6),
                         ),
-                        onChanged: (_) => setState(() {}),
+                        hintText: 'Enter a product name...',
                       ),
-                      const SizedBox(height: AppSpacing.lg),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: AppSpacing.base),
 
-                      // URL input
-                      Text(
-                        'Product URL (optional)',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      TextField(
-                        controller: _urlController,
-                        keyboardType: TextInputType.url,
-                        decoration: const InputDecoration(
-                          hintText: 'https://example.com/product',
+                    // URL input
+                    TextField(
+                      controller: _urlController,
+                      keyboardType: TextInputType.url,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(
+                          Icons.link_rounded,
+                          color: AppColors.mist,
                         ),
+                        hintText: 'Product URL (optional)',
                       ),
-                      const SizedBox(height: AppSpacing.xxl),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
 
-                      // Hero CTA — dark pill button (Etsy)
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
+                    // Primary CTA — Stitch: bg-primary, white, rounded-xl, shadow
+                    SizedBox(
+                      width: double.infinity,
+                      height: 58,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          boxShadow: _canGenerate ? AppShadows.button : [],
+                          borderRadius: BorderRadius.circular(AppRadius.xl),
+                        ),
                         child: FilledButton(
                           onPressed: _canGenerate
                               ? () => _generate(random: false)
                               : null,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: _canGenerate
-                                ? AppColors.ink
-                                : AppColors.mist,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.pill),
-                            ),
-                          ),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.auto_awesome, size: 20),
                               SizedBox(width: AppSpacing.sm),
-                              Text(
-                                'Make it a Hero',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.2,
-                                ),
-                              ),
+                              Text('Make it a Hero'),
                             ],
                           ),
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.md),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
 
-                      // Secondary CTA — outlined pill
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: OutlinedButton(
-                          onPressed: _isLoading
-                              ? null
-                              : () => _generate(random: true),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.casino_rounded,
-                                  size: 20, color: AppColors.amber),
-                              const SizedBox(width: AppSpacing.sm),
-                              Text(
-                                'Surprise me!',
-                                style: TextStyle(
-                                  color: AppColors.amber,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
+                    // Secondary CTA — "Surprise Me"
+                    SizedBox(
+                      width: double.infinity,
+                      height: 58,
+                      child: FilledButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () => _generate(random: true),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                          foregroundColor: AppColors.primary,
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.auto_awesome, size: 20),
+                            SizedBox(width: AppSpacing.sm),
+                            Text('Surprise Me'),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.xxl),
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
 
-                      const DisclaimerBanner(),
-                      const SizedBox(height: AppSpacing.lg),
-                    ],
-                  ),
+                    // Quick action row — Stitch: 3 circles with labels
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _QuickAction(
+                          icon: Icons.analytics,
+                          label: 'Patent\nAnalysis',
+                          onTap: () {},
+                        ),
+                        Container(
+                          width: 1,
+                          height: 40,
+                          color: AppColors.primary.withValues(alpha: 0.2),
+                        ),
+                        _QuickAction(
+                          icon: Icons.history,
+                          label: 'Recent\nIdeas',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 40,
+                          color: AppColors.primary.withValues(alpha: 0.2),
+                        ),
+                        _QuickAction(
+                          icon: Icons.lightbulb,
+                          label: 'Market\nTrends',
+                          onTap: () {},
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+
+                    // Today's Insight card — Stitch
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(AppRadius.xl),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "TODAY'S INSIGHT",
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            'Sustainable packaging is trending in the luxury cosmetics sector. Tap to explore.',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // Disclaimer
+                    const DisclaimerBanner(),
+                    const SizedBox(height: AppSpacing.xl),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
           if (_isLoading)
             const LoadingOverlay(
@@ -321,4 +374,54 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
+}
+
+// Quick action circle — Stitch design
+class _QuickAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppColors.primary),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.ink.withValues(alpha: 0.5),
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1,
+              height: 1.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Extension to use TextStyle as TextSpan parent
+extension _TextStyleExt on TextStyle {
+  TextSpan let(TextSpan Function(TextStyle) fn) => fn(this);
 }

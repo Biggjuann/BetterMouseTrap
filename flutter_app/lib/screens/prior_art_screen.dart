@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import '../models/idea_spec.dart';
 import '../models/idea_variant.dart';
@@ -62,31 +63,90 @@ class _PriorArtScreenState extends State<PriorArtScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Patent Analysis'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Prior Art'),
-            Tab(text: 'Analysis'),
-            Tab(text: 'Strategy'),
-          ],
-        ),
-      ),
       body: Stack(
         children: [
           Container(
-            decoration:
-                const BoxDecoration(gradient: AppGradients.pageBackground),
+            decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
           ),
-          TabBarView(
-            controller: _tabController,
+          Column(
             children: [
-              _buildOverviewTab(),
-              _buildPriorArtTab(),
-              _buildAnalysisTab(),
-              _buildStrategyTab(),
+              // Stitch nav bar — sticky with primary border
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.cream.withValues(alpha: 0.8),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                    ),
+                  ),
+                ),
+                child: SafeArea(
+                  bottom: false,
+                  child: Column(
+                    children: [
+                      // Top row
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.base,
+                          vertical: AppSpacing.sm,
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.chevron_left, size: 28),
+                              color: AppColors.primary,
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            const Expanded(
+                              child: Text(
+                                'Patent Analysis',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.ink,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.share, size: 22),
+                              color: AppColors.primary,
+                              onPressed: () {},
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Tab bar — Stitch scroll tabs
+                      TabBar(
+                        controller: _tabController,
+                        isScrollable: true,
+                        tabAlignment: TabAlignment.start,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.base,
+                        ),
+                        tabs: const [
+                          Tab(text: 'Overview'),
+                          Tab(text: 'Prior Art'),
+                          Tab(text: 'Analysis'),
+                          Tab(text: 'Strategy'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Tab content
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildOverviewTab(),
+                    _buildPriorArtTab(),
+                    _buildAnalysisTab(),
+                    _buildStrategyTab(),
+                  ],
+                ),
+              ),
             ],
           ),
           if (_isLoading)
@@ -106,19 +166,26 @@ class _PriorArtScreenState extends State<PriorArtScreen>
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        // Risk level hero card
-        _RiskCard(
+        // Risk summary card — Stitch: circular ring + label
+        _RiskHeroCard(
           riskLevel: summary.overallRisk,
           narrative: summary.narrative,
           confidence: _analysis.confidence,
         ),
         const SizedBox(height: AppSpacing.lg),
 
+        // Key findings
+        if (summary.keyFindings.isNotEmpty) ...[
+          _SectionHeader(title: 'Key Findings'),
+          const SizedBox(height: AppSpacing.md),
+          ...summary.keyFindings.map((f) => _FindingCard(finding: f)),
+          const SizedBox(height: AppSpacing.lg),
+        ],
+
         // Search stats
-        _SectionCard(
-          icon: Icons.analytics_outlined,
-          color: AppColors.teal,
-          title: 'Search Coverage',
+        _SectionHeader(title: 'Search Coverage'),
+        const SizedBox(height: AppSpacing.md),
+        _StitchCard(
           child: Column(
             children: [
               _StatRow('Queries executed', '${meta.totalQueriesRun}'),
@@ -133,46 +200,10 @@ class _PriorArtScreenState extends State<PriorArtScreen>
         ),
         const SizedBox(height: AppSpacing.lg),
 
-        // Key findings
-        if (summary.keyFindings.isNotEmpty) ...[
-          _SectionCard(
-            icon: Icons.lightbulb_outline,
-            color: AppColors.amber,
-            title: 'Key Findings',
-            child: Column(
-              children: summary.keyFindings
-                  .map((f) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              margin: const EdgeInsets.only(top: 4),
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: AppColors.amber,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Text(f,
-                                  style: Theme.of(context).textTheme.bodyMedium),
-                            ),
-                          ],
-                        ),
-                      ))
-                  .toList(),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-        ],
-
         const DisclaimerBanner(),
         const SizedBox(height: AppSpacing.lg),
 
-        // Action buttons
+        // Action buttons — Stitch fixed bottom style
         _ActionButtons(
           isLoading: _isLoading,
           canBuildThis: _canBuildThis,
@@ -191,7 +222,6 @@ class _PriorArtScreenState extends State<PriorArtScreen>
     final phases =
         allHits.map((h) => h.sourcePhase).toSet().toList()..sort();
 
-    // Filter hits
     final filteredHits = _selectedSourceFilter == null
         ? allHits
         : allHits
@@ -217,8 +247,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                 final count =
                     allHits.where((h) => h.sourcePhase == p).length;
                 return _FilterChip(
-                  label:
-                      '${_sourcePhasLabel(p)} ($count)',
+                  label: '${_sourcePhaseLabel(p)} ($count)',
                   selected: _selectedSourceFilter == p,
                   onTap: () =>
                       setState(() => _selectedSourceFilter = p),
@@ -245,7 +274,6 @@ class _PriorArtScreenState extends State<PriorArtScreen>
         ),
         const SizedBox(height: AppSpacing.md),
 
-        // Patent hits
         if (filteredHits.isEmpty)
           _emptyState()
         else
@@ -262,10 +290,9 @@ class _PriorArtScreenState extends State<PriorArtScreen>
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        // Novelty
         _AssessmentCard(
           title: 'Novelty Assessment',
-          icon: Icons.new_releases_outlined,
+          icon: Icons.verified,
           riskLevel: _analysis.noveltyAssessment.riskLevel,
           summary: _analysis.noveltyAssessment.summary,
           details: [
@@ -277,10 +304,9 @@ class _PriorArtScreenState extends State<PriorArtScreen>
         ),
         const SizedBox(height: AppSpacing.md),
 
-        // Obviousness
         _AssessmentCard(
           title: 'Non-Obviousness',
-          icon: Icons.psychology_outlined,
+          icon: Icons.psychology,
           riskLevel: _analysis.obviousnessAssessment.riskLevel,
           summary: _analysis.obviousnessAssessment.summary,
           details: [
@@ -290,11 +316,10 @@ class _PriorArtScreenState extends State<PriorArtScreen>
         ),
         const SizedBox(height: AppSpacing.md),
 
-        // Eligibility
         if (_analysis.eligibilityNote.applies) ...[
           _AssessmentCard(
             title: 'Patent Eligibility (\u00A7101)',
-            icon: Icons.gavel_outlined,
+            icon: Icons.gavel,
             riskLevel: 'medium',
             summary: _analysis.eligibilityNote.summary,
             details: [],
@@ -303,10 +328,9 @@ class _PriorArtScreenState extends State<PriorArtScreen>
         ],
 
         // Claim strategy
-        _SectionCard(
-          icon: Icons.description_outlined,
-          color: AppColors.teal,
-          title: 'Claim Strategy',
+        _SectionHeader(title: 'Claim Strategy'),
+        const SizedBox(height: AppSpacing.md),
+        _StitchCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -316,6 +340,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                 _analysis.claimStrategy.rationale,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       height: 1.5,
+                      color: AppColors.stone,
                     ),
               ),
               if (_analysis.claimStrategy.riskAreas.isNotEmpty) ...[
@@ -334,7 +359,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.warning_amber_rounded,
+                        const Icon(Icons.warning_amber_rounded,
                             size: 16, color: AppColors.warning),
                         const SizedBox(width: 6),
                         Expanded(
@@ -367,9 +392,11 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                       width: double.infinity,
                       padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
-                        color: AppColors.warmWhite,
+                        color: AppColors.cream,
                         borderRadius: BorderRadius.circular(AppRadius.sm),
-                        border: Border.all(color: AppColors.borderLight),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                        ),
                       ),
                       child: Text(
                         '${entry.key + 1}. ${entry.value}',
@@ -401,43 +428,31 @@ class _PriorArtScreenState extends State<PriorArtScreen>
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        // Core concept
-        _SectionCard(
-          icon: Icons.hub_outlined,
-          color: AppColors.teal,
-          title: 'Core Concept',
+        _SectionHeader(title: 'Core Concept'),
+        const SizedBox(height: AppSpacing.md),
+        _StitchCard(
           child: Text(
             inv.coreConcept,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   height: 1.5,
+                  color: AppColors.stone,
                 ),
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.lg),
 
-        // Essential elements
-        _SectionCard(
-          icon: Icons.checklist_outlined,
-          color: AppColors.amber,
-          title: 'Essential Elements',
+        _SectionHeader(title: 'Essential Elements'),
+        const SizedBox(height: AppSpacing.md),
+        _StitchCard(
           child: Column(
             children: inv.essentialElements
                 .map((e) => Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.only(bottom: 8),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            margin: const EdgeInsets.only(top: 4),
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              color: AppColors.amber.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.check,
-                                size: 12, color: AppColors.amber),
-                          ),
+                          const Icon(Icons.check_circle,
+                              size: 18, color: AppColors.teal),
                           const SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: Text(e,
@@ -450,64 +465,62 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                 .toList(),
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.lg),
 
-        // CPC classifications
+        // CPC classifications — Stitch style chips
         if (inv.cpcCodes.isNotEmpty) ...[
-          _SectionCard(
-            icon: Icons.category_outlined,
-            color: AppColors.coral,
-            title: 'CPC Classifications',
-            child: Column(
+          _SectionHeader(title: 'CPC Classifications'),
+          const SizedBox(height: AppSpacing.md),
+          _StitchCard(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: inv.cpcCodes
-                  .map((cpc) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  .map((cpc) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.cardWhite,
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                          ),
+                          boxShadow: AppShadows.card,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color:
-                                    AppColors.coral.withValues(alpha: 0.1),
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.sm),
-                              ),
-                              child: Text(
-                                cpc.code,
-                                style: TextStyle(
-                                  color: AppColors.coral,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: 'monospace',
-                                ),
+                            Text(
+                              cpc.code,
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(cpc.description,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(fontWeight: FontWeight.w600)),
-                            Text(cpc.rationale,
-                                style:
-                                    Theme.of(context).textTheme.bodySmall),
+                            const SizedBox(width: 6),
+                            Text(
+                              cpc.description,
+                              style: TextStyle(
+                                color: AppColors.slateLight,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ],
                         ),
                       ))
                   .toList(),
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.lg),
         ],
 
         // Search strategies
         if (inv.searchStrategies.isNotEmpty) ...[
-          _SectionCard(
-            icon: Icons.search_rounded,
-            color: AppColors.success,
-            title: 'Search Queries Used',
+          _SectionHeader(title: 'Search Queries Used'),
+          const SizedBox(height: AppSpacing.md),
+          _StitchCard(
             child: Column(
               children: inv.searchStrategies
                   .map((s) => Padding(
@@ -516,11 +529,12 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                           width: double.infinity,
                           padding: const EdgeInsets.all(AppSpacing.sm),
                           decoration: BoxDecoration(
-                            color: AppColors.warmWhite,
+                            color: AppColors.cream,
                             borderRadius:
                                 BorderRadius.circular(AppRadius.sm),
-                            border:
-                                Border.all(color: AppColors.borderLight),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                            ),
                           ),
                           child: Row(
                             children: [
@@ -542,15 +556,14 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                   .toList(),
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.lg),
         ],
 
         // Alternative implementations
         if (inv.alternativeImplementations.isNotEmpty) ...[
-          _SectionCard(
-            icon: Icons.alt_route_outlined,
-            color: AppColors.stone,
-            title: 'Alternative Approaches Considered',
+          _SectionHeader(title: 'Alternative Approaches'),
+          const SizedBox(height: AppSpacing.md),
+          _StitchCard(
             child: Column(
               children: inv.alternativeImplementations
                   .map((a) => Padding(
@@ -559,16 +572,11 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Icon(Icons.arrow_right_rounded,
-                                size: 18,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant),
+                                size: 18, color: AppColors.slateLight),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(a,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall),
+                                  style: Theme.of(context).textTheme.bodySmall),
                             ),
                           ],
                         ),
@@ -591,8 +599,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
       decoration: BoxDecoration(
         color: AppColors.success.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border:
-            Border.all(color: AppColors.success.withValues(alpha: 0.15)),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.15)),
       ),
       child: Column(
         children: [
@@ -625,7 +632,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
     );
   }
 
-  String _sourcePhasLabel(String phase) {
+  String _sourcePhaseLabel(String phase) {
     switch (phase) {
       case 'keyword':
         return 'Keyword';
@@ -639,7 +646,6 @@ class _PriorArtScreenState extends State<PriorArtScreen>
   }
 
   void _navigateToBuildThis() {
-    // Convert enhanced hits to PatentHit for backward compat
     final patentHits = _analysis.hits
         .map((h) => PatentHit(
               patentId: h.patentId,
@@ -669,7 +675,6 @@ class _PriorArtScreenState extends State<PriorArtScreen>
   Future<void> _exportOnePager() async {
     setState(() => _isLoading = true);
     try {
-      // Convert enhanced hits to PatentHit for export
       final patentHits = _analysis.hits
           .map((h) => PatentHit(
                 patentId: h.patentId,
@@ -718,12 +723,55 @@ class _PriorArtScreenState extends State<PriorArtScreen>
 
 // ── Reusable widgets ──────────────────────────────────────────────────
 
-class _RiskCard extends StatelessWidget {
+// Section header — Stitch: uppercase bold tracking-widest
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title.toUpperCase(),
+      style: const TextStyle(
+        color: AppColors.slateLight,
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 2,
+      ),
+    );
+  }
+}
+
+// Generic Stitch card container
+class _StitchCard extends StatelessWidget {
+  final Widget child;
+  const _StitchCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.cardWhite,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.05),
+        ),
+        boxShadow: AppShadows.card,
+      ),
+      child: child,
+    );
+  }
+}
+
+// Stitch risk hero card with SVG-like circular ring
+class _RiskHeroCard extends StatelessWidget {
   final String riskLevel;
   final String narrative;
   final String confidence;
 
-  const _RiskCard({
+  const _RiskHeroCard({
     required this.riskLevel,
     required this.narrative,
     required this.confidence,
@@ -755,76 +803,76 @@ class _RiskCard extends StatelessWidget {
     }
   }
 
-  IconData get _riskIcon {
+  double get _riskPercent {
     switch (riskLevel) {
       case 'low':
-        return Icons.check_circle_outline;
+        return 0.25;
       case 'medium':
-        return Icons.info_outline;
+        return 0.62;
       case 'high':
-        return Icons.warning_amber_rounded;
+        return 0.85;
       default:
-        return Icons.help_outline;
+        return 0.5;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: _riskColor.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: _riskColor.withValues(alpha: 0.2)),
-        boxShadow: AppShadows.card,
-      ),
+    return _StitchCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: _riskColor.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(_riskIcon, color: _riskColor, size: 24),
-              ),
-              const SizedBox(width: AppSpacing.md),
+              // Left: labels
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Overall Prior Art Risk',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                    const SizedBox(height: 2),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: _riskColor.withValues(alpha: 0.15),
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.pill),
+                      'RISK ASSESSMENT',
+                      style: TextStyle(
+                        color: AppColors.slateLight,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 2,
                       ),
-                      child: Text(
-                        _riskLabel,
-                        style: TextStyle(
-                          color: _riskColor,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      _riskLabel,
+                      style: TextStyle(
+                        color: _riskColor,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ],
                 ),
               ),
-              ConfidenceBadge(level: confidence),
+              // Right: circular ring — Stitch style
+              SizedBox(
+                width: 80,
+                height: 80,
+                child: CustomPaint(
+                  painter: _RingPainter(
+                    progress: _riskPercent,
+                    color: _riskColor,
+                    trackColor: AppColors.cream,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${(_riskPercent * 100).round()}%',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -832,7 +880,32 @@ class _RiskCard extends StatelessWidget {
             narrative,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   height: 1.6,
+                  color: AppColors.stone,
                 ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          // Tags
+          Wrap(
+            spacing: 8,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _riskColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Text(
+                  'NEEDS REVIEW',
+                  style: TextStyle(
+                    color: _riskColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              ConfidenceBadge(level: confidence),
+            ],
           ),
         ],
       ),
@@ -840,58 +913,94 @@ class _RiskCard extends StatelessWidget {
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  final IconData icon;
+// Custom ring painter for the risk percentage
+class _RingPainter extends CustomPainter {
+  final double progress;
   final Color color;
-  final String title;
-  final Widget child;
+  final Color trackColor;
 
-  const _SectionCard({
-    required this.icon,
+  _RingPainter({
+    required this.progress,
     required this.color,
-    required this.title,
-    required this.child,
+    required this.trackColor,
   });
 
   @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 4;
+    const strokeWidth = 8.0;
+
+    // Track
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = trackColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth,
+    );
+
+    // Progress
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      2 * math.pi * progress,
+      false,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) =>
+      old.progress != progress || old.color != color;
+}
+
+// Finding card — Stitch: icon + content
+class _FindingCard extends StatelessWidget {
+  final String finding;
+  const _FindingCard({required this.finding});
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.cardWhite,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppShadows.card,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.base),
+        decoration: BoxDecoration(
+          color: AppColors.cardWhite,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.05),
           ),
-          const SizedBox(height: AppSpacing.md),
-          child,
-        ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppColors.teal.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.verified, color: AppColors.teal, size: 18),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text(
+                finding,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -928,41 +1037,25 @@ class _AssessmentCard extends StatelessWidget {
   String get _label {
     switch (riskLevel) {
       case 'low':
-        return 'Low Risk';
+        return 'LOW RISK';
       case 'medium':
-        return 'Medium Risk';
+        return 'MEDIUM RISK';
       case 'high':
-        return 'High Risk';
+        return 'HIGH RISK';
       default:
-        return riskLevel;
+        return riskLevel.toUpperCase();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.cardWhite,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppShadows.card,
-      ),
+    return _StitchCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: _color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Icon(icon, color: _color, size: 20),
-              ),
+              Icon(icon, color: AppColors.primary, size: 22),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
@@ -978,15 +1071,13 @@ class _AssessmentCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: _color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border:
-                      Border.all(color: _color.withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   _label,
                   style: TextStyle(
                     color: _color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
@@ -997,6 +1088,7 @@ class _AssessmentCard extends StatelessWidget {
             summary,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   height: 1.5,
+                  color: AppColors.stone,
                 ),
           ),
           if (details.isNotEmpty) ...[
@@ -1063,17 +1155,19 @@ class _FilterChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.teal.withValues(alpha: 0.1)
+              ? AppColors.primary.withValues(alpha: 0.1)
               : AppColors.cardWhite,
           borderRadius: BorderRadius.circular(AppRadius.pill),
           border: Border.all(
-            color: selected ? AppColors.teal : AppColors.border,
+            color: selected
+                ? AppColors.primary
+                : AppColors.primary.withValues(alpha: 0.1),
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? AppColors.teal : null,
+            color: selected ? AppColors.primary : AppColors.stone,
             fontSize: 13,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           ),
@@ -1111,7 +1205,7 @@ class _FilingBadge extends StatelessWidget {
       case 'non_provisional':
         return AppColors.success;
       case 'design_patent':
-        return AppColors.amber;
+        return AppColors.primary;
       case 'defer':
         return AppColors.warning;
       case 'abandon':
@@ -1190,13 +1284,13 @@ class _ApproachChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.teal.withValues(alpha: 0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         _label,
         style: const TextStyle(
-          color: AppColors.teal,
+          color: AppColors.primary,
           fontSize: 10,
           fontWeight: FontWeight.w600,
         ),
@@ -1222,179 +1316,170 @@ class _EnhancedPatentHitCardState extends State<_EnhancedPatentHitCard> {
     final hit = widget.hit;
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.cardWhite,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.border),
-          boxShadow: AppShadows.card,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ScoreBadge(score: hit.score),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      hit.title,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
+      child: _StitchCard(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ScoreBadge(score: hit.score),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    hit.title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        hit.patentId,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(width: 8),
+                      _SourcePhaseChip(phase: hit.sourcePhase),
+                    ],
+                  ),
+                  if (hit.assignee != null || hit.date != null) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Wrap(
+                      spacing: AppSpacing.md,
+                      runSpacing: 4,
                       children: [
-                        Text(
-                          hit.patentId,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(fontWeight: FontWeight.w500),
-                        ),
-                        const SizedBox(width: 8),
-                        _SourcePhaseChip(phase: hit.sourcePhase),
+                        if (hit.assignee != null)
+                          _metaChip(
+                              Icons.business_rounded, hit.assignee!),
+                        if (hit.date != null)
+                          _metaChip(
+                              Icons.calendar_today_rounded, hit.date!),
                       ],
                     ),
-                    if (hit.assignee != null || hit.date != null) ...[
-                      const SizedBox(height: AppSpacing.sm),
-                      Wrap(
-                        spacing: AppSpacing.md,
-                        runSpacing: 4,
+                  ],
+                  const SizedBox(height: AppSpacing.md),
+
+                  InkWell(
+                    onTap: () =>
+                        setState(() => _isExpanded = !_isExpanded),
+                    borderRadius:
+                        BorderRadius.circular(AppRadius.sm),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (hit.assignee != null)
-                            _metaChip(
-                                Icons.business_rounded, hit.assignee!),
-                          if (hit.date != null)
-                            _metaChip(
-                                Icons.calendar_today_rounded, hit.date!),
+                          Icon(
+                            _isExpanded
+                                ? Icons.expand_less_rounded
+                                : Icons.expand_more_rounded,
+                            size: 18,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _isExpanded
+                                ? 'Hide details'
+                                : 'How it compares',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
                         ],
                       ),
-                    ],
-                    const SizedBox(height: AppSpacing.md),
+                    ),
+                  ),
 
-                    // Expandable details
-                    InkWell(
-                      onTap: () =>
-                          setState(() => _isExpanded = !_isExpanded),
-                      borderRadius:
-                          BorderRadius.circular(AppRadius.sm),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _isExpanded
-                                  ? Icons.expand_less_rounded
-                                  : Icons.expand_more_rounded,
-                              size: 18,
-                              color: AppColors.teal,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _isExpanded
-                                  ? 'Hide details'
-                                  : 'How it compares',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelMedium
-                                  ?.copyWith(
-                                    color: AppColors.teal,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                          ],
+                  if (_isExpanded) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.cream,
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.sm),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.1),
                         ),
                       ),
-                    ),
-
-                    if (_isExpanded) ...[
-                      const SizedBox(height: AppSpacing.sm),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        decoration: BoxDecoration(
-                          color: AppColors.warmWhite,
-                          borderRadius:
-                              BorderRadius.circular(AppRadius.sm),
-                          border:
-                              Border.all(color: AppColors.borderLight),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            hit.whySimilar,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(height: 1.5),
+                          ),
+                          if (hit.cpcCodes.isNotEmpty) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            Wrap(
+                              spacing: 4,
+                              runSpacing: 4,
+                              children: hit.cpcCodes
+                                  .take(5)
+                                  .map((c) => Container(
+                                        padding: const EdgeInsets
+                                            .symmetric(
+                                            horizontal: 6,
+                                            vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary
+                                              .withValues(alpha: 0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          c,
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.primary,
+                                            fontFamily: 'monospace',
+                                          ),
+                                        ),
+                                      ))
+                                  .toList(),
+                            ),
+                          ],
+                          if (hit.abstract_.isNotEmpty) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            Divider(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                height: 1),
+                            const SizedBox(height: AppSpacing.sm),
                             Text(
-                              hit.whySimilar,
+                              hit.abstract_,
+                              maxLines: 4,
+                              overflow: TextOverflow.ellipsis,
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
-                                  ?.copyWith(height: 1.5),
+                                  ?.copyWith(
+                                    fontStyle: FontStyle.italic,
+                                    height: 1.4,
+                                  ),
                             ),
-                            if (hit.cpcCodes.isNotEmpty) ...[
-                              const SizedBox(height: AppSpacing.sm),
-                              Wrap(
-                                spacing: 4,
-                                runSpacing: 4,
-                                children: hit.cpcCodes
-                                    .take(5)
-                                    .map((c) => Container(
-                                          padding: const EdgeInsets
-                                              .symmetric(
-                                              horizontal: 6,
-                                              vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.coral
-                                                .withValues(alpha: 0.1),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            c,
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600,
-                                              color: AppColors.coral,
-                                              fontFamily: 'monospace',
-                                            ),
-                                          ),
-                                        ))
-                                    .toList(),
-                              ),
-                            ],
-                            if (hit.abstract_.isNotEmpty) ...[
-                              const SizedBox(height: AppSpacing.sm),
-                              Divider(
-                                  color: AppColors.borderLight,
-                                  height: 1),
-                              const SizedBox(height: AppSpacing.sm),
-                              Text(
-                                hit.abstract_,
-                                maxLines: 4,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      fontStyle: FontStyle.italic,
-                                      height: 1.4,
-                                    ),
-                              ),
-                            ],
                           ],
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ],
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1404,9 +1489,7 @@ class _EnhancedPatentHitCardState extends State<_EnhancedPatentHitCard> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon,
-            size: 13,
-            color: Theme.of(context).colorScheme.onSurfaceVariant),
+        Icon(icon, size: 13, color: AppColors.slateLight),
         const SizedBox(width: 4),
         Flexible(
           child: Text(
@@ -1414,6 +1497,7 @@ class _EnhancedPatentHitCardState extends State<_EnhancedPatentHitCard> {
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontSize: 12,
+                  color: AppColors.slateLight,
                 ),
           ),
         ),
@@ -1439,31 +1523,18 @@ class _SourcePhaseChip extends StatelessWidget {
     }
   }
 
-  Color get _color {
-    switch (phase) {
-      case 'keyword':
-        return AppColors.teal;
-      case 'cpc':
-        return AppColors.coral;
-      case 'citation':
-        return AppColors.amber;
-      default:
-        return AppColors.stone;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: _color.withValues(alpha: 0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         _label,
-        style: TextStyle(
-          color: _color,
+        style: const TextStyle(
+          color: AppColors.primary,
           fontSize: 10,
           fontWeight: FontWeight.w700,
         ),
@@ -1489,31 +1560,29 @@ class _ActionButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Export CTA
+        // Export CTA — Stitch primary button
         SizedBox(
           width: double.infinity,
           height: 56,
-          child: FilledButton(
-            onPressed: isLoading ? null : onExport,
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.description_outlined, size: 20),
-                SizedBox(width: AppSpacing.sm),
-                Text(
-                  'Get your one-pager',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-              ],
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              boxShadow: AppShadows.button,
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+            ),
+            child: FilledButton(
+              onPressed: isLoading ? null : onExport,
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.picture_as_pdf, size: 20),
+                  SizedBox(width: AppSpacing.sm),
+                  Text('Export Full Analysis'),
+                ],
+              ),
             ),
           ),
         ),
 
-        // Build This button
         if (canBuildThis) ...[
           const SizedBox(height: AppSpacing.md),
           SizedBox(
@@ -1527,16 +1596,9 @@ class _ActionButtons extends StatelessWidget {
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.rocket_launch_outlined, size: 20),
+                  Icon(Icons.gavel, size: 20),
                   SizedBox(width: AppSpacing.sm),
-                  Text(
-                    'Let\'s Build This!',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
+                  Text("Let's Build This!"),
                 ],
               ),
             ),

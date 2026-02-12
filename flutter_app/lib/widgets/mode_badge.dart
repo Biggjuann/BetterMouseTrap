@@ -9,23 +9,23 @@ class ModeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _colorForMode(mode);
+    final colors = _colorsForMode(mode);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: colors.$1.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
+        border: Border.all(color: colors.$1.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_iconForMode(mode), size: 12, color: color),
+          Icon(_iconForMode(mode), size: 12, color: colors.$1),
           const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
-              color: color,
+              color: colors.$1,
               fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.2,
@@ -36,24 +36,24 @@ class ModeBadge extends StatelessWidget {
     );
   }
 
-  static Color _colorForMode(String mode) {
+  static (Color,) _colorsForMode(String mode) {
     switch (mode) {
       case 'cost_down':
-        return const Color(0xFF2196F3);
+        return (AppColors.blueText,);
       case 'durability':
-        return const Color(0xFF795548);
+        return (const Color(0xFF795548),);
       case 'safety':
-        return const Color(0xFFD93025);
+        return (AppColors.error,);
       case 'convenience':
-        return const Color(0xFF2E7D44);
+        return (AppColors.emeraldText,);
       case 'sustainability':
-        return const Color(0xFF1A8A8A);
+        return (AppColors.teal,);
       case 'performance':
-        return const Color(0xFFD48500);
+        return (AppColors.primary,);
       case 'mashup':
-        return const Color(0xFF7B1FA2);
+        return (AppColors.purpleText,);
       default:
-        return AppColors.stone;
+        return (AppColors.stone,);
     }
   }
 

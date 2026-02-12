@@ -72,73 +72,196 @@ class _IdeasListScreenState extends State<IdeasListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Your Ideas'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: IconButton(
-              icon: const Icon(Icons.refresh_rounded),
-              tooltip: 'Generate new ideas',
-              onPressed: _isLoading ? null : _regenerate,
-            ),
-          ),
-        ],
-      ),
       body: Stack(
         children: [
           Container(
             decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
           ),
-          ListView.builder(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.base, AppSpacing.sm, AppSpacing.base, AppSpacing.xl,
-            ),
-            itemCount: _variants.length + 1,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: AppSpacing.base,
-                    top: AppSpacing.sm,
-                    left: AppSpacing.xs,
-                  ),
-                  child: Text(
-                    '${_variants.length} hero ideas generated',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                        ),
-                  ),
-                );
-              }
-              final variant = _variants[index - 1];
-              return _VariantTile(
-                variant: variant,
-                index: index,
-                onTap: () {
-                  if (_sessionId != null) {
-                    ApiClient.instance.updateSession(_sessionId!, {
-                      'selected_variant_json': variant.toJson(),
-                      'title': variant.title,
-                    }).catchError((_) {});
-                  }
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => IdeaDetailScreen(
-                        variant: variant,
-                        productText: widget.productText,
-                        productURL: widget.productURL,
-                        sessionId: _sessionId,
-                      ),
+          CustomScrollView(
+            slivers: [
+              // Header — Stitch style
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg, AppSpacing.base, AppSpacing.lg, 0,
                     ),
-                  );
-                },
-              );
-            },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Top bar
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                              color: AppColors.primary,
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            const Spacer(),
+                            Text(
+                              'PREMIUM ACCESS',
+                              style: TextStyle(
+                                color: AppColors.primary.withValues(alpha: 0.8),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                            const Spacer(),
+                            // Avatar placeholder
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.primary,
+                                  width: 2,
+                                ),
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                              ),
+                              child: const Icon(
+                                Icons.person,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.base),
+
+                        // Title
+                        Text(
+                          'Invention Ideas',
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.base),
+
+                        // Search bar — Stitch
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColors.cardWhite,
+                                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                                  boxShadow: AppShadows.card,
+                                ),
+                                child: Row(
+                                  children: [
+                                    const SizedBox(width: 12),
+                                    Icon(Icons.search, color: AppColors.slateLight, size: 20),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Search concepts...',
+                                      style: TextStyle(
+                                        color: AppColors.slateLight,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: AppColors.cardWhite,
+                                borderRadius: BorderRadius.circular(AppRadius.lg),
+                                boxShadow: AppShadows.card,
+                              ),
+                              child: Icon(Icons.tune, color: AppColors.primary),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Idea cards
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final variant = _variants[index];
+                      return _VariantCard(
+                        variant: variant,
+                        onTap: () {
+                          if (_sessionId != null) {
+                            ApiClient.instance.updateSession(_sessionId!, {
+                              'selected_variant_json': variant.toJson(),
+                              'title': variant.title,
+                            }).catchError((_) {});
+                          }
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => IdeaDetailScreen(
+                                variant: variant,
+                                productText: widget.productText,
+                                productURL: widget.productURL,
+                                sessionId: _sessionId,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    childCount: _variants.length,
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            ],
           ),
+
+          // FAB — Stitch: "Generate New Ideas"
+          Positioned(
+            bottom: AppSpacing.xl,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  boxShadow: AppShadows.button,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: FilledButton(
+                  onPressed: _isLoading ? null : _regenerate,
+                  style: FilledButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.base,
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.auto_fix_high, size: 20),
+                      SizedBox(width: AppSpacing.sm),
+                      Text('Generate New Ideas'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           if (_isLoading)
             const LoadingOverlay(message: 'Finding fresh hero ideas...'),
         ],
@@ -147,42 +270,41 @@ class _IdeasListScreenState extends State<IdeasListScreen> {
   }
 }
 
-class _VariantTile extends StatelessWidget {
+// Stitch-style idea card
+class _VariantCard extends StatelessWidget {
   final IdeaVariant variant;
-  final int index;
   final VoidCallback onTap;
 
-  const _VariantTile({
+  const _VariantCard({
     required this.variant,
-    required this.index,
     required this.onTap,
   });
 
-  Color get _accentColor {
+  IconData get _modeIcon {
     switch (variant.improvementMode) {
       case 'cost_down':
-        return const Color(0xFF2196F3);
+        return Icons.savings_outlined;
       case 'durability':
-        return const Color(0xFF795548);
+        return Icons.shield_outlined;
       case 'safety':
-        return const Color(0xFFD93025);
+        return Icons.health_and_safety_outlined;
       case 'convenience':
-        return const Color(0xFF2E7D44);
+        return Icons.touch_app_outlined;
       case 'sustainability':
-        return const Color(0xFF1A8A8A);
+        return Icons.eco_outlined;
       case 'performance':
-        return const Color(0xFFD48500);
+        return Icons.speed;
       case 'mashup':
-        return const Color(0xFF7B1FA2);
+        return Icons.merge_type;
       default:
-        return AppColors.stone;
+        return Icons.lightbulb_outlined;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.only(bottom: AppSpacing.base),
       child: Material(
         color: AppColors.cardWhite,
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -190,114 +312,82 @@ class _VariantTile extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppRadius.lg),
           child: Container(
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.05),
+              ),
               boxShadow: AppShadows.card,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              child: Row(
-                children: [
-                  // Colored accent bar
-                  Container(
-                    width: 4,
-                    height: 130,
-                    color: _accentColor,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon box — Stitch
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
                   ),
-                  // Content
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.base),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Icon(_modeIcon, color: AppColors.primary, size: 24),
+                ),
+                const SizedBox(width: AppSpacing.base),
+
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          // Number + badge row
-                          Row(
-                            children: [
-                              Container(
-                                width: 26,
-                                height: 26,
-                                decoration: BoxDecoration(
-                                  color: _accentColor.withValues(alpha: 0.1),
-                                  borderRadius:
-                                      BorderRadius.circular(AppRadius.sm),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '$index',
-                                    style: TextStyle(
-                                      color: _accentColor,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: Text(
-                                  variant.title,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: -0.2,
-                                      ),
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              ModeBadge(
-                                mode: variant.improvementMode,
-                                label: variant.modeLabel,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-
-                          // Summary
-                          Padding(
-                            padding: const EdgeInsets.only(left: 34),
+                          Expanded(
                             child: Text(
-                              variant.summary,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(height: 1.4),
+                              variant.title,
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.sm),
-
-                          // Keywords
-                          Padding(
-                            padding: const EdgeInsets.only(left: 34),
-                            child: Wrap(
-                              spacing: 6,
-                              runSpacing: 4,
-                              children: variant.keywords
-                                  .take(4)
-                                  .map((k) => KeywordTag(text: k))
-                                  .toList(),
-                            ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: AppColors.slateLight,
+                            size: 22,
                           ),
                         ],
                       ),
-                    ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        variant.summary,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.stone,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Badge row — Stitch style
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          ModeBadge(
+                            mode: variant.improvementMode,
+                            label: variant.modeLabel,
+                          ),
+                          ...variant.keywords
+                              .take(2)
+                              .map((k) => KeywordTag(text: k)),
+                        ],
+                      ),
+                    ],
                   ),
-                  // Arrow
-                  Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.md),
-                    child: Icon(
-                      Icons.chevron_right_rounded,
-                      color: Theme.of(context).colorScheme.outline,
-                      size: 24,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
