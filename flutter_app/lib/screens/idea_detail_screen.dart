@@ -357,6 +357,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                             entry.value,
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               height: 1.5,
+                              color: AppColors.ink,
                             ),
                           ),
                         ),

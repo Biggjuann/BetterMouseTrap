@@ -179,8 +179,8 @@ abstract class AppShadows {
 
 const String _fontFamily = 'Manrope';
 
-TextTheme _manropeTextTheme(TextTheme base) {
-  return base.apply(fontFamily: _fontFamily);
+TextTheme _manropeTextTheme(TextTheme base, {Color color = AppColors.ink}) {
+  return base.apply(fontFamily: _fontFamily, bodyColor: color, displayColor: color);
 }
 
 ThemeData buildLightTheme() {
@@ -508,7 +508,7 @@ ThemeData buildDarkTheme() {
       fontWeight: FontWeight.w500,
       letterSpacing: 0.3,
     ),
-  ));
+  ), color: AppColors.darkOnSurface);
 
   return ThemeData(
     useMaterial3: true,

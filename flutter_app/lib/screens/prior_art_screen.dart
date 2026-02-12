@@ -996,6 +996,7 @@ class _FindingCard extends StatelessWidget {
                 finding,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   height: 1.5,
+                  color: AppColors.ink,
                 ),
               ),
             ),
@@ -1122,13 +1123,13 @@ class _StatRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: Theme.of(context).textTheme.bodySmall),
+          Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.ink)),
           Text(
             value,
             style: Theme.of(context)
                 .textTheme
                 .bodySmall
-                ?.copyWith(fontWeight: FontWeight.w700),
+                ?.copyWith(fontWeight: FontWeight.w700, color: AppColors.ink),
           ),
         ],
       ),

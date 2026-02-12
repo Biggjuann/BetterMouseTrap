@@ -136,6 +136,7 @@ class _IdeasListScreenState extends State<IdeasListScreen> {
                           'Invention Ideas',
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.w800,
+                            color: AppColors.ink,
                           ),
                         ),
                         const SizedBox(height: AppSpacing.base),
@@ -348,6 +349,7 @@ class _VariantCard extends StatelessWidget {
                               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontSize: 17,
                                 fontWeight: FontWeight.w700,
+                                color: AppColors.ink,
                               ),
                             ),
                           ),
