@@ -4,6 +4,8 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../models/api_responses.dart';
 import '../theme.dart';
+import '../utils/pdf_downloader.dart';
+import '../utils/pdf_generator.dart';
 import '../widgets/disclaimer_banner.dart';
 
 class ExportScreen extends StatelessWidget {
@@ -82,35 +84,54 @@ class ExportScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        IconButton(
-                          icon: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.cardWhite,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.05),
-                              ),
-                              boxShadow: AppShadows.card,
-                            ),
-                            child: const Icon(
-                              Icons.share,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.copy_rounded, size: 20),
                               color: AppColors.primary,
-                              size: 20,
+                              tooltip: 'Copy',
+                              onPressed: () {
+                                Clipboard.setData(
+                                  ClipboardData(text: exportResponse.plainText),
+                                );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Copied to clipboard!'),
+                                    backgroundColor: AppColors.success,
+                                  ),
+                                );
+                              },
                             ),
-                          ),
-                          onPressed: () {
-                            Clipboard.setData(
-                              ClipboardData(text: exportResponse.plainText),
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('Copied to clipboard!'),
-                                backgroundColor: AppColors.success,
-                              ),
-                            );
-                          },
+                            IconButton(
+                              icon: const Icon(Icons.picture_as_pdf, size: 20),
+                              color: AppColors.primary,
+                              tooltip: 'Download PDF',
+                              onPressed: () async {
+                                try {
+                                  final bytes = await PdfGenerator.generateFromMarkdown(
+                                    title: 'Invention Summary',
+                                    content: exportResponse.markdown,
+                                  );
+                                  downloadPdfBytes(bytes, 'invention_summary.pdf');
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text('PDF downloaded!'),
+                                        backgroundColor: AppColors.success,
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('PDF failed: $e')),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -250,36 +271,84 @@ class ExportScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    boxShadow: AppShadows.button,
-                    borderRadius: BorderRadius.circular(AppRadius.xl),
-                  ),
-                  child: FilledButton(
-                    onPressed: () {
-                      Clipboard.setData(
-                        ClipboardData(text: exportResponse.plainText),
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Copied to clipboard!'),
-                          backgroundColor: AppColors.success,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 56,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          boxShadow: AppShadows.button,
+                          borderRadius: BorderRadius.circular(AppRadius.xl),
                         ),
-                      );
-                    },
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.copy_rounded, size: 20),
-                        SizedBox(width: AppSpacing.sm),
-                        Text('Copy to Clipboard'),
-                      ],
+                        child: FilledButton(
+                          onPressed: () {
+                            Clipboard.setData(
+                              ClipboardData(text: exportResponse.plainText),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Copied to clipboard!'),
+                                backgroundColor: AppColors.success,
+                              ),
+                            );
+                          },
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.copy_rounded, size: 20),
+                              SizedBox(width: AppSpacing.sm),
+                              Text('Copy'),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: AppSpacing.md),
+                  SizedBox(
+                    height: 56,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        boxShadow: AppShadows.button,
+                        borderRadius: BorderRadius.circular(AppRadius.xl),
+                      ),
+                      child: OutlinedButton(
+                        onPressed: () async {
+                          try {
+                            final bytes = await PdfGenerator.generateFromMarkdown(
+                              title: 'Invention Summary',
+                              content: exportResponse.markdown,
+                            );
+                            downloadPdfBytes(bytes, 'invention_summary.pdf');
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('PDF downloaded!'),
+                                  backgroundColor: AppColors.success,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('PDF failed: $e')),
+                              );
+                            }
+                          }
+                        },
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.picture_as_pdf, size: 20),
+                            SizedBox(width: AppSpacing.sm),
+                            Text('PDF'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

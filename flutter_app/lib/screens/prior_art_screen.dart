@@ -12,7 +12,7 @@ import '../widgets/confidence_badge.dart';
 import '../widgets/disclaimer_banner.dart';
 import '../widgets/loading_overlay.dart';
 import '../widgets/score_badge.dart';
-import 'build_this_screen.dart';
+import 'provisional_patent_screen.dart';
 import 'export_screen.dart';
 
 class PriorArtScreen extends StatefulWidget {
@@ -662,7 +662,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => BuildThisScreen(
+        builder: (_) => ProvisionalPatentScreen(
           productText: widget.product.text,
           variant: widget.variant,
           spec: widget.spec,
@@ -1603,7 +1603,7 @@ class _ActionButtons extends StatelessWidget {
                 children: [
                   Icon(Icons.gavel, size: 20),
                   SizedBox(width: AppSpacing.sm),
-                  Text("Let's Build This!"),
+                  Text("Draft Patent Application"),
                 ],
               ),
             ),

@@ -10,7 +10,6 @@ import '../models/patent_analysis.dart';
 import '../models/patent_hit.dart';
 import '../models/product_input.dart';
 import '../models/provisional_patent.dart';
-import '../models/prototyping_response.dart';
 import '../models/session_summary.dart';
 import 'auth_service.dart';
 
@@ -194,20 +193,6 @@ class ApiClient {
     };
     final data = await _post('/build/patent-draft', body);
     return ProvisionalPatentResponse.fromJson(data);
-  }
-
-  Future<PrototypingResponse> generatePrototype({
-    required String productText,
-    required IdeaVariant variant,
-    required IdeaSpec spec,
-  }) async {
-    final body = {
-      'product_text': productText,
-      'variant': variant.toJson(),
-      'spec': spec.toJson(),
-    };
-    final data = await _post('/build/prototype', body);
-    return PrototypingResponse.fromJson(data);
   }
 
   // ── HTTP helpers ────────────────────────────────────────────────

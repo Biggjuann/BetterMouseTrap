@@ -4,6 +4,8 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../services/api_client.dart';
 import '../theme.dart';
+import '../utils/pdf_downloader.dart';
+import '../utils/pdf_generator.dart';
 import '../widgets/disclaimer_banner.dart';
 
 class SessionDetailScreen extends StatefulWidget {
@@ -240,22 +242,54 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
             data: markdown,
             selectable: true,
           ),
-          if (copyText != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: copyText));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Copied to clipboard')),
-                  );
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (copyText != null)
+                TextButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: copyText));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Copied to clipboard')),
+                    );
+                  },
+                  icon: const Icon(Icons.copy_rounded, size: 16),
+                  label: const Text('Copy'),
+                ),
+              TextButton.icon(
+                onPressed: () async {
+                  try {
+                    final bytes = await PdfGenerator.generateFromMarkdown(
+                      title: title,
+                      content: markdown,
+                    );
+                    final safeName = title
+                        .replaceAll(RegExp(r'[^\w\s-]'), '')
+                        .replaceAll(RegExp(r'\s+'), '_')
+                        .toLowerCase();
+                    downloadPdfBytes(bytes, '$safeName.pdf');
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('PDF downloaded!'),
+                          backgroundColor: AppColors.success,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('PDF failed: $e')),
+                      );
+                    }
+                  }
                 },
-                icon: const Icon(Icons.copy_rounded, size: 16),
-                label: const Text('Copy'),
+                icon: const Icon(Icons.picture_as_pdf, size: 16),
+                label: const Text('PDF'),
               ),
-            ),
-          ],
+            ],
+          ),
         ],
       ),
     );

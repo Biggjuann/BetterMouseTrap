@@ -11,36 +11,31 @@ class ProvisionalPatentRequest(BaseModel):
     hits: list[PatentHit]
 
 
+# ── USPTO Provisional Patent Response Models ──────────────────────────
+
+class CoverSheet(BaseModel):
+    invention_title: str
+    filing_date_note: str
+
+
+class Background(BaseModel):
+    field_of_invention: str
+    description_of_prior_art: str
+
+
+class Specification(BaseModel):
+    title_of_invention: str
+    cross_reference: str | None = None
+    background: Background
+    summary: str
+    brief_description_of_drawings: str | None = None
+    detailed_description: str
+
+
 class ProvisionalPatentResponse(BaseModel):
-    title: str
+    cover_sheet: CoverSheet
+    specification: Specification
     abstract: str
     claims: dict  # {independent: [...], dependent: [...]}
-    detailed_description: str
-    prior_art_discussion: str
-    markdown: str
-
-
-class BomItem(BaseModel):
-    item: str
-    quantity: str
-    estimated_cost: str
-    source: str
-
-
-class PrototypingApproach(BaseModel):
-    method: str
-    rationale: str
-    specs: dict
-    bill_of_materials: list[BomItem]
-    assembly_instructions: list[str]
-
-
-class PrototypingRequest(BaseModel):
-    product_text: str
-    variant: IdeaVariant
-    spec: IdeaSpec
-
-
-class PrototypingResponse(BaseModel):
-    approaches: list[PrototypingApproach]
+    drawings_note: str
     markdown: str

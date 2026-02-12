@@ -5,21 +5,17 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.auth.dependencies import get_current_user
 from app.core.config import settings
 from app.schemas.build_this import (
-    BomItem,
+    Background,
+    CoverSheet,
     ProvisionalPatentRequest,
     ProvisionalPatentResponse,
-    PrototypingApproach,
-    PrototypingRequest,
-    PrototypingResponse,
+    Specification,
 )
 from app.services.llm import LLMError, call_llm
 from app.services.prompts import (
     PROVISIONAL_PATENT_SCHEMA,
     PROVISIONAL_PATENT_SYSTEM,
-    PROTOTYPING_SCHEMA,
-    PROTOTYPING_SYSTEM,
     build_provisional_patent_prompt,
-    build_prototyping_prompt,
 )
 
 log = logging.getLogger("mousetrap.routes_build_this")
@@ -34,16 +30,78 @@ def _has_llm_key() -> bool:
 
 
 def _format_patent_markdown(data: dict) -> str:
+    cover = data.get("cover_sheet", {})
+    spec = data.get("specification", {})
+    bg = spec.get("background", {})
+    claims = data.get("claims", {})
+
     lines = [
-        f"# Provisional Patent Application: {data.get('title', 'Untitled')}",
+        f"# {cover.get('invention_title', 'Untitled Invention')}",
         "",
-        "## Abstract",
-        data.get("abstract", ""),
+        f"*{cover.get('filing_date_note', '')}*",
         "",
-        "## Claims",
+        "---",
+        "",
+        "## SPECIFICATION",
+        "",
+        f"### Title of Invention",
+        "",
+        spec.get("title_of_invention", ""),
         "",
     ]
-    claims = data.get("claims", {})
+
+    cross_ref = spec.get("cross_reference")
+    if cross_ref:
+        lines += [
+            "### Cross-Reference to Related Applications",
+            "",
+            cross_ref,
+            "",
+        ]
+
+    lines += [
+        "### Background of the Invention",
+        "",
+        "#### Field of the Invention",
+        "",
+        bg.get("field_of_invention", ""),
+        "",
+        "#### Description of the Prior Art",
+        "",
+        bg.get("description_of_prior_art", ""),
+        "",
+        "### Summary of the Invention",
+        "",
+        spec.get("summary", ""),
+        "",
+    ]
+
+    drawings_desc = spec.get("brief_description_of_drawings")
+    if drawings_desc:
+        lines += [
+            "### Brief Description of the Drawings",
+            "",
+            drawings_desc,
+            "",
+        ]
+
+    lines += [
+        "### Detailed Description of Preferred Embodiments",
+        "",
+        spec.get("detailed_description", ""),
+        "",
+        "---",
+        "",
+        "## ABSTRACT",
+        "",
+        data.get("abstract", ""),
+        "",
+        "---",
+        "",
+        "## CLAIMS",
+        "",
+    ]
+
     for i, c in enumerate(claims.get("independent", []), 1):
         lines.append(f"**{i}.** {c}")
         lines.append("")
@@ -53,61 +111,56 @@ def _format_patent_markdown(data: dict) -> str:
         lines.append("")
 
     lines += [
-        "## Detailed Description",
-        data.get("detailed_description", ""),
+        "---",
         "",
-        "## Prior Art Discussion",
-        data.get("prior_art_discussion", ""),
+        "## DRAWINGS RECOMMENDATION",
+        "",
+        data.get("drawings_note", ""),
         "",
         "---",
-        "**Disclaimer:** This is not legal advice. This draft is for informational purposes only "
-        "and should be reviewed by a registered patent attorney before filing.",
+        "",
+        "*Disclaimer: This is an AI-generated draft for informational purposes only. "
+        "It does not constitute legal advice. Have a registered patent attorney or agent "
+        "review this document before filing with the USPTO.*",
     ]
     return "\n".join(lines)
 
 
-def _format_prototype_markdown(approaches: list[dict]) -> str:
-    lines = ["# Prototyping Package", ""]
-    for i, a in enumerate(approaches, 1):
-        lines.append(f"## Approach {i}: {a.get('method', 'Unknown')}")
-        lines.append("")
-        lines.append(f"**Rationale:** {a.get('rationale', '')}")
-        lines.append("")
-
-        specs = a.get("specs", {})
-        if specs:
-            lines.append("### Specifications")
-            for k, v in specs.items():
-                lines.append(f"- **{k.replace('_', ' ').title()}:** {v}")
-            lines.append("")
-
-        bom = a.get("bill_of_materials", [])
-        if bom:
-            lines.append("### Bill of Materials")
-            lines.append("| Item | Qty | Est. Cost | Source |")
-            lines.append("|------|-----|-----------|--------|")
-            for item in bom:
-                lines.append(
-                    f"| {item.get('item', '')} | {item.get('quantity', '')} "
-                    f"| {item.get('estimated_cost', '')} | {item.get('source', '')} |"
-                )
-            lines.append("")
-
-        steps = a.get("assembly_instructions", [])
-        if steps:
-            lines.append("### Assembly Instructions")
-            for j, step in enumerate(steps, 1):
-                lines.append(f"{j}. {step}")
-            lines.append("")
-
-    return "\n".join(lines)
-
-
-# ── Mock fallbacks ───────────────────────────────────────────────────
+# ── Mock fallback ────────────────────────────────────────────────────
 
 def _mock_patent_draft(req: ProvisionalPatentRequest) -> ProvisionalPatentResponse:
     data = {
-        "title": f"Improved {req.variant.title}",
+        "cover_sheet": {
+            "invention_title": f"Improved {req.variant.title}",
+            "filing_date_note": "Filing establishes a priority date. You have 12 months to file a non-provisional application.",
+        },
+        "specification": {
+            "title_of_invention": f"Improved {req.variant.title}",
+            "cross_reference": None,
+            "background": {
+                "field_of_invention": (
+                    f"This invention relates generally to improvements in {req.product_text}, "
+                    f"and more particularly to {req.variant.title.lower()}."
+                ),
+                "description_of_prior_art": (
+                    f"Existing solutions in the {req.product_text} space suffer from several limitations. "
+                    f"{req.spec.baseline} "
+                    f"There remains a need for an approach that addresses these shortcomings."
+                ),
+            },
+            "summary": (
+                f"{req.variant.summary} "
+                f"The present invention provides {req.spec.novelty}"
+            ),
+            "brief_description_of_drawings": None,
+            "detailed_description": (
+                f"In accordance with the present invention, {req.spec.mechanism}\n\n"
+                f"The invention differentiates from prior art in the following ways: "
+                f"{', '.join(req.spec.differentiators) if req.spec.differentiators else 'novel mechanism and approach'}.\n\n"
+                f"In one preferred embodiment, the system implements the core mechanism described above "
+                f"to achieve measurable improvements over existing solutions."
+            ),
+        },
         "abstract": (
             f"An improved {req.product_text} comprising {req.spec.mechanism} "
             f"The invention addresses limitations in existing products by providing "
@@ -124,58 +177,40 @@ def _mock_patent_draft(req: ProvisionalPatentRequest) -> ProvisionalPatentRespon
                 "The apparatus of claim 2, further comprising a modular design.",
             ],
         },
-        "detailed_description": (
-            f"Field of Invention: This invention relates to improvements in {req.product_text}.\n\n"
-            f"Background: {req.spec.baseline}\n\n"
-            f"Summary: {req.variant.summary}\n\n"
-            f"Detailed Description: {req.spec.mechanism}"
-        ),
-        "prior_art_discussion": (
-            "A search of existing patents revealed limited overlap with the proposed invention. "
-            "The closest prior art differs in its approach to the core mechanism described herein."
+        "drawings_note": (
+            "It is recommended to include the following drawings:\n"
+            "- Figure 1: System overview diagram showing key components\n"
+            "- Figure 2: Flowchart of the core method steps\n"
+            "- Figure 3: Detailed view of the primary mechanism"
         ),
     }
+    data["markdown"] = _format_patent_markdown(data)
+
+    bg = data["specification"]["background"]
+    spec_data = data["specification"]
+
     return ProvisionalPatentResponse(
-        **data,
-        markdown=_format_patent_markdown(data),
+        cover_sheet=CoverSheet(**data["cover_sheet"]),
+        specification=Specification(
+            title_of_invention=spec_data["title_of_invention"],
+            cross_reference=spec_data["cross_reference"],
+            background=Background(**bg),
+            summary=spec_data["summary"],
+            brief_description_of_drawings=spec_data["brief_description_of_drawings"],
+            detailed_description=spec_data["detailed_description"],
+        ),
+        abstract=data["abstract"],
+        claims=data["claims"],
+        drawings_note=data["drawings_note"],
+        markdown=data["markdown"],
     )
 
 
-def _mock_prototype(req: PrototypingRequest) -> PrototypingResponse:
-    approaches = [
-        {
-            "method": "3D Printing (FDM)",
-            "rationale": f"3D printing allows rapid iteration on the {req.variant.title} design with minimal tooling costs.",
-            "specs": {
-                "dimensions": "150mm x 100mm x 50mm (estimated)",
-                "materials": "PLA or PETG filament",
-                "tolerances": "+/- 0.2mm",
-                "finish": "Light sanding + spray paint",
-            },
-            "bill_of_materials": [
-                {"item": "PLA Filament (1kg)", "quantity": "1", "estimated_cost": "$20", "source": "Amazon"},
-                {"item": "Sandpaper (assorted)", "quantity": "1 pack", "estimated_cost": "$8", "source": "Hardware store"},
-            ],
-            "assembly_instructions": [
-                "Download or create the 3D model based on the specifications above.",
-                "Slice the model using recommended settings (0.2mm layer height, 20% infill).",
-                "Print all components.",
-                "Sand surfaces for smooth finish.",
-                "Assemble components and test functionality.",
-            ],
-        }
-    ]
-    return PrototypingResponse(
-        approaches=[PrototypingApproach(**a) for a in approaches],
-        markdown=_format_prototype_markdown(approaches),
-    )
-
-
-# ── Endpoints ────────────────────────────────────────────────────────
+# ── Endpoint ─────────────────────────────────────────────────────────
 
 @router.post("/patent-draft", response_model=ProvisionalPatentResponse)
 async def generate_patent_draft(req: ProvisionalPatentRequest):
-    """Generate a provisional patent application draft."""
+    """Generate a USPTO-format provisional patent application draft."""
     if not _has_llm_key():
         log.warning("No LLM API key — returning mock patent draft")
         return _mock_patent_draft(req)
@@ -205,60 +240,31 @@ async def generate_patent_draft(req: ProvisionalPatentRequest):
     if isinstance(claims, list):
         claims = {"independent": claims, "dependent": []}
 
+    cover_data = data.get("cover_sheet", {})
+    spec_data = data.get("specification", {})
+    bg_data = spec_data.get("background", {})
+
+    full_data = {**data, "claims": claims}
+    markdown = _format_patent_markdown(full_data)
+
     return ProvisionalPatentResponse(
-        title=data.get("title", "Untitled"),
+        cover_sheet=CoverSheet(
+            invention_title=cover_data.get("invention_title", "Untitled"),
+            filing_date_note=cover_data.get("filing_date_note", ""),
+        ),
+        specification=Specification(
+            title_of_invention=spec_data.get("title_of_invention", ""),
+            cross_reference=spec_data.get("cross_reference"),
+            background=Background(
+                field_of_invention=bg_data.get("field_of_invention", ""),
+                description_of_prior_art=bg_data.get("description_of_prior_art", ""),
+            ),
+            summary=spec_data.get("summary", ""),
+            brief_description_of_drawings=spec_data.get("brief_description_of_drawings"),
+            detailed_description=spec_data.get("detailed_description", ""),
+        ),
         abstract=data.get("abstract", ""),
         claims=claims,
-        detailed_description=data.get("detailed_description", ""),
-        prior_art_discussion=data.get("prior_art_discussion", ""),
-        markdown=_format_patent_markdown(data),
-    )
-
-
-@router.post("/prototype", response_model=PrototypingResponse)
-async def generate_prototype(req: PrototypingRequest):
-    """Generate a prototyping package with fabrication approaches."""
-    if not _has_llm_key():
-        log.warning("No LLM API key — returning mock prototype")
-        return _mock_prototype(req)
-
-    prompt = build_prototyping_prompt(
-        product_text=req.product_text,
-        variant_title=req.variant.title,
-        variant_summary=req.variant.summary,
-        spec_mechanism=req.spec.mechanism,
-        spec_differentiators=req.spec.differentiators,
-    )
-    try:
-        data = call_llm(
-            prompt,
-            json_schema_hint=PROTOTYPING_SCHEMA,
-            system=PROTOTYPING_SYSTEM,
-        )
-    except LLMError as exc:
-        log.error("LLM call failed: %s", exc)
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
-
-    raw_approaches = data.get("approaches", [])
-    approaches = []
-    for ra in raw_approaches:
-        bom_items = []
-        for item in ra.get("bill_of_materials", []):
-            bom_items.append(BomItem(
-                item=item.get("item", ""),
-                quantity=item.get("quantity", ""),
-                estimated_cost=item.get("estimated_cost", ""),
-                source=item.get("source", ""),
-            ))
-        approaches.append(PrototypingApproach(
-            method=ra.get("method", "Unknown"),
-            rationale=ra.get("rationale", ""),
-            specs=ra.get("specs", {}),
-            bill_of_materials=bom_items,
-            assembly_instructions=ra.get("assembly_instructions", []),
-        ))
-
-    return PrototypingResponse(
-        approaches=approaches,
-        markdown=_format_prototype_markdown([a.model_dump() for a in approaches]),
+        drawings_note=data.get("drawings_note", ""),
+        markdown=markdown,
     )

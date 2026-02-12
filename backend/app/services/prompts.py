@@ -294,26 +294,43 @@ Patents to evaluate:
 {safe_json_instructions()}"""
 
 
-# ── Prompt D: Provisional Patent Draft ─────────────────────────────
+# ── Prompt D: USPTO Provisional Patent Application ─────────────────
 
 PROVISIONAL_PATENT_SYSTEM = (
-    "You are a patent drafting assistant who makes the patent process less intimidating. "
-    "You create provisional patent application drafts in standard USPTO format with precise "
-    "technical terminology, but you also write clearly enough that an inventor can understand "
-    "every section. Think of yourself as translating a great product idea into the language "
-    "the patent office needs to hear. "
+    "You are a USPTO provisional patent application drafting assistant. "
+    "You create provisional patent applications that comply with 35 U.S.C. §112(a) "
+    "and follow the USPTO provisional application format. Your drafts include all "
+    "required sections: cover sheet, complete specification (title, background, summary, "
+    "detailed description), abstract, and claims. You write with precise technical "
+    "terminology but clearly enough that an inventor can understand every section. "
+    "Your goal is to produce a draft that is 'as complete as possible' per USPTO guidance, "
+    "so the inventor can file it to establish a priority date and later convert to a "
+    "nonprovisional application within the 12-month pendency period. "
     + no_legal_advice_instructions()
 )
 
 PROVISIONAL_PATENT_SCHEMA = """{
-  "title": "<invention title>",
-  "abstract": "<150-word abstract>",
-  "claims": {
-    "independent": ["<independent claim 1>", "..."],
-    "dependent": ["<dependent claim referencing an independent claim>", "..."]
+  "cover_sheet": {
+    "invention_title": "<formal descriptive title, not marketing language>",
+    "filing_date_note": "<note about 12-month pendency period>"
   },
-  "detailed_description": "<multi-paragraph detailed description of the invention>",
-  "prior_art_discussion": "<discussion of known prior art and how this invention differs>"
+  "specification": {
+    "title_of_invention": "<same as cover sheet title>",
+    "cross_reference": null,
+    "background": {
+      "field_of_invention": "<1-2 paragraphs describing the technical field>",
+      "description_of_prior_art": "<2-3 paragraphs on existing solutions and their limitations>"
+    },
+    "summary": "<2-3 paragraphs summarizing the invention and its advantages>",
+    "brief_description_of_drawings": "<optional: describe what figures would show>",
+    "detailed_description": "<4-6 paragraphs: preferred embodiment, operation, variations, advantages>"
+  },
+  "abstract": "<exactly 150 words - technical summary of the disclosure>",
+  "claims": {
+    "independent": ["<claim 1>", "<claim 2>"],
+    "dependent": ["<claim 3 referencing claim 1>", "<claim 4>", "..."]
+  },
+  "drawings_note": "<recommendation on whether drawings should be prepared and what they should depict>"
 }"""
 
 
@@ -339,7 +356,9 @@ def build_provisional_patent_prompt(
     else:
         prior_art_block = "\n  No significant prior art found."
 
-    return f"""Create a provisional patent application draft for this invention.
+    return f"""Draft a complete USPTO provisional patent application for this invention.
+Follow the provisional application format per 35 U.S.C. §111(b) and comply with
+the written description requirement of 35 U.S.C. §112(a).
 
 Product: {product_text}
 Invention: {variant_title}
@@ -348,100 +367,53 @@ Summary: {variant_summary}
 Technical Details:
   Novelty: {spec_novelty}
   Mechanism: {spec_mechanism}
-  Baseline: {spec_baseline}
+  Baseline (existing solutions): {spec_baseline}
   Differentiators:
 {diffs}
 
 Prior Art Search Results:{prior_art_block}
 
-Draft a complete provisional patent application with:
-1. "title" — A formal invention title (descriptive, not marketing language)
-2. "abstract" — A 150-word abstract in patent style
-3. "claims" — An object with:
-   - "independent": 2-3 independent claims covering the core invention
-   - "dependent": 3-5 dependent claims adding specific features
-   Claims should use standard patent claim language ("A method comprising...", "The method of claim 1, wherein...")
-4. "detailed_description" — 3-5 paragraphs covering: field of invention, background, summary, detailed description of embodiments
-5. "prior_art_discussion" — 1-2 paragraphs discussing the prior art found and how this invention differs
+Generate a complete provisional patent application with these sections:
 
-Include the disclaimer that this is not legal advice and should be reviewed by a patent attorney.
+1. "cover_sheet" — Object with:
+   - "invention_title": A formal, descriptive title (not marketing language)
+   - "filing_date_note": A brief note about the 12-month pendency period
 
-{safe_json_instructions()}"""
+2. "specification" — Object with the full written description:
+   - "title_of_invention": Same as cover sheet title
+   - "cross_reference": null (no related applications)
+   - "background": Object with:
+     - "field_of_invention": 1-2 paragraphs on the technical field
+     - "description_of_prior_art": 2-3 paragraphs describing existing solutions,
+       referencing the prior art found above, and explaining their limitations
+   - "summary": 2-3 paragraphs summarizing the invention and its key advantages
+   - "brief_description_of_drawings": Describe what figures would depict (e.g.,
+     "FIG. 1 is a perspective view...", "FIG. 2 is a block diagram...")
+   - "detailed_description": 4-6 substantive paragraphs covering:
+     - The preferred embodiment in detail
+     - How the invention operates
+     - Alternative embodiments or variations
+     - Specific materials, dimensions, or configurations where applicable
+     - Advantages over the prior art
+     The description must be detailed enough that someone skilled in the art could
+     make and use the invention (enablement requirement).
 
+3. "abstract" — Exactly 150 words. Technical summary of the disclosure. Must state
+   the technical field, the problem solved, and the gist of the solution.
 
-# ── Prompt E: Prototyping Package ──────────────────────────────────
+4. "claims" — Object with:
+   - "independent": 2-3 independent claims in standard patent language
+     (e.g., "A device comprising: a first element configured to...; a second element...")
+   - "dependent": 4-6 dependent claims referencing independent claims
+     (e.g., "The device of claim 1, wherein the first element further comprises...")
+   Note: Claims are optional in a provisional but strongly recommended for scope.
 
-PROTOTYPING_SYSTEM = (
-    "You are an expert product prototyping consultant who helps inventors go from idea to "
-    "reality. You believe in staying lean and mean — building smart, affordable prototypes "
-    "that prove the concept without breaking the bank. You have deep experience in "
-    "3D printing, electronics, CNC machining, woodworking, and other fabrication methods. "
-    "You're practical and encouraging: your job is to show inventors that they CAN build this, "
-    "and here's exactly how. Think of it like helping someone prepare a prototype to "
-    "demonstrate on Shark Tank — it needs to work, look good, and prove the concept. "
-    "Only suggest approaches that genuinely make sense for the product's form factor, "
-    "materials, and complexity."
-)
+5. "drawings_note" — Recommend what drawings the inventor should prepare before filing.
+   Suggest specific figures (perspective view, exploded view, block diagram, flowchart)
+   that would best illustrate the invention. Note that drawings cannot be added after filing.
 
-PROTOTYPING_SCHEMA = """{
-  "approaches": [
-    {
-      "method": "<fabrication method, e.g., '3D Printing (FDM)', 'Arduino + 3D Printed Enclosure'>",
-      "rationale": "<why this method fits this product>",
-      "specs": {
-        "dimensions": "<approximate dimensions>",
-        "materials": "<recommended materials>",
-        "tolerances": "<relevant tolerances if applicable>",
-        "finish": "<surface finish recommendations>"
-      },
-      "bill_of_materials": [
-        {"item": "<component name>", "quantity": "<qty>", "estimated_cost": "<USD>", "source": "<where to buy>"}
-      ],
-      "assembly_instructions": ["<step 1>", "<step 2>", "..."]
-    }
-  ]
-}"""
-
-
-def build_prototyping_prompt(
-    product_text: str,
-    variant_title: str,
-    variant_summary: str,
-    spec_mechanism: str,
-    spec_differentiators: list[str],
-) -> str:
-    diffs = "\n".join(f"  - {d}" for d in spec_differentiators)
-
-    return f"""Design a prototyping package for this product invention.
-
-Product: {product_text}
-Invention: {variant_title}
-Summary: {variant_summary}
-
-Technical Details:
-  Mechanism: {spec_mechanism}
-  Key Differentiators:
-{diffs}
-
-Help this inventor build a working prototype they could demonstrate to investors, show on
-camera, or take to a trade show. Stay lean and mean — keep costs low and use accessible tools.
-
-Provide 1-2 practical fabrication approaches for building a working prototype. For each approach:
-
-1. "method" — The fabrication method (e.g., "3D Printing (FDM/SLA)", "Arduino + 3D Printed Enclosure",
-   "CNC Machined Aluminum", "Laser-Cut Acrylic + Electronics", etc.)
-   Only suggest methods that realistically work for this type of product.
-2. "rationale" — Why this method is a good fit. Be encouraging — explain why this is doable
-   and what makes it the right choice. (2-3 sentences)
-3. "specs" — Object with dimensions, materials, tolerances, and finish recommendations
-4. "bill_of_materials" — Complete list of parts/materials with quantities, estimated costs in USD,
-   and where to source them (Amazon, McMaster-Carr, Adafruit, local hardware store, etc.)
-5. "assembly_instructions" — Step-by-step instructions (8-15 steps) that a motivated maker
-   could follow, even if they're not an expert. Be clear and encouraging.
-
-If the product involves electronics, include specific components (microcontrollers, sensors, etc.).
-If 3D printing is appropriate, mention specific settings (layer height, infill, orientation).
-Keep total prototype cost under $200 if possible.
+IMPORTANT: The specification must be as complete as possible. The nonprovisional application
+filed within 12 months can only claim subject matter disclosed in this provisional.
 
 {safe_json_instructions()}"""
 

@@ -33,6 +33,7 @@ dependencies:
   http: ^1.2.0
   flutter_markdown: ^0.7.0
   shared_preferences: ^2.2.0
+  pdf: ^3.11.1
 
 dev_dependencies:
   flutter_test:
