@@ -364,7 +364,7 @@ class _VariantCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.stone,
+                          color: AppColors.ink,
                           height: 1.4,
                         ),
                       ),

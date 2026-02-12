@@ -340,7 +340,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                 _analysis.claimStrategy.rationale,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       height: 1.5,
-                      color: AppColors.stone,
+                      color: AppColors.ink,
                     ),
               ),
               if (_analysis.claimStrategy.riskAreas.isNotEmpty) ...[
@@ -435,7 +435,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
             inv.coreConcept,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   height: 1.5,
-                  color: AppColors.stone,
+                  color: AppColors.ink,
                 ),
           ),
         ),
@@ -880,7 +880,7 @@ class _RiskHeroCard extends StatelessWidget {
             narrative,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   height: 1.6,
-                  color: AppColors.stone,
+                  color: AppColors.ink,
                 ),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -1088,7 +1088,7 @@ class _AssessmentCard extends StatelessWidget {
             summary,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   height: 1.5,
-                  color: AppColors.stone,
+                  color: AppColors.ink,
                 ),
           ),
           if (details.isNotEmpty) ...[

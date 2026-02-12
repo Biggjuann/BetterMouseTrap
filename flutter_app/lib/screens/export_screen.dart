@@ -167,7 +167,7 @@ class ExportScreen extends StatelessWidget {
                               fontFamily: 'Manrope',
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
-                              color: AppColors.stone,
+                              color: AppColors.ink,
                               height: 1.6,
                             ),
                             strong: const TextStyle(
@@ -178,7 +178,7 @@ class ExportScreen extends StatelessWidget {
                             em: const TextStyle(
                               fontFamily: 'Manrope',
                               fontStyle: FontStyle.italic,
-                              color: AppColors.stone,
+                              color: AppColors.ink,
                             ),
                             listBullet: const TextStyle(
                               fontFamily: 'Manrope',

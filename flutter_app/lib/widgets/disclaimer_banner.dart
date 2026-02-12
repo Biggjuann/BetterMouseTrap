@@ -30,7 +30,7 @@ class DisclaimerBanner extends StatelessWidget {
             child: Text(
               'This is not legal advice. Always consult a patent attorney before filing.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.stone,
+                    color: AppColors.ink,
                   ),
             ),
           ),

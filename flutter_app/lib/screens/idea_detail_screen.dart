@@ -294,7 +294,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             Text(
               'Breaking down what makes this clever...',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.stone,
+                    color: AppColors.ink,
                   ),
             ),
           ],
@@ -392,7 +392,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
         text,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               height: 1.6,
-              color: AppColors.stone,
+              color: AppColors.ink,
             ),
       ),
     );

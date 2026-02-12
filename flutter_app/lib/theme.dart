@@ -191,7 +191,7 @@ ThemeData buildLightTheme() {
     onPrimary: Colors.white,
     surface: AppColors.cream,
     onSurface: AppColors.ink,
-    onSurfaceVariant: AppColors.stone,
+    onSurfaceVariant: AppColors.ink,
     outline: AppColors.border,
     outlineVariant: AppColors.borderLight,
   );

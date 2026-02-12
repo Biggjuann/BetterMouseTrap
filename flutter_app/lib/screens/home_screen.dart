@@ -146,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'Turn any product into your\nnext big idea.',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.ink.withValues(alpha: 0.7),
+                        color: AppColors.ink,
                         height: 1.5,
                         fontWeight: FontWeight.w500,
                       ),
