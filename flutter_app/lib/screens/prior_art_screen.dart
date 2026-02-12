@@ -266,7 +266,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
               style: Theme.of(context)
                   .textTheme
                   .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+                  ?.copyWith(fontWeight: FontWeight.w700, color: AppColors.ink),
             ),
             const Spacer(),
             ConfidenceBadge(level: _analysis.confidence),
@@ -350,7 +350,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                   style: Theme.of(context)
                       .textTheme
                       .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                      ?.copyWith(fontWeight: FontWeight.w700, color: AppColors.ink),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 ...(_analysis.claimStrategy.riskAreas.map(
@@ -364,7 +364,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(r,
-                              style: Theme.of(context).textTheme.bodySmall),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.ink)),
                         ),
                       ],
                     ),
@@ -379,7 +379,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                   style: Theme.of(context)
                       .textTheme
                       .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                      ?.copyWith(fontWeight: FontWeight.w700, color: AppColors.ink),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 ...(_analysis.claimStrategy.suggestedIndependentClaims
@@ -403,6 +403,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               height: 1.5,
                               fontStyle: FontStyle.italic,
+                              color: AppColors.ink,
                             ),
                       ),
                     ),
@@ -457,7 +458,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                           Expanded(
                             child: Text(e,
                                 style:
-                                    Theme.of(context).textTheme.bodyMedium),
+                                    Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.ink)),
                           ),
                         ],
                       ),
@@ -502,7 +503,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                             Text(
                               cpc.description,
                               style: TextStyle(
-                                color: AppColors.slateLight,
+                                color: AppColors.ink,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -544,7 +545,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodySmall
-                                      ?.copyWith(fontStyle: FontStyle.italic),
+                                      ?.copyWith(fontStyle: FontStyle.italic, color: AppColors.ink),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -576,7 +577,7 @@ class _PriorArtScreenState extends State<PriorArtScreen>
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(a,
-                                  style: Theme.of(context).textTheme.bodySmall),
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.ink)),
                             ),
                           ],
                         ),
@@ -1063,6 +1064,7 @@ class _AssessmentCard extends StatelessWidget {
                   title,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
                       ),
                 ),
               ),
@@ -1100,6 +1102,7 @@ class _AssessmentCard extends StatelessWidget {
                     d,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           height: 1.5,
+                          color: AppColors.ink,
                         ),
                   ),
                 )),
@@ -1332,7 +1335,7 @@ class _EnhancedPatentHitCardState extends State<_EnhancedPatentHitCard> {
                     style: Theme.of(context)
                         .textTheme
                         .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                        ?.copyWith(fontWeight: FontWeight.w700, color: AppColors.ink),
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -1342,7 +1345,7 @@ class _EnhancedPatentHitCardState extends State<_EnhancedPatentHitCard> {
                         style: Theme.of(context)
                             .textTheme
                             .bodySmall
-                            ?.copyWith(fontWeight: FontWeight.w500),
+                            ?.copyWith(fontWeight: FontWeight.w500, color: AppColors.ink),
                       ),
                       const SizedBox(width: 8),
                       _SourcePhaseChip(phase: hit.sourcePhase),
@@ -1421,7 +1424,7 @@ class _EnhancedPatentHitCardState extends State<_EnhancedPatentHitCard> {
                             style: Theme.of(context)
                                 .textTheme
                                 .bodySmall
-                                ?.copyWith(height: 1.5),
+                                ?.copyWith(height: 1.5, color: AppColors.ink),
                           ),
                           if (hit.cpcCodes.isNotEmpty) ...[
                             const SizedBox(height: AppSpacing.sm),
@@ -1470,6 +1473,7 @@ class _EnhancedPatentHitCardState extends State<_EnhancedPatentHitCard> {
                                   ?.copyWith(
                                     fontStyle: FontStyle.italic,
                                     height: 1.4,
+                                    color: AppColors.ink,
                                   ),
                             ),
                           ],
