@@ -377,18 +377,18 @@ def _build_enhanced_hits(scored: list[dict], analysis: dict) -> list[EnhancedPat
 
     hits = []
     for h in scored:
-        pid = h.get("patent_id", "")
+        pid = h.get("patent_id") or ""
         llm = llm_scores.get(pid, {})
         hits.append(EnhancedPatentHit(
             patent_id=pid,
-            title=h.get("title", ""),
-            abstract=h.get("abstract", ""),
+            title=h.get("title") or "",
+            abstract=h.get("abstract") or "",
             assignee=h.get("assignee"),
             date=h.get("date"),
-            cpc_codes=h.get("cpc_codes", []),
-            score=round(float(llm.get("score", h.get("score", 0))), 3),
-            why_similar=llm.get("why_similar", h.get("why_similar", "")),
-            source_phase=h.get("source_phase", "keyword"),
+            cpc_codes=h.get("cpc_codes") or [],
+            score=round(float(llm.get("score", h.get("score", 0)) or 0), 3),
+            why_similar=llm.get("why_similar") or h.get("why_similar") or "",
+            source_phase=h.get("source_phase") or "keyword",
         ))
 
     hits.sort(key=lambda x: x.score, reverse=True)

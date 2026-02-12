@@ -101,11 +101,13 @@ def score_hits_heuristic(
     expanded = _expand_keywords(keywords)
 
     for h in hits:
-        kw_score = _keyword_overlap_score(expanded, h.get("title", ""), h.get("abstract", ""))
+        title = h.get("title") or ""
+        abstract = h.get("abstract") or ""
+        kw_score = _keyword_overlap_score(expanded, title, abstract)
         recency = _recency_bonus(h.get("date"))
         h["score"] = round(min(kw_score + recency, 1.0), 3)
 
-        text = (h.get("title", "") + " " + h.get("abstract", "")).lower()
+        text = (title + " " + abstract).lower()
         matched = [kw for kw in keywords if kw.lower() in text]
         if matched:
             h["why_similar"] = f"Shares keywords: {', '.join(matched[:5])}. Addresses a related problem domain."

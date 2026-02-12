@@ -856,12 +856,78 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _errorMessage = e.toString());
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_errorMessage!)),
-        );
+        _showErrorDialog(e.toString());
       }
     } finally {
       if (mounted) setState(() => _isLoadingPatents = false);
     }
+  }
+
+  void _showErrorDialog(String error) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 24),
+            const SizedBox(width: AppSpacing.sm),
+            const Expanded(
+              child: Text(
+                'Patent Search Failed',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'The patent search could not be completed. This usually means the search service is temporarily unavailable.',
+              style: TextStyle(color: AppColors.ink, height: 1.5),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.cream,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Text(
+                error.length > 200 ? '${error.substring(0, 200)}...' : error,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                  color: AppColors.slateLight,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              if (_spec != null) _searchPatents(_spec!);
+            },
+            style: FilledButton.styleFrom(backgroundColor: AppColors.teal),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
   }
 }

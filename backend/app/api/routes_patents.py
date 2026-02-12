@@ -211,4 +211,8 @@ async def analyze_patents(req: PatentAnalysisRequest):
         log.warning("No API keys configured — returning mock analysis")
         return _mock_analysis_response(req)
 
-    return await run_patent_analysis(req)
+    try:
+        return await run_patent_analysis(req)
+    except Exception:
+        log.exception("Patent analysis failed — returning mock fallback")
+        return _mock_analysis_response(req)

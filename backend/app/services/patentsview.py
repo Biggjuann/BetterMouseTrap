@@ -116,6 +116,7 @@ def normalize_hits(raw_patents: list[dict]) -> list[dict]:
 
     Returns dicts with keys: patent_id, title, abstract, assignee, date.
     Score and why_similar are added later by the scoring service.
+    Uses `or ""` to handle None values (key exists but value is null).
     """
     hits = []
     for p in raw_patents:
@@ -125,9 +126,9 @@ def normalize_hits(raw_patents: list[dict]) -> list[dict]:
             assignee_name = assignees[0].get("assignee_organization")
 
         hits.append({
-            "patent_id": p.get("patent_id", ""),
-            "title": p.get("patent_title", ""),
-            "abstract": p.get("patent_abstract", ""),
+            "patent_id": p.get("patent_id") or "",
+            "title": p.get("patent_title") or "",
+            "abstract": p.get("patent_abstract") or "",
             "assignee": assignee_name,
             "date": p.get("patent_date"),
         })
@@ -135,7 +136,10 @@ def normalize_hits(raw_patents: list[dict]) -> list[dict]:
 
 
 def normalize_enhanced_hits(raw_patents: list[dict], source_phase: str) -> list[dict]:
-    """Normalize raw PatentsView results with CPC codes and source phase."""
+    """Normalize raw PatentsView results with CPC codes and source phase.
+
+    Uses `or ""` to handle None values (key exists but value is null).
+    """
     hits = []
     for p in raw_patents:
         assignees = p.get("assignees", [])
@@ -144,11 +148,13 @@ def normalize_enhanced_hits(raw_patents: list[dict], source_phase: str) -> list[
             assignee_name = assignees[0].get("assignee_organization")
 
         cpc_codes = []
-        cpc_current = p.get("cpc_current", [])
+        cpc_current = p.get("cpc_current") or []
         if isinstance(cpc_current, list):
             for cpc in cpc_current:
-                group = cpc.get("cpc_group", "")
-                subclass = cpc.get("cpc_subclass", "")
+                if not isinstance(cpc, dict):
+                    continue
+                group = cpc.get("cpc_group") or ""
+                subclass = cpc.get("cpc_subclass") or ""
                 if group:
                     cpc_codes.append(group)
                 elif subclass:
@@ -156,9 +162,9 @@ def normalize_enhanced_hits(raw_patents: list[dict], source_phase: str) -> list[
             cpc_codes = list(dict.fromkeys(cpc_codes))[:10]  # dedup, limit
 
         hits.append({
-            "patent_id": p.get("patent_id", ""),
-            "title": p.get("patent_title", ""),
-            "abstract": p.get("patent_abstract", ""),
+            "patent_id": p.get("patent_id") or "",
+            "title": p.get("patent_title") or "",
+            "abstract": p.get("patent_abstract") or "",
             "assignee": assignee_name,
             "date": p.get("patent_date"),
             "cpc_codes": cpc_codes,
