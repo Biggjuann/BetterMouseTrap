@@ -30,7 +30,7 @@ workflows:
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create \
-            --certificate-key /tmp/cert_key.pem
+            --certificate-key "$(cat /tmp/cert_key.pem)"
           echo "=== Certificates fetched, adding to keychain ==="
           keychain add-certificates
           echo "=== Applying profiles to Xcode project ==="
