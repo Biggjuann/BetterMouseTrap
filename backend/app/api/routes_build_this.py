@@ -231,7 +231,7 @@ async def generate_patent_draft(req: ProvisionalPatentRequest):
             prompt,
             json_schema_hint=PROVISIONAL_PATENT_SCHEMA,
             system=PROVISIONAL_PATENT_SYSTEM,
-            max_tokens=16000,
+            max_tokens=32000,
         )
     except LLMError as exc:
         log.error("LLM call failed: %s", exc)
@@ -240,6 +240,14 @@ async def generate_patent_draft(req: ProvisionalPatentRequest):
     claims = data.get("claims", {})
     if isinstance(claims, list):
         claims = {"independent": claims, "dependent": []}
+
+    # Detect truncation: these fields come last in JSON and are most likely to be lost
+    if not data.get("abstract"):
+        log.warning("Patent draft missing 'abstract' — likely truncated LLM response")
+    if not data.get("claims"):
+        log.warning("Patent draft missing 'claims' — likely truncated LLM response")
+    if not data.get("drawings_note"):
+        log.warning("Patent draft missing 'drawings_note' — likely truncated LLM response")
 
     cover_data = data.get("cover_sheet", {})
     spec_data = data.get("specification", {})

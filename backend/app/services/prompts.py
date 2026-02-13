@@ -412,8 +412,12 @@ Generate a complete provisional patent application with these sections:
    Suggest specific figures (perspective view, exploded view, block diagram, flowchart)
    that would best illustrate the invention. Note that drawings cannot be added after filing.
 
-IMPORTANT: The specification must be as complete as possible. The nonprovisional application
-filed within 12 months can only claim subject matter disclosed in this provisional.
+IMPORTANT REQUIREMENTS:
+- The specification must be as complete as possible. The nonprovisional application
+  filed within 12 months can only claim subject matter disclosed in this provisional.
+- Keep the "detailed_description" to 4-6 focused paragraphs (not excessively long).
+- You MUST include ALL sections: cover_sheet, specification, abstract, claims, AND drawings_note.
+  Do NOT omit the abstract, claims, or drawings_note — they are required fields.
 
 {safe_json_instructions()}"""
 
