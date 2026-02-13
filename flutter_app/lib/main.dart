@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'services/auth_service.dart';
 import 'services/credit_service.dart';
 import 'services/purchase_service.dart';
@@ -30,7 +31,9 @@ class MouseTrapApp extends StatelessWidget {
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
       home: AuthService.instance.isLoggedIn
-          ? const HomeScreen()
+          ? (AuthService.instance.onboardingSeen
+              ? const HomeScreen()
+              : const OnboardingScreen())
           : const LoginScreen(),
     );
   }

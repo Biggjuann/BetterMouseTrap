@@ -8,9 +8,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 from sqlalchemy import text
 
 from app.api.routes_build_this import router as build_router
@@ -23,6 +22,7 @@ from app.api.routes_sessions import router as sessions_router
 from app.auth.bootstrap import ensure_admin_user
 from app.auth.routes import router as auth_router
 from app.core.config import settings
+from app.core.limiter import limiter
 from app.models.database import async_session
 
 # ── Logging ──────────────────────────────────────────────────────
@@ -40,7 +40,6 @@ log = logging.getLogger("mousetrap")
 app = FastAPI(title=settings.app_name, debug=settings.debug)
 
 # ── Rate limiting ───────────────────────────────────────────────────
-limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

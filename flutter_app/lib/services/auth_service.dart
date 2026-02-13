@@ -11,12 +11,15 @@ class AuthService {
   AuthService._();
 
   static const _tokenKey = 'bm_auth_token';
+  static const _onboardingKey = 'bm_onboarding_seen';
 
   String? _token;
   SharedPreferences? _prefs;
+  bool _onboardingSeen = false;
 
   String? get token => _token;
   bool get isLoggedIn => _token != null;
+  bool get onboardingSeen => _onboardingSeen;
 
   String get _baseUrl {
     const configured = String.fromEnvironment('API_BASE_URL', defaultValue: '');
@@ -32,6 +35,12 @@ class AuthService {
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
     _token = _prefs?.getString(_tokenKey);
+    _onboardingSeen = _prefs?.getBool(_onboardingKey) ?? false;
+  }
+
+  Future<void> markOnboardingSeen() async {
+    _onboardingSeen = true;
+    await _prefs?.setBool(_onboardingKey, true);
   }
 
   Future<bool> validateToken() async {
@@ -132,6 +141,62 @@ class AuthService {
     _token = data['access_token'] as String;
     await _prefs?.setString(_tokenKey, _token!);
     return _token!;
+  }
+
+  /// Step 1: Request a password reset code.
+  Future<void> forgotPassword(String email) async {
+    final resp = await http.post(
+      Uri.parse('$_baseUrl/auth/forgot-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    );
+
+    if (resp.statusCode == 429) {
+      throw Exception('Too many requests. Please wait a moment.');
+    }
+
+    if (resp.statusCode != 200) {
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      throw Exception(data['detail'] ?? 'Failed to send reset code');
+    }
+  }
+
+  /// Step 2: Verify the 6-digit code, returns a reset token.
+  Future<String> verifyResetCode(String email, String code) async {
+    final resp = await http.post(
+      Uri.parse('$_baseUrl/auth/verify-reset-code'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'code': code}),
+    );
+
+    if (resp.statusCode == 429) {
+      throw Exception('Too many attempts. Please wait a moment.');
+    }
+
+    if (resp.statusCode != 200) {
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      throw Exception(data['detail'] ?? 'Invalid code');
+    }
+
+    final data = jsonDecode(resp.body) as Map<String, dynamic>;
+    return data['reset_token'] as String;
+  }
+
+  /// Step 3: Reset password using the reset token.
+  Future<void> resetPassword(String resetToken, String newPassword) async {
+    final resp = await http.post(
+      Uri.parse('$_baseUrl/auth/reset-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'reset_token': resetToken,
+        'new_password': newPassword,
+      }),
+    );
+
+    if (resp.statusCode != 200) {
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      throw Exception(data['detail'] ?? 'Failed to reset password');
+    }
   }
 
   Future<void> logout() async {

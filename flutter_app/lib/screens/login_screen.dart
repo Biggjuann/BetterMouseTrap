@@ -4,7 +4,9 @@ import '../services/auth_service.dart';
 import '../services/credit_service.dart';
 import '../services/purchase_service.dart';
 import '../theme.dart';
+import 'forgot_password_screen.dart';
 import 'home_screen.dart';
+import 'onboarding_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -199,6 +201,30 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
 
+                          if (!_isRegisterMode)
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : () => Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const ForgotPasswordScreen(),
+                                          ),
+                                        ),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  textStyle: const TextStyle(fontSize: 13),
+                                ),
+                                child: const Text('Forgot password?'),
+                              ),
+                            ),
+
                           const SizedBox(height: AppSpacing.lg),
 
                           // Primary CTA — Stitch gold button with shadow
@@ -278,7 +304,11 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(
+          builder: (_) => AuthService.instance.onboardingSeen
+              ? const HomeScreen()
+              : const OnboardingScreen(),
+        ),
       );
     } catch (e) {
       _showError(e.toString().replaceFirst('Exception: ', ''));
@@ -313,7 +343,11 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(
+          builder: (_) => AuthService.instance.onboardingSeen
+              ? const HomeScreen()
+              : const OnboardingScreen(),
+        ),
       );
     } catch (e) {
       _showError(e.toString().replaceFirst('Exception: ', ''));

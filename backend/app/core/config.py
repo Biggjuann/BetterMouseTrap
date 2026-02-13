@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     # Apple Sign-In
     apple_bundle_id: str = "com.mousetrap.app"
 
+    # Email (Resend)
+    resend_api_key: str = ""
+    resend_from_email: str = "noreply@yourdomain.com"
+
     # Admin bootstrap
     admin_email: str = ""
     admin_password: str = ""
