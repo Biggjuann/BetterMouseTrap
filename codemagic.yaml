@@ -17,18 +17,17 @@ workflows:
         script: |
           set -e
           set -x
-          # Write key to file and inspect format
-          printf '%s\n' "$APP_STORE_CONNECT_PRIVATE_KEY" > /tmp/authkey.p8
-          echo "=== Key file debug info ==="
-          echo "Line count: $(wc -l < /tmp/authkey.p8)"
-          echo "Byte count: $(wc -c < /tmp/authkey.p8)"
-          file /tmp/authkey.p8
-          echo "First 27 chars: $(head -c 27 /tmp/authkey.p8)"
+          # Write key to file, strip any Windows carriage returns
+          printf '%s\n' "$APP_STORE_CONNECT_PRIVATE_KEY" > /tmp/authkey_raw.p8
+          tr -d '\r' < /tmp/authkey_raw.p8 > /tmp/authkey.p8
+          # Validate key with OpenSSL
+          openssl pkey -in /tmp/authkey.p8 -noout 2>&1 && echo "OpenSSL: key is valid" || echo "OpenSSL: key is INVALID"
+          # Re-export clean key to env var for CLI tool
+          export APP_STORE_CONNECT_PRIVATE_KEY="$(cat /tmp/authkey.p8)"
           keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
-            --create \
-            --private-key @/tmp/authkey.p8
+            --create
           echo "=== Certificates fetched, adding to keychain ==="
           keychain add-certificates
           echo "=== Applying profiles to Xcode project ==="
