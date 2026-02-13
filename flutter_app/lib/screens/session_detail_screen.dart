@@ -293,6 +293,15 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
           MarkdownBody(
             data: markdown,
             selectable: true,
+            styleSheet: MarkdownStyleSheet(
+              h1: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.ink),
+              h2: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.primary),
+              h3: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink),
+              p: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: AppColors.ink, height: 1.6),
+              strong: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
+              em: const TextStyle(fontStyle: FontStyle.italic, color: AppColors.ink),
+              listBullet: const TextStyle(fontSize: 14, color: AppColors.ink),
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Row(
