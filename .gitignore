@@ -14,7 +14,7 @@ backend/.venv/
 *.env.production
 
 # Flutter SDK (bundled locally, too large for git)
-flutter/
+/flutter/
 
 # Flutter build artifacts
 flutter_app/.dart_tool/
