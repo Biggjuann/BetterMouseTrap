@@ -24,10 +24,13 @@ workflows:
           openssl pkey -in /tmp/authkey.p8 -noout 2>&1 && echo "OpenSSL: key is valid" || echo "OpenSSL: key is INVALID"
           # Re-export clean key to env var for CLI tool
           export APP_STORE_CONNECT_PRIVATE_KEY="$(cat /tmp/authkey.p8)"
+          # Generate RSA key for code signing certificate
+          openssl genrsa 2048 2>/dev/null > /tmp/cert_key.pem
           keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
-            --create
+            --create \
+            --certificate-key /tmp/cert_key.pem
           echo "=== Certificates fetched, adding to keychain ==="
           keychain add-certificates
           echo "=== Applying profiles to Xcode project ==="
