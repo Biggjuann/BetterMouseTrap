@@ -146,7 +146,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                                         icon: const Icon(Icons.shield_outlined, size: 18),
                                         label: const Text('Draft Patent Application'),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF7B1FA2),
+                                          backgroundColor: AppColors.teal,
                                           foregroundColor: Colors.white,
                                           padding: const EdgeInsets.symmetric(vertical: 12),
                                           shape: RoundedRectangleBorder(
