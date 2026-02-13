@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
+import '../models/idea_spec.dart';
+import '../models/idea_variant.dart';
+import '../models/patent_hit.dart';
 import '../services/api_client.dart';
 import '../theme.dart';
 import '../utils/pdf_downloader.dart';
 import '../utils/pdf_generator.dart';
 import '../widgets/disclaimer_banner.dart';
+import 'provisional_patent_screen.dart';
 
 class SessionDetailScreen extends StatefulWidget {
   final String sessionId;
@@ -130,6 +134,28 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                                       '${(_session!['patent_hits_json'] as List).length} hits found',
                                       style: Theme.of(context).textTheme.bodySmall,
                                     ),
+                                  if (_session!['patent_hits_json'] != null &&
+                                      _session!['patent_draft_json'] == null &&
+                                      _session!['selected_variant_json'] != null &&
+                                      _session!['spec_json'] != null) ...[
+                                    const SizedBox(height: AppSpacing.md),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton.icon(
+                                        onPressed: _navigateToPatentDraft,
+                                        icon: const Icon(Icons.shield_outlined, size: 18),
+                                        label: const Text('Draft Patent Application'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF7B1FA2),
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(AppRadius.md),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -178,6 +204,31 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                   ],
                 ),
     );
+  }
+
+  void _navigateToPatentDraft() {
+    final variant = IdeaVariant.fromJson(
+      Map<String, dynamic>.from(_session!['selected_variant_json']),
+    );
+    final spec = IdeaSpec.fromJson(
+      Map<String, dynamic>.from(_session!['spec_json']),
+    );
+    final hits = (_session!['patent_hits_json'] as List)
+        .map((h) => PatentHit.fromJson(Map<String, dynamic>.from(h)))
+        .toList();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProvisionalPatentScreen(
+          productText: _session!['product_text'] ?? '',
+          variant: variant,
+          spec: spec,
+          hits: hits,
+          sessionId: widget.sessionId,
+        ),
+      ),
+    ).then((_) => _loadSession());
   }
 
   Widget _sectionCard({
