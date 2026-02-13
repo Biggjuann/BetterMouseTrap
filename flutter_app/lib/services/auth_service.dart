@@ -199,6 +199,28 @@ class AuthService {
     }
   }
 
+  /// Permanently delete the current user's account.
+  Future<void> deleteAccount() async {
+    final resp = await http.delete(
+      Uri.parse('$_baseUrl/auth/account'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (_token != null) 'Authorization': 'Bearer $_token',
+      },
+    );
+
+    if (resp.statusCode != 200) {
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      throw Exception(data['detail'] ?? 'Failed to delete account');
+    }
+
+    // Clear local state
+    _token = null;
+    _onboardingSeen = false;
+    await _prefs?.remove(_tokenKey);
+    await _prefs?.remove(_onboardingKey);
+  }
+
   Future<void> logout() async {
     _token = null;
     await _prefs?.remove(_tokenKey);

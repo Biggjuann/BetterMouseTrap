@@ -16,7 +16,9 @@ from app.auth.apple import verify_apple_identity_token
 from app.auth.dependencies import get_current_user
 from app.auth.security import create_access_token, decode_access_token, hash_password, verify_password
 from app.core.limiter import limiter
+from app.models.credit import CreditTransaction
 from app.models.database import get_session
+from app.models.session import Session
 from app.models.user import InviteCode, PasswordResetCode, User
 from app.services.credits import get_balance, grant_signup_bonus
 from app.services.email import send_reset_code
@@ -245,6 +247,37 @@ async def me(
         is_admin=current_user.is_admin,
         credit_balance=balance,
     )
+
+
+@router.delete("/account", response_model=MessageResponse)
+async def delete_account(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Permanently delete the current user's account and all associated data."""
+    user_id = current_user.id
+    log.info("Account deletion requested for user %s (%s)", user_id, current_user.email)
+
+    # Delete all user data in order (child tables first)
+    await session.execute(
+        select(PasswordResetCode).where(PasswordResetCode.user_id == user_id).execution_options(synchronize_session="fetch")
+    )
+    from sqlalchemy import delete as sql_delete
+    await session.execute(sql_delete(PasswordResetCode).where(PasswordResetCode.user_id == user_id))
+    await session.execute(sql_delete(CreditTransaction).where(CreditTransaction.user_id == user_id))
+    await session.execute(sql_delete(Session).where(Session.user_id == user_id))
+
+    # Clear invite code references
+    await session.execute(
+        update(InviteCode).where(InviteCode.used_by == user_id).values(used_by=None, used_at=None)
+    )
+
+    # Delete the user
+    await session.execute(sql_delete(User).where(User.id == user_id))
+    await session.commit()
+
+    log.info("Account deleted for user %s", user_id)
+    return MessageResponse(message="Account deleted successfully")
 
 
 @router.post("/invite", response_model=InviteResponse)

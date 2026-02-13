@@ -75,6 +75,65 @@ class _HomeScreenState extends State<HomeScreen> {
     _goToLogin();
   }
 
+  Future<void> _deleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppColors.coral, size: 24),
+            SizedBox(width: AppSpacing.sm),
+            Text(
+              'Delete Account?',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink,
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'This will permanently delete your account, all your saved ideas, and credit balance. This cannot be undone.',
+          style: TextStyle(color: AppColors.ink, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.coral,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await AuthService.instance.deleteAccount();
+      CreditService.instance.reset();
+      if (!mounted) return;
+      _goToLogin();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -138,10 +197,37 @@ class _HomeScreenState extends State<HomeScreen> {
                             MaterialPageRoute(builder: (_) => const HistoryScreen()),
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.logout_rounded, color: AppColors.mist),
-                          tooltip: 'Sign out',
-                          onPressed: _logout,
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert_rounded, color: AppColors.mist),
+                          onSelected: (value) {
+                            if (value == 'logout') _logout();
+                            if (value == 'delete') _deleteAccount();
+                          },
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(
+                              value: 'logout',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.logout_rounded, size: 20, color: AppColors.ink),
+                                  SizedBox(width: AppSpacing.sm),
+                                  Text('Sign out'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete_forever, size: 20, color: AppColors.coral),
+                                  SizedBox(width: AppSpacing.sm),
+                                  Text(
+                                    'Delete account',
+                                    style: TextStyle(color: AppColors.coral),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
