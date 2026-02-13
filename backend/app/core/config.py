@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expiration_minutes: int = 1440  # 24 hours
 
+    # Apple Sign-In
+    apple_bundle_id: str = "com.mousetrap.app"
+
     # Admin bootstrap
     admin_email: str = ""
     admin_password: str = ""

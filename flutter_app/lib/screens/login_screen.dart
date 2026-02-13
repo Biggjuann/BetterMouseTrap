@@ -14,7 +14,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _inviteCodeController = TextEditingController();
   bool _isLoading = false;
   bool _isRegisterMode = false;
 
@@ -22,12 +21,13 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _inviteCodeController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final showApple = AuthService.instance.isAppleSignInAvailable;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -101,13 +101,60 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     // Subtitle
                     Text(
-                      _isRegisterMode ? 'Join the club!' : 'Welcome back!',
+                      _isRegisterMode ? 'Create your account' : 'Welcome back!',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: AppColors.ink,
                             fontWeight: FontWeight.w500,
                           ),
                     ),
                     const SizedBox(height: AppSpacing.xxl),
+
+                    // Sign in with Apple button (iOS only)
+                    if (showApple) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton.icon(
+                          onPressed: _isLoading ? null : _signInWithApple,
+                          icon: const Icon(Icons.apple, size: 24),
+                          label: const Text(
+                            'Sign in with Apple',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.xl),
+                            ),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // "or" divider
+                      Row(
+                        children: [
+                          Expanded(child: Divider(color: AppColors.ink.withValues(alpha: 0.15))),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
+                            child: Text(
+                              'or',
+                              style: TextStyle(
+                                color: AppColors.ink.withValues(alpha: 0.4),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Expanded(child: Divider(color: AppColors.ink.withValues(alpha: 0.15))),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
 
                     // Form card — Stitch: white, primary/5 border, xl radius
                     Container(
@@ -139,11 +186,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextField(
                             controller: _passwordController,
                             obscureText: true,
-                            textInputAction: _isRegisterMode
-                                ? TextInputAction.next
-                                : TextInputAction.done,
-                            onSubmitted:
-                                _isRegisterMode ? null : (_) => _submit(),
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _submit(),
                             decoration: InputDecoration(
                               hintText: 'Password',
                               prefixIcon: Icon(
@@ -152,22 +196,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
-
-                          if (_isRegisterMode) ...[
-                            const SizedBox(height: AppSpacing.base),
-                            TextField(
-                              controller: _inviteCodeController,
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (_) => _submit(),
-                              decoration: InputDecoration(
-                                hintText: 'Invite code',
-                                prefixIcon: Icon(
-                                  Icons.vpn_key_outlined,
-                                  color: AppColors.primary.withValues(alpha: 0.6),
-                                ),
-                              ),
-                            ),
-                          ],
 
                           const SizedBox(height: AppSpacing.lg),
 
@@ -203,7 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ),
                                           const SizedBox(width: AppSpacing.sm),
                                           Text(
-                                            _isRegisterMode ? 'Register' : 'Sign In',
+                                            _isRegisterMode ? 'Create Account' : 'Sign In',
                                           ),
                                         ],
                                       ),
@@ -226,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(
                         _isRegisterMode
                             ? 'Already have an account? Sign in'
-                            : 'Have an invite code? Register',
+                            : "Don't have an account? Create one",
                       ),
                     ),
                   ],
@@ -239,6 +267,22 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Future<void> _signInWithApple() async {
+    setState(() => _isLoading = true);
+    try {
+      await AuthService.instance.signInWithApple();
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    } catch (e) {
+      _showError(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _submit() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -248,19 +292,15 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    if (_isRegisterMode && _inviteCodeController.text.trim().isEmpty) {
-      _showError('Please enter your invite code');
+    if (_isRegisterMode && password.length < 8) {
+      _showError('Password must be at least 8 characters');
       return;
     }
 
     setState(() => _isLoading = true);
     try {
       if (_isRegisterMode) {
-        await AuthService.instance.register(
-          email,
-          password,
-          _inviteCodeController.text.trim(),
-        );
+        await AuthService.instance.register(email, password);
       } else {
         await AuthService.instance.login(email, password);
       }

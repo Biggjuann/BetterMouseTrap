@@ -34,6 +34,7 @@ dependencies:
   flutter_markdown: ^0.7.0
   shared_preferences: ^2.2.0
   pdf: ^3.11.1
+  sign_in_with_apple: ^7.0.1
 
 dev_dependencies:
   flutter_test:
