@@ -14,6 +14,7 @@ from slowapi.util import get_remote_address
 from sqlalchemy import text
 
 from app.api.routes_build_this import router as build_router
+from app.api.routes_credits import router as credits_router
 from app.api.routes_export import router as export_router
 from app.api.routes_ideas import router as ideas_router
 from app.api.routes_insights import router as insights_router
@@ -54,6 +55,7 @@ app.add_middleware(
 
 # ── Routers ─────────────────────────────────────────────────────────
 app.include_router(auth_router)
+app.include_router(credits_router)
 app.include_router(ideas_router)
 app.include_router(patents_router)
 app.include_router(export_router)

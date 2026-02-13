@@ -1,8 +1,12 @@
 import logging
 
 from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.credit_guard import require_credits
 from app.auth.dependencies import get_current_user
+from app.models.database import get_session
+from app.models.user import User
 
 from app.core.config import settings
 from app.schemas.patent import (
@@ -197,7 +201,11 @@ def _mock_analysis_response(req: PatentAnalysisRequest) -> PatentAnalysisRespons
 
 
 @router.post("/analyze", response_model=PatentAnalysisResponse)
-async def analyze_patents(req: PatentAnalysisRequest):
+async def analyze_patents(
+    req: PatentAnalysisRequest,
+    user: User = Depends(require_credits),
+    session: AsyncSession = Depends(get_session),
+):
     """Professional patent analysis: invention analysis → multi-phase search → assessment."""
 
     # Fall back to mocks if no API keys
@@ -212,7 +220,19 @@ async def analyze_patents(req: PatentAnalysisRequest):
         return _mock_analysis_response(req)
 
     try:
-        return await run_patent_analysis(req)
+        result = await run_patent_analysis(req)
     except Exception:
         log.exception("Patent analysis failed — returning mock fallback")
         return _mock_analysis_response(req)
+
+    # Deduct credit after successful analysis (admin bypass)
+    if not user.is_admin:
+        from app.services.credits import deduct_credit
+        await deduct_credit(
+            session, user.id,
+            transaction_type="patent_analysis",
+            description=f"Patent analysis for: {req.variant.title[:100]}",
+        )
+        await session.commit()
+
+    return result

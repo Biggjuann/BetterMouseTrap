@@ -2,8 +2,12 @@ import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.credit_guard import require_credits
 from app.auth.dependencies import get_current_user
+from app.models.database import get_session
+from app.models.user import User
 
 from app.core.config import settings
 from app.schemas.idea import (
@@ -243,7 +247,11 @@ def _parse_brief_idea(raw: dict, tier: str) -> IdeaVariant:
 
 
 @router.post("/generate", response_model=GenerateIdeasResponse)
-async def generate_ideas(req: GenerateIdeasRequest):
+async def generate_ideas(
+    req: GenerateIdeasRequest,
+    user: User = Depends(require_credits),
+    session: AsyncSession = Depends(get_session),
+):
     """Generate idea variants for a product."""
     product = req.text or "generic product"
 
@@ -303,6 +311,16 @@ async def generate_ideas(req: GenerateIdeasRequest):
     # Recurring revenue (brief)
     for raw in data.get("recurring_revenue", data.get("recurringRevenue", [])):
         variants.append(_parse_brief_idea(raw, "recurring"))
+
+    # Deduct credit after successful generation (admin bypass)
+    if not user.is_admin:
+        from app.services.credits import deduct_credit
+        await deduct_credit(
+            session, user.id,
+            transaction_type="idea_generation",
+            description=f"Idea generation for: {product[:100]}",
+        )
+        await session.commit()
 
     return GenerateIdeasResponse(variants=variants, customer_truth=customer_truth)
 

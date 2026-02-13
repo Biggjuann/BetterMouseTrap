@@ -26,6 +26,11 @@ class UnauthorizedException implements Exception {
   const UnauthorizedException();
 }
 
+/// Thrown when the server returns 402 — user needs to buy credits.
+class InsufficientCreditsException implements Exception {
+  const InsufficientCreditsException();
+}
+
 class ApiClient {
   static final ApiClient instance = ApiClient._();
   ApiClient._();
@@ -195,6 +200,24 @@ class ApiClient {
     return ProvisionalPatentResponse.fromJson(data);
   }
 
+  // ── Credit endpoints ──────────────────────────────────────────
+
+  Future<Map<String, dynamic>> getCreditBalance() async {
+    return await _get('/credits/balance');
+  }
+
+  Future<Map<String, dynamic>> verifyPurchase({
+    required String transactionId,
+    required String productId,
+    required String signedTransaction,
+  }) async {
+    return await _post('/credits/verify-purchase', {
+      'transaction_id': transactionId,
+      'product_id': productId,
+      'signed_transaction': signedTransaction,
+    });
+  }
+
   // ── HTTP helpers ────────────────────────────────────────────────
 
   Map<String, String> get _authHeaders {
@@ -227,6 +250,10 @@ class ApiClient {
     }
 
     if (response.statusCode == 401) await _handleUnauthorized();
+
+    if (response.statusCode == 402) {
+      throw const InsufficientCreditsException();
+    }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(

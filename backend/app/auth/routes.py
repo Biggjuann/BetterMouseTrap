@@ -15,6 +15,7 @@ from app.auth.dependencies import get_current_user
 from app.auth.security import create_access_token, hash_password, verify_password
 from app.models.database import get_session
 from app.models.user import InviteCode, User
+from app.services.credits import get_balance, grant_signup_bonus
 
 log = logging.getLogger("mousetrap.auth")
 
@@ -44,6 +45,7 @@ class UserResponse(BaseModel):
     id: str
     email: str
     is_admin: bool
+    credit_balance: int
 
     class Config:
         from_attributes = True
@@ -127,6 +129,9 @@ async def register(
     session.add(user)
     await session.flush()
 
+    # Grant signup bonus credits
+    await grant_signup_bonus(session, user.id)
+
     # Mark invite as used (if one was provided)
     if req.invite_code and invited_by is not None:
         result = await session.execute(
@@ -191,6 +196,11 @@ async def apple_auth(
         password_hash=None,
     )
     session.add(user)
+    await session.flush()
+
+    # Grant signup bonus credits
+    await grant_signup_bonus(session, user.id)
+
     await session.commit()
 
     token = create_access_token({"sub": str(user.id)})
@@ -198,11 +208,16 @@ async def apple_auth(
 
 
 @router.get("/me", response_model=UserResponse)
-async def me(current_user: User = Depends(get_current_user)):
+async def me(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    balance = await get_balance(session, current_user.id)
     return UserResponse(
         id=str(current_user.id),
         email=current_user.email,
         is_admin=current_user.is_admin,
+        credit_balance=balance,
     )
 
 

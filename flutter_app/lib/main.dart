@@ -3,11 +3,19 @@ import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'services/auth_service.dart';
+import 'services/credit_service.dart';
+import 'services/purchase_service.dart';
 import 'theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AuthService.instance.init();
+
+  if (AuthService.instance.isLoggedIn) {
+    CreditService.instance.refresh();
+    PurchaseService.instance.init();
+  }
+
   runApp(const MouseTrapApp());
 }
 

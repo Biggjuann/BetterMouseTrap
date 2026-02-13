@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import '../models/api_responses.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import '../services/credit_service.dart';
+import '../services/purchase_service.dart';
 import '../theme.dart';
+import '../widgets/buy_credits_sheet.dart';
 import '../widgets/disclaimer_banner.dart';
 import '../widgets/loading_overlay.dart';
 import 'history_screen.dart';
@@ -29,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     ApiClient.instance.onUnauthorized = _goToLogin;
+    CreditService.instance.refresh();
     _loadInsight();
   }
 
@@ -67,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _logout() async {
     await AuthService.instance.logout();
+    CreditService.instance.reset();
     _goToLogin();
   }
 
@@ -86,10 +91,45 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const SizedBox(height: AppSpacing.lg),
 
-                    // Top bar — history + logout
+                    // Top bar — credits + history + logout
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
+                        // Credit balance pill
+                        ValueListenableBuilder<int>(
+                          valueListenable: CreditService.instance.balance,
+                          builder: (context, balance, _) {
+                            final isAdmin = CreditService.instance.isAdmin.value;
+                            return GestureDetector(
+                              onTap: () => _showBuyCreditsSheet(),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                                  border: Border.all(
+                                    color: AppColors.primary.withValues(alpha: 0.2),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.toll, size: 16, color: AppColors.primary),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      isAdmin ? 'Unlimited' : '$balance',
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        const Spacer(),
                         IconButton(
                           icon: const Icon(Icons.history_rounded, color: AppColors.primary),
                           tooltip: 'My Ideas',
@@ -359,7 +399,22 @@ class _HomeScreenState extends State<HomeScreen> {
   bool get _canGenerate =>
       !_isLoading && _productController.text.trim().isNotEmpty;
 
+  void _showBuyCreditsSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const BuyCreditsSheet(),
+    );
+  }
+
   Future<void> _generate({required bool random}) async {
+    // Credit gate
+    if (!CreditService.instance.hasCredits) {
+      _showBuyCreditsSheet();
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       final text = random ? '' : _productController.text.trim();
@@ -371,6 +426,9 @@ class _HomeScreenState extends State<HomeScreen> {
         text: text,
         random: random,
       );
+
+      // Deduct credit locally after success
+      CreditService.instance.localDeduct();
 
       // Create session and save variants
       String? sessionId;
@@ -402,6 +460,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       );
+    } on InsufficientCreditsException {
+      if (mounted) _showBuyCreditsSheet();
     } on UnauthorizedException {
       return;
     } catch (e) {

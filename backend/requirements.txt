@@ -15,5 +15,8 @@ sqlalchemy>=2.0,<3
 psycopg[binary]>=3.1,<4
 alembic>=1.13,<2
 
+# IAP receipt verification
+cryptography>=42.0,<44
+
 # Rate limiting
 slowapi>=0.1.9,<1

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../services/credit_service.dart';
+import '../services/purchase_service.dart';
 import '../theme.dart';
 import 'home_screen.dart';
 
@@ -271,6 +273,8 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       await AuthService.instance.signInWithApple();
+      CreditService.instance.refresh();
+      PurchaseService.instance.init();
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -304,6 +308,8 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         await AuthService.instance.login(email, password);
       }
+      CreditService.instance.refresh();
+      PurchaseService.instance.init();
       if (!mounted) return;
       Navigator.pushReplacement(
         context,

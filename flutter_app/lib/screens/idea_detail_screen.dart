@@ -5,7 +5,9 @@ import '../models/idea_spec.dart';
 import '../models/idea_variant.dart';
 import '../models/product_input.dart';
 import '../services/api_client.dart';
+import '../services/credit_service.dart';
 import '../theme.dart';
+import '../widgets/buy_credits_sheet.dart';
 import '../utils/pdf_downloader.dart';
 import '../utils/pdf_generator.dart';
 import '../widgets/keyword_tag.dart';
@@ -1008,7 +1010,22 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
     }
   }
 
+  void _showBuyCreditsSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const BuyCreditsSheet(),
+    );
+  }
+
   Future<void> _searchPatents(IdeaSpec spec) async {
+    // Credit gate
+    if (!CreditService.instance.hasCredits) {
+      _showBuyCreditsSheet();
+      return;
+    }
+
     setState(() => _isLoadingPatents = true);
     try {
       final analysisResponse = await ApiClient.instance.analyzePatents(
@@ -1016,6 +1033,9 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
         variant: widget.variant,
         spec: spec,
       );
+
+      // Deduct credit locally after success
+      CreditService.instance.localDeduct();
 
       if (widget.sessionId != null) {
         ApiClient.instance.updateSession(widget.sessionId!, {
@@ -1042,6 +1062,10 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
           ),
         ),
       );
+    } on InsufficientCreditsException {
+      if (mounted) _showBuyCreditsSheet();
+    } on UnauthorizedException {
+      return;
     } catch (e) {
       if (mounted) {
         setState(() => _errorMessage = e.toString());
