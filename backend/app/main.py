@@ -1,5 +1,6 @@
 import logging
 import os
+import subprocess
 import sys
 import traceback
 
@@ -106,6 +107,20 @@ async def health():
 async def on_startup():
     if not settings.debug and settings.jwt_secret_key == "CHANGE-ME-IN-PRODUCTION":
         raise RuntimeError("JWT_SECRET_KEY must be changed in production!")
+
+    # Run database migrations automatically on startup
+    try:
+        result = subprocess.run(
+            ["alembic", "upgrade", "head"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode == 0:
+            log.info("Alembic migrations applied successfully")
+        else:
+            log.warning("Alembic migration failed: %s", result.stderr)
+    except Exception as e:
+        log.warning("Could not run migrations: %s", e)
+
     try:
         await ensure_admin_user()
     except Exception:
