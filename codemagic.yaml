@@ -15,17 +15,22 @@ workflows:
     scripts:
       - name: Set up code signing
         script: |
+          set -e
+          set -x
           keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create
+          echo "=== Certificates fetched, adding to keychain ==="
           keychain add-certificates
-          xcode-project use-profiles
+          echo "=== Applying profiles to Xcode project ==="
+          xcode-project use-profiles --project ios/Runner.xcodeproj
+          echo "=== Listing code signing identities ==="
+          security find-identity -v -p codesigning
       - name: Get Flutter packages and install pods
         script: |
           flutter pub get
-          cd ios
-          pod install
+          cd ios && pod install
       - name: Build IPA
         script: |
           flutter build ipa --release \
