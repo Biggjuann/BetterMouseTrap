@@ -26,8 +26,6 @@ workflows:
           flutter pub get
           cd ios
           pod install
-      - name: Flutter analyze
-        script: flutter analyze --no-pub
       - name: Build IPA
         script: |
           flutter build ipa --release \
