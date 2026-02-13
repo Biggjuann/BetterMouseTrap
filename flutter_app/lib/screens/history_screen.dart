@@ -208,6 +208,7 @@ class _SessionTile extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w700,
+                              color: AppColors.ink,
                             ),
                       ),
                       const SizedBox(height: 4),
@@ -217,7 +218,7 @@ class _SessionTile extends StatelessWidget {
                           const SizedBox(width: AppSpacing.sm),
                           Text(
                             _formatDate(session.updatedAt),
-                            style: Theme.of(context).textTheme.bodySmall,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.ink),
                           ),
                         ],
                       ),

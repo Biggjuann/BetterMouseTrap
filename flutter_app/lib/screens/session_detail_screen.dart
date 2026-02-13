@@ -90,7 +90,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                               children: [
                                 Text(
                                   _session!['product_text'] ?? '',
-                                  style: Theme.of(context).textTheme.bodyMedium,
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.ink),
                                 ),
                                 if (_session!['product_url'] != null) ...[
                                   const SizedBox(height: 4),
@@ -127,12 +127,12 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                                 children: [
                                   Text(
                                     'Confidence: ${_session!['patent_confidence']}',
-                                    style: Theme.of(context).textTheme.bodyMedium,
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.ink),
                                   ),
                                   if (_session!['patent_hits_json'] != null)
                                     Text(
                                       '${(_session!['patent_hits_json'] as List).length} hits found',
-                                      style: Theme.of(context).textTheme.bodySmall,
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.ink),
                                     ),
                                   if (_session!['patent_hits_json'] != null &&
                                       _session!['patent_draft_json'] == null &&
@@ -265,6 +265,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                 title,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
+                      color: AppColors.ink,
                     ),
               ),
             ],
@@ -358,12 +359,13 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
             variant['title'] ?? 'Untitled',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
                 ),
           ),
           const SizedBox(height: 4),
           Text(
             variant['summary'] ?? '',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.ink),
           ),
         ],
       ),
@@ -379,18 +381,18 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (spec['novelty'] != null) ...[
-            Text('Novelty', style: Theme.of(context).textTheme.labelLarge),
-            Text(spec['novelty'], style: Theme.of(context).textTheme.bodyMedium),
+            Text('Novelty', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.ink)),
+            Text(spec['novelty'], style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.ink)),
             const SizedBox(height: AppSpacing.sm),
           ],
           if (spec['mechanism'] != null) ...[
-            Text('Mechanism', style: Theme.of(context).textTheme.labelLarge),
-            Text(spec['mechanism'], style: Theme.of(context).textTheme.bodyMedium),
+            Text('Mechanism', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.ink)),
+            Text(spec['mechanism'], style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.ink)),
             const SizedBox(height: AppSpacing.sm),
           ],
           if (spec['baseline'] != null) ...[
-            Text('Baseline', style: Theme.of(context).textTheme.labelLarge),
-            Text(spec['baseline'], style: Theme.of(context).textTheme.bodyMedium),
+            Text('Baseline', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.ink)),
+            Text(spec['baseline'], style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.ink)),
           ],
         ],
       ),
