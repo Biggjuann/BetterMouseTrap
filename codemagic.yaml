@@ -48,6 +48,14 @@ workflows:
             --build-name=1.0.0 \
             --build-number=$PROJECT_BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
+      - name: Upload to App Store Connect
+        script: |
+          set -e
+          # Re-export API key for app-store-connect CLI
+          printf '%s\n' "$APP_STORE_CONNECT_PRIVATE_KEY" | tr -d '\r' > /tmp/authkey.p8
+          export APP_STORE_CONNECT_PRIVATE_KEY="$(cat /tmp/authkey.p8)"
+          app-store-connect publish \
+            --path build/ios/ipa/*.ipa
     artifacts:
       - flutter_app/build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
