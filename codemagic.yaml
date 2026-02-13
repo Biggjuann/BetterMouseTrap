@@ -21,10 +21,9 @@ workflows:
             --create
           keychain add-certificates
           xcode-project use-profiles
-      - name: Get Flutter packages
-        script: flutter packages pub get
-      - name: Install CocoaPods
+      - name: Get Flutter packages and install pods
         script: |
+          flutter pub get
           cd ios
           pod install
       - name: Flutter analyze
