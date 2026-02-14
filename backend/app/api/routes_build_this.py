@@ -241,13 +241,49 @@ async def generate_patent_draft(req: ProvisionalPatentRequest):
     if isinstance(claims, list):
         claims = {"independent": claims, "dependent": []}
 
-    # Detect truncation: these fields come last in JSON and are most likely to be lost
-    if not data.get("abstract"):
-        log.warning("Patent draft missing 'abstract' — likely truncated LLM response")
-    if not data.get("claims"):
-        log.warning("Patent draft missing 'claims' — likely truncated LLM response")
-    if not data.get("drawings_note"):
-        log.warning("Patent draft missing 'drawings_note' — likely truncated LLM response")
+    # If abstract, claims, or drawings_note are missing, make a focused follow-up call
+    missing_abstract = not data.get("abstract")
+    missing_claims = not claims or not claims.get("independent")
+    missing_drawings = not data.get("drawings_note")
+
+    if missing_abstract or missing_claims or missing_drawings:
+        log.warning(
+            "Patent draft missing sections (abstract=%s, claims=%s, drawings=%s) — making follow-up call",
+            missing_abstract, missing_claims, missing_drawings,
+        )
+        spec_data_for_followup = data.get("specification", {})
+        title = data.get("cover_sheet", {}).get("invention_title", req.variant.title)
+        summary = spec_data_for_followup.get("summary", req.variant.summary)
+
+        followup_prompt = f"""Given this patent invention, generate ONLY the missing sections.
+
+Invention: {title}
+Summary: {summary}
+Product: {req.product_text}
+Novelty: {req.spec.novelty}
+Mechanism: {req.spec.mechanism}
+
+Generate a JSON object with these fields:
+- "abstract": Exactly 150 words. Technical summary stating the field, problem, and solution.
+- "claims": Object with "independent" (2-3 claims) and "dependent" (4-6 claims) arrays in patent language.
+- "drawings_note": Recommend specific figures (perspective view, block diagram, flowchart) the inventor should prepare.
+
+Respond with ONLY valid JSON, no markdown fences."""
+
+        try:
+            followup = call_llm(followup_prompt, system=PROVISIONAL_PATENT_SYSTEM, max_tokens=4096)
+            if missing_abstract and followup.get("abstract"):
+                data["abstract"] = followup["abstract"]
+            if missing_claims:
+                fc = followup.get("claims", {})
+                if isinstance(fc, list):
+                    fc = {"independent": fc, "dependent": []}
+                if fc.get("independent"):
+                    claims = fc
+            if missing_drawings and followup.get("drawings_note"):
+                data["drawings_note"] = followup["drawings_note"]
+        except Exception as exc:
+            log.error("Follow-up LLM call failed: %s", exc)
 
     cover_data = data.get("cover_sheet", {})
     spec_data = data.get("specification", {})
