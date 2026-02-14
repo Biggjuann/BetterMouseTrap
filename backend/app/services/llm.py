@@ -28,8 +28,12 @@ def _call_anthropic(prompt: str, system: str | None = None, max_tokens: int | No
     }
     if system:
         kwargs["system"] = system
-    response = client.messages.create(**kwargs)
-    return response.content[0].text
+    # Use streaming to avoid timeout errors on large max_tokens requests
+    result_text = ""
+    with client.messages.stream(**kwargs) as stream:
+        for text in stream.text_stream:
+            result_text += text
+    return result_text
 
 
 # ── OpenAI ───────────────────────────────────────────────────────────
