@@ -43,4 +43,10 @@ nul
 .claude/
 
 # Windows Flutter symlink artifacts
-flutter_app/windows/flutter/ephemeral/
+flutter_app/windows/flutter/
+
+# Untracked dev artifacts
+_ul
+flutter_app/app_icon_1024.png
+flutter_app/tool/
+icon_gen/
