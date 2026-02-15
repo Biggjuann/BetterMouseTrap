@@ -11,7 +11,7 @@ import logging
 import httpx
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric import ec, utils
 
 from app.core.config import settings
 
@@ -94,10 +94,14 @@ async def verify_and_decode_receipt(
 
     # Verify JWS signature using leaf cert
     signed_data = f"{header_b64}.{payload_b64}".encode()
-    signature = _base64url_decode(signature_b64)
+    raw_sig = _base64url_decode(signature_b64)
+    # JWS uses raw R||S signature format; cryptography expects DER-encoded
+    r = int.from_bytes(raw_sig[:32], "big")
+    s = int.from_bytes(raw_sig[32:], "big")
+    der_sig = utils.encode_dss_signature(r, s)
     try:
         leaf_cert.public_key().verify(
-            signature,
+            der_sig,
             signed_data,
             ec.ECDSA(hashes.SHA256()),
         )
@@ -114,8 +118,7 @@ async def verify_and_decode_receipt(
         raise ValueError(f"Product ID mismatch: {payload.get('productId')} != {expected_product_id}")
 
     environment = payload.get("environment", "")
-    if not settings.debug and environment == "Sandbox":
-        raise ValueError("Sandbox receipt in production mode")
+    log.info("IAP environment: %s", environment)
 
     return {
         "original_transaction_id": payload["originalTransactionId"],
