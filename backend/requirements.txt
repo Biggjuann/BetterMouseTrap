@@ -11,8 +11,7 @@ python-jose[cryptography]>=3.3,<4
 bcrypt>=4.0,<5
 
 # Database
-sqlalchemy>=2.0,<3
-greenlet>=3.0  # required by SQLAlchemy async ORM
+sqlalchemy[asyncio]>=2.0,<3
 psycopg[binary]>=3.1,<4
 alembic>=1.13,<2
 

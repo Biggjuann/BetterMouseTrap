@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
-from app.models.database import get_session
+from app.models.database import async_session, get_session
 from app.models.user import User
 from app.services.apple_iap import verify_and_decode_receipt
 from app.services.credits import get_balance, grant_purchase_credits
@@ -77,21 +77,23 @@ async def verify_purchase(
             detail=f"Receipt validation failed: {e}",
         )
 
-    # Grant credits (idempotent via apple_transaction_id unique constraint)
-    try:
-        new_balance = await grant_purchase_credits(
-            session=session,
-            user_id=user.id,
-            credits_amount=credits_amount,
-            apple_transaction_id=verified["original_transaction_id"],
-            product_id=req.product_id,
-        )
-        await session.commit()
-    except Exception:
-        # Likely IntegrityError from duplicate apple_transaction_id
-        await session.rollback()
-        balance = await get_balance(session, user.id)
-        return VerifyPurchaseResponse(success=True, credits_granted=0, new_balance=balance)
+    # Grant credits using a fresh DB session to avoid greenlet context
+    # issues after the httpx call in verify_and_decode_receipt
+    async with async_session() as credit_session:
+        try:
+            new_balance = await grant_purchase_credits(
+                session=credit_session,
+                user_id=user.id,
+                credits_amount=credits_amount,
+                apple_transaction_id=verified["original_transaction_id"],
+                product_id=req.product_id,
+            )
+            await credit_session.commit()
+        except Exception:
+            # Likely IntegrityError from duplicate apple_transaction_id
+            await credit_session.rollback()
+            balance = await get_balance(credit_session, user.id)
+            return VerifyPurchaseResponse(success=True, credits_granted=0, new_balance=balance)
 
     log.info("Granted %d credits to user %s (product: %s)", credits_amount, user.id, req.product_id)
     return VerifyPurchaseResponse(
