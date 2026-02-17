@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     admin_email: str = ""
     admin_password: str = ""
 
+    # Encryption (comma-separated Fernet keys for rotation; empty = disabled)
+    encryption_keys: str = ""
+
     # App
     app_name: str = "MouseTrap"
     debug: bool = False

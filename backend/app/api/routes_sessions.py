@@ -15,6 +15,7 @@ from app.schemas.session import (
     SessionSummary,
     SessionUpdate,
 )
+from app.services.encryption import decrypt_json, decrypt_text, encrypt_json, encrypt_text
 
 log = logging.getLogger("mousetrap.routes_sessions")
 
@@ -22,10 +23,11 @@ router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 
 def _to_summary(s: Session) -> SessionSummary:
+    pt = decrypt_text(s.product_text) or ""
     return SessionSummary(
         id=str(s.id),
-        title=s.title,
-        product_text=s.product_text[:100],
+        title=decrypt_text(s.title),
+        product_text=pt[:100],
         status=s.status,
         created_at=s.created_at.isoformat(),
         updated_at=s.updated_at.isoformat(),
@@ -35,19 +37,19 @@ def _to_summary(s: Session) -> SessionSummary:
 def _to_detail(s: Session) -> SessionDetail:
     return SessionDetail(
         id=str(s.id),
-        product_text=s.product_text,
+        product_text=decrypt_text(s.product_text) or "",
         product_url=s.product_url,
-        variants_json=s.variants_json,
-        selected_variant_json=s.selected_variant_json,
-        spec_json=s.spec_json,
-        patent_hits_json=s.patent_hits_json,
+        variants_json=decrypt_json(s.variants_json),
+        selected_variant_json=decrypt_json(s.selected_variant_json),
+        spec_json=decrypt_json(s.spec_json),
+        patent_hits_json=decrypt_json(s.patent_hits_json),
         patent_confidence=s.patent_confidence,
-        export_markdown=s.export_markdown,
-        export_plain_text=s.export_plain_text,
-        patent_draft_json=s.patent_draft_json,
-        prototype_json=s.prototype_json,
+        export_markdown=decrypt_text(s.export_markdown),
+        export_plain_text=decrypt_text(s.export_plain_text),
+        patent_draft_json=decrypt_json(s.patent_draft_json),
+        prototype_json=decrypt_json(s.prototype_json),
         status=s.status,
-        title=s.title,
+        title=decrypt_text(s.title),
         created_at=s.created_at.isoformat(),
         updated_at=s.updated_at.isoformat(),
     )
@@ -61,7 +63,7 @@ async def create_session(
 ):
     session = Session(
         user_id=user.id,
-        product_text=req.product_text,
+        product_text=encrypt_text(req.product_text),
         product_url=req.product_url,
     )
     db.add(session)
@@ -114,8 +116,18 @@ async def update_session(
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
+    json_fields = {
+        "variants_json", "selected_variant_json", "spec_json",
+        "patent_hits_json", "patent_draft_json", "prototype_json",
+    }
+    text_fields = {"title", "export_markdown", "export_plain_text"}
+
     update_data = req.model_dump(exclude_none=True)
     for key, value in update_data.items():
+        if key in json_fields:
+            value = encrypt_json(value)
+        elif key in text_fields:
+            value = encrypt_text(value)
         setattr(session, key, value)
 
     await db.commit()

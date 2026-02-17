@@ -24,6 +24,7 @@ from app.auth.routes import router as auth_router
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.models.database import async_session
+from app.services.encryption import validate_keys as validate_encryption_keys
 
 # ── Logging ──────────────────────────────────────────────────────
 if not settings.debug:
@@ -108,6 +109,9 @@ async def health():
 async def on_startup():
     if not settings.debug and settings.jwt_secret_key == "CHANGE-ME-IN-PRODUCTION":
         raise RuntimeError("JWT_SECRET_KEY must be changed in production!")
+
+    # Validate encryption keys early (fail fast if malformed)
+    validate_encryption_keys()
 
     # Run database migrations automatically on startup
     try:
