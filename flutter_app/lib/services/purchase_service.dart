@@ -30,14 +30,15 @@ class PurchaseService {
   final ValueNotifier<bool> isPurchasing = ValueNotifier<bool>(false);
   final ValueNotifier<String?> purchaseError = ValueNotifier<String?>(null);
 
-  /// Set of purchaseIDs already seen/completed to avoid reprocessing.
+  /// Set of purchaseIDs already completed to skip duplicates.
   final Set<String> _completedIds = {};
 
-  /// Tracks total stream events for diagnostics.
-  int _streamEventCount = 0;
+  /// True once init has finished clearing stale transactions.
+  bool _ready = false;
 
-  /// True when we're waiting for a fresh purchase after buyConsumable.
-  bool _awaitingNewPurchase = false;
+  /// Counts for diagnostics.
+  int _staleCleared = 0;
+  int _streamEvents = 0;
 
   static const _productIds = {
     'com.mousetrap.credits.10',
@@ -60,10 +61,19 @@ class PurchaseService {
       return;
     }
 
+    // Phase 1: Attach listener to capture stale transactions.
+    // Any purchased/restored transactions that arrive before _ready=true
+    // are stale and will be completed immediately (no backend call).
     _subscription = _iap.purchaseStream.listen(
       _onPurchaseUpdate,
       onError: (e) => purchaseError.value = 'Stream error: $e',
     );
+
+    // Give StoreKit a moment to deliver any stale transactions
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    // Phase 2: Mark as ready — future stream events are real purchases.
+    _ready = true;
 
     final response = await _iap.queryProductDetails(_productIds);
     if (response.notFoundIDs.isNotEmpty) {
@@ -80,6 +90,11 @@ class PurchaseService {
       );
     }).toList()
       ..sort((a, b) => a.credits.compareTo(b.credits));
+
+    if (_staleCleared > 0) {
+      purchaseError.value =
+          'DIAG: cleared $_staleCleared stale txn(s). Ready for purchases.';
+    }
   }
 
   Future<void> buyCredits(CreditPack pack) async {
@@ -87,24 +102,26 @@ class PurchaseService {
       purchaseError.value = 'DIAG: storeProduct is null for ${pack.productId}';
       return;
     }
+    if (!_ready) {
+      purchaseError.value = 'DIAG: still initializing, please wait...';
+      return;
+    }
+
     isPurchasing.value = true;
     purchaseError.value = 'DIAG: calling buyConsumable...';
-    _awaitingNewPurchase = true;
 
     try {
       final purchaseParam = PurchaseParam(productDetails: pack.storeProduct!);
       final started = await _iap.buyConsumable(purchaseParam: purchaseParam);
       if (!started) {
-        _awaitingNewPurchase = false;
         isPurchasing.value = false;
         purchaseError.value =
-            'DIAG: buyConsumable=false (seen=${_completedIds.length} txns)';
+            'DIAG: buyConsumable=false (cleared=$_staleCleared)';
       } else {
         purchaseError.value =
-            'DIAG: buyConsumable=true, waiting for StoreKit...';
+            'DIAG: buyConsumable=true, waiting for StoreKit dialog...';
       }
     } catch (e) {
-      _awaitingNewPurchase = false;
       isPurchasing.value = false;
       purchaseError.value = 'DIAG: buyConsumable threw: $e';
     }
@@ -112,47 +129,56 @@ class PurchaseService {
 
   Future<void> _onPurchaseUpdate(List<PurchaseDetails> purchases) async {
     for (final purchase in purchases) {
-      _streamEventCount++;
+      _streamEvents++;
       final pid = purchase.purchaseID ?? 'no-id';
 
       switch (purchase.status) {
         case PurchaseStatus.pending:
           isPurchasing.value = true;
-          purchaseError.value =
-              'DIAG: #$_streamEventCount pending id=$pid';
+          purchaseError.value = 'DIAG: #$_streamEvents pending id=$pid';
           break;
 
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
-          // Skip if we already processed this exact transaction
-          if (_completedIds.contains(pid)) {
+          if (!_ready) {
+            // STALE: arrived during init — complete immediately, no backend call
+            _staleCleared++;
+            _completedIds.add(pid);
             purchaseError.value =
-                'DIAG: #$_streamEventCount SKIP duplicate id=$pid';
-            // Still complete it to clear the queue
-            await _iap.completePurchase(purchase);
-            break;
+                'DIAG: clearing stale #$_staleCleared id=$pid';
+            try {
+              await _iap.completePurchase(purchase);
+            } catch (_) {}
+          } else if (_completedIds.contains(pid)) {
+            // Already processed this exact transaction
+            purchaseError.value =
+                'DIAG: #$_streamEvents re-skip id=$pid';
+            try {
+              await _iap.completePurchase(purchase);
+            } catch (_) {}
+          } else {
+            // REAL purchase after user tap
+            purchaseError.value =
+                'DIAG: #$_streamEvents verifying id=$pid...';
+            await _verifyAndComplete(purchase);
           }
-
-          // Always verify with backend and always complete
-          purchaseError.value =
-              'DIAG: #$_streamEventCount verifying id=$pid...';
-          await _verifyAndComplete(purchase);
           break;
 
         case PurchaseStatus.error:
-          _awaitingNewPurchase = false;
           isPurchasing.value = false;
           purchaseError.value =
-              'DIAG: #$_streamEventCount error=${purchase.error?.message} id=$pid';
-          await _iap.completePurchase(purchase);
+              'DIAG: #$_streamEvents error=${purchase.error?.message} id=$pid';
+          try {
+            await _iap.completePurchase(purchase);
+          } catch (_) {}
           break;
 
         case PurchaseStatus.canceled:
-          _awaitingNewPurchase = false;
           isPurchasing.value = false;
-          purchaseError.value =
-              'DIAG: #$_streamEventCount canceled id=$pid';
-          await _iap.completePurchase(purchase);
+          purchaseError.value = 'DIAG: #$_streamEvents canceled id=$pid';
+          try {
+            await _iap.completePurchase(purchase);
+          } catch (_) {}
           break;
       }
     }
@@ -171,39 +197,23 @@ class PurchaseService {
       final granted = result['credits_granted'] as int;
       final newBalance = result['new_balance'] as int;
       CreditService.instance.balance.value = newBalance;
-
-      // Mark this transaction as processed
       _completedIds.add(pid);
 
+      isPurchasing.value = false;
       if (granted > 0) {
-        // Real new purchase — success!
-        _awaitingNewPurchase = false;
-        isPurchasing.value = false;
         purchaseError.value =
-            'DIAG: +$granted credits! balance=$newBalance (id=$pid)';
+            'DIAG: +$granted credits! balance=$newBalance';
       } else {
-        // Duplicate / already-granted transaction
         purchaseError.value =
-            'DIAG: dup txn id=$pid (granted=0). '
-            '${_awaitingNewPurchase ? "Still waiting for new purchase..." : ""}';
-        // If not awaiting a new purchase, reset state
-        if (!_awaitingNewPurchase) {
-          isPurchasing.value = false;
-        }
-        // If awaiting, keep isPurchasing=true — the real purchase is coming
+            'DIAG: granted=0 id=$pid (already processed). Tap again.';
       }
     } catch (e) {
-      _awaitingNewPurchase = false;
       isPurchasing.value = false;
       purchaseError.value = 'DIAG: verify error id=$pid — $e';
     } finally {
-      // Always complete — don't check pendingCompletePurchase
-      // to ensure stale transactions are truly cleared
       try {
         await _iap.completePurchase(purchase);
-      } catch (_) {
-        // completePurchase can throw if already completed
-      }
+      } catch (_) {}
     }
   }
 
