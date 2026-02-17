@@ -30,6 +30,9 @@ class PurchaseService {
   final ValueNotifier<bool> isPurchasing = ValueNotifier<bool>(false);
   final ValueNotifier<String?> purchaseError = ValueNotifier<String?>(null);
 
+  // Diagnostic: track pending transactions seen on init
+  int _pendingOnInit = 0;
+
   static const _productIds = {
     'com.mousetrap.credits.10',
     'com.mousetrap.credits.25',
@@ -45,14 +48,23 @@ class PurchaseService {
   List<CreditPack> availablePacks = [];
 
   Future<void> init() async {
-    if (!await _iap.isAvailable()) return;
+    final available = await _iap.isAvailable();
+    if (!available) {
+      purchaseError.value = 'DIAG: IAP not available on this device';
+      return;
+    }
 
     _subscription = _iap.purchaseStream.listen(
       _onPurchaseUpdate,
-      onError: (e) => purchaseError.value = e.toString(),
+      onError: (e) => purchaseError.value = 'Stream error: $e',
     );
 
     final response = await _iap.queryProductDetails(_productIds);
+    if (response.notFoundIDs.isNotEmpty) {
+      purchaseError.value =
+          'DIAG: Products not found: ${response.notFoundIDs.join(", ")}';
+    }
+
     availablePacks = response.productDetails.map((p) {
       return CreditPack(
         productId: p.id,
@@ -65,38 +77,53 @@ class PurchaseService {
   }
 
   Future<void> buyCredits(CreditPack pack) async {
-    if (pack.storeProduct == null) return;
+    if (pack.storeProduct == null) {
+      purchaseError.value = 'DIAG: storeProduct is null for ${pack.productId}';
+      return;
+    }
     isPurchasing.value = true;
-    purchaseError.value = null;
+    purchaseError.value = 'DIAG: calling buyConsumable...';
 
     try {
       final purchaseParam = PurchaseParam(productDetails: pack.storeProduct!);
       final started = await _iap.buyConsumable(purchaseParam: purchaseParam);
       if (!started) {
         isPurchasing.value = false;
-        purchaseError.value = 'Could not start purchase. Please try again.';
+        purchaseError.value =
+            'DIAG: buyConsumable returned false (pending=$_pendingOnInit)';
+      } else {
+        purchaseError.value =
+            'DIAG: buyConsumable returned true — waiting for StoreKit callback...';
       }
     } catch (e) {
       isPurchasing.value = false;
-      purchaseError.value = 'Purchase failed: $e';
+      purchaseError.value = 'DIAG: buyConsumable threw: $e';
     }
   }
 
   Future<void> _onPurchaseUpdate(List<PurchaseDetails> purchases) async {
     for (final purchase in purchases) {
+      final diag =
+          'status=${purchase.status}, product=${purchase.productID}, '
+          'id=${purchase.purchaseID}, pending=${purchase.pendingCompletePurchase}';
+
       switch (purchase.status) {
         case PurchaseStatus.pending:
+          _pendingOnInit++;
           isPurchasing.value = true;
+          purchaseError.value = 'DIAG: stream pending — $diag';
           break;
 
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
+          purchaseError.value = 'DIAG: stream ${purchase.status} — verifying...';
           await _verifyAndComplete(purchase);
           break;
 
         case PurchaseStatus.error:
           isPurchasing.value = false;
-          purchaseError.value = purchase.error?.message ?? 'Purchase failed';
+          purchaseError.value =
+              'DIAG: stream error — ${purchase.error?.message} | $diag';
           if (purchase.pendingCompletePurchase) {
             await _iap.completePurchase(purchase);
           }
@@ -104,6 +131,7 @@ class PurchaseService {
 
         case PurchaseStatus.canceled:
           isPurchasing.value = false;
+          purchaseError.value = 'DIAG: stream canceled — $diag';
           if (purchase.pendingCompletePurchase) {
             await _iap.completePurchase(purchase);
           }
@@ -114,6 +142,7 @@ class PurchaseService {
 
   Future<void> _verifyAndComplete(PurchaseDetails purchase) async {
     try {
+      purchaseError.value = 'DIAG: calling verifyPurchase API...';
       final result = await ApiClient.instance.verifyPurchase(
         transactionId: purchase.purchaseID ?? '',
         productId: purchase.productID,
@@ -124,10 +153,10 @@ class PurchaseService {
       CreditService.instance.balance.value = newBalance;
 
       isPurchasing.value = false;
-      purchaseError.value = null;
+      purchaseError.value = 'DIAG: success! balance=$newBalance';
     } catch (e) {
       isPurchasing.value = false;
-      purchaseError.value = 'Verification failed: $e';
+      purchaseError.value = 'DIAG: verify error — $e';
     } finally {
       if (purchase.pendingCompletePurchase) {
         await _iap.completePurchase(purchase);
