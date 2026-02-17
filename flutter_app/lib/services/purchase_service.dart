@@ -69,8 +69,17 @@ class PurchaseService {
     isPurchasing.value = true;
     purchaseError.value = null;
 
-    final purchaseParam = PurchaseParam(productDetails: pack.storeProduct!);
-    await _iap.buyConsumable(purchaseParam: purchaseParam);
+    try {
+      final purchaseParam = PurchaseParam(productDetails: pack.storeProduct!);
+      final started = await _iap.buyConsumable(purchaseParam: purchaseParam);
+      if (!started) {
+        isPurchasing.value = false;
+        purchaseError.value = 'Could not start purchase. Please try again.';
+      }
+    } catch (e) {
+      isPurchasing.value = false;
+      purchaseError.value = 'Purchase failed: $e';
+    }
   }
 
   Future<void> _onPurchaseUpdate(List<PurchaseDetails> purchases) async {
