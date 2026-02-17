@@ -30,8 +30,12 @@ class PurchaseService {
   final ValueNotifier<bool> isPurchasing = ValueNotifier<bool>(false);
   final ValueNotifier<String?> purchaseError = ValueNotifier<String?>(null);
 
-  // Diagnostic: track pending transactions seen on init
-  int _pendingOnInit = 0;
+  /// True only after the user taps a pack. False during init when
+  /// StoreKit replays old unfinished transactions.
+  bool _userInitiated = false;
+
+  /// Count of stale transactions completed on init.
+  int _staleCompleted = 0;
 
   static const _productIds = {
     'com.mousetrap.credits.10',
@@ -54,6 +58,8 @@ class PurchaseService {
       return;
     }
 
+    // Listener picks up pending (stale) transactions immediately.
+    // _userInitiated is false, so they'll be completed without verification.
     _subscription = _iap.purchaseStream.listen(
       _onPurchaseUpdate,
       onError: (e) => purchaseError.value = 'Stream error: $e',
@@ -84,18 +90,23 @@ class PurchaseService {
     isPurchasing.value = true;
     purchaseError.value = 'DIAG: calling buyConsumable...';
 
+    // Mark as user-initiated so stream handler verifies with backend
+    _userInitiated = true;
+
     try {
       final purchaseParam = PurchaseParam(productDetails: pack.storeProduct!);
       final started = await _iap.buyConsumable(purchaseParam: purchaseParam);
       if (!started) {
+        _userInitiated = false;
         isPurchasing.value = false;
         purchaseError.value =
-            'DIAG: buyConsumable returned false (pending=$_pendingOnInit)';
+            'DIAG: buyConsumable returned false (staleCompleted=$_staleCompleted)';
       } else {
         purchaseError.value =
-            'DIAG: buyConsumable returned true — waiting for StoreKit callback...';
+            'DIAG: buyConsumable=true, waiting for StoreKit...';
       }
     } catch (e) {
+      _userInitiated = false;
       isPurchasing.value = false;
       purchaseError.value = 'DIAG: buyConsumable threw: $e';
     }
@@ -109,18 +120,30 @@ class PurchaseService {
 
       switch (purchase.status) {
         case PurchaseStatus.pending:
-          _pendingOnInit++;
           isPurchasing.value = true;
           purchaseError.value = 'DIAG: stream pending — $diag';
           break;
 
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
-          purchaseError.value = 'DIAG: stream ${purchase.status} — verifying...';
-          await _verifyAndComplete(purchase);
+          if (_userInitiated) {
+            // User-initiated purchase — verify with backend
+            purchaseError.value =
+                'DIAG: stream ${purchase.status} — verifying with server...';
+            await _verifyAndComplete(purchase);
+          } else {
+            // Stale transaction from previous session — just complete it
+            _staleCompleted++;
+            purchaseError.value =
+                'DIAG: completing stale txn #$_staleCompleted (${purchase.productID})';
+            if (purchase.pendingCompletePurchase) {
+              await _iap.completePurchase(purchase);
+            }
+          }
           break;
 
         case PurchaseStatus.error:
+          _userInitiated = false;
           isPurchasing.value = false;
           purchaseError.value =
               'DIAG: stream error — ${purchase.error?.message} | $diag';
@@ -130,6 +153,7 @@ class PurchaseService {
           break;
 
         case PurchaseStatus.canceled:
+          _userInitiated = false;
           isPurchasing.value = false;
           purchaseError.value = 'DIAG: stream canceled — $diag';
           if (purchase.pendingCompletePurchase) {
@@ -149,12 +173,16 @@ class PurchaseService {
         signedTransaction: purchase.verificationData.serverVerificationData,
       );
 
+      final granted = result['credits_granted'] as int;
       final newBalance = result['new_balance'] as int;
       CreditService.instance.balance.value = newBalance;
 
+      _userInitiated = false;
       isPurchasing.value = false;
-      purchaseError.value = 'DIAG: success! balance=$newBalance';
+      purchaseError.value =
+          'DIAG: success! granted=$granted, balance=$newBalance';
     } catch (e) {
+      _userInitiated = false;
       isPurchasing.value = false;
       purchaseError.value = 'DIAG: verify error — $e';
     } finally {
