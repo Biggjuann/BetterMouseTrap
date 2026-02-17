@@ -67,23 +67,27 @@ class PurchaseService {
   Future<void> buyCredits(CreditPack pack) async {
     if (pack.storeProduct == null) return;
     isPurchasing.value = true;
-    purchaseError.value = null;
+    purchaseError.value = 'Starting purchase...';
 
     try {
       final purchaseParam = PurchaseParam(productDetails: pack.storeProduct!);
       final started = await _iap.buyConsumable(purchaseParam: purchaseParam);
       if (!started) {
         isPurchasing.value = false;
-        purchaseError.value = 'Could not start purchase. Please try again.';
+        purchaseError.value = 'StoreKit: buyConsumable returned false';
+      } else {
+        purchaseError.value = 'Waiting for StoreKit...';
       }
     } catch (e) {
       isPurchasing.value = false;
-      purchaseError.value = 'Purchase failed: $e';
+      purchaseError.value = 'buyConsumable error: $e';
     }
   }
 
   Future<void> _onPurchaseUpdate(List<PurchaseDetails> purchases) async {
     for (final purchase in purchases) {
+      purchaseError.value = 'StoreKit status: ${purchase.status}';
+
       switch (purchase.status) {
         case PurchaseStatus.pending:
           isPurchasing.value = true;
@@ -91,12 +95,13 @@ class PurchaseService {
 
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
+          purchaseError.value = 'Verifying with server...';
           await _verifyAndComplete(purchase);
           break;
 
         case PurchaseStatus.error:
           isPurchasing.value = false;
-          purchaseError.value = purchase.error?.message ?? 'Purchase failed';
+          purchaseError.value = 'StoreKit error: ${purchase.error?.message ?? 'unknown'}';
           if (purchase.pendingCompletePurchase) {
             await _iap.completePurchase(purchase);
           }
@@ -104,6 +109,7 @@ class PurchaseService {
 
         case PurchaseStatus.canceled:
           isPurchasing.value = false;
+          purchaseError.value = 'Purchase canceled';
           if (purchase.pendingCompletePurchase) {
             await _iap.completePurchase(purchase);
           }
@@ -120,11 +126,16 @@ class PurchaseService {
         signedTransaction: purchase.verificationData.serverVerificationData,
       );
 
+      final granted = result['credits_granted'] as int;
       final newBalance = result['new_balance'] as int;
       CreditService.instance.balance.value = newBalance;
 
       isPurchasing.value = false;
-      purchaseError.value = null;
+      if (granted > 0) {
+        purchaseError.value = 'Added $granted credits! Balance: $newBalance';
+      } else {
+        purchaseError.value = 'Already applied. Balance: $newBalance';
+      }
     } catch (e) {
       isPurchasing.value = false;
       purchaseError.value = 'Verification failed: $e';
