@@ -9,6 +9,29 @@ from app.core.config import settings
 
 log = logging.getLogger("mousetrap.patentsview")
 
+# ── Shared async client (connection pooling) ───────────────────────
+# Reuses connections across parallel PatentsView queries instead of
+# opening 10-20 separate clients.  Created lazily, closed on shutdown.
+_async_client: httpx.AsyncClient | None = None
+
+
+def _get_async_client() -> httpx.AsyncClient:
+    global _async_client
+    if _async_client is None or _async_client.is_closed:
+        _async_client = httpx.AsyncClient(
+            timeout=30,
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+        )
+    return _async_client
+
+
+async def close_async_client():
+    """Close the shared client — call from FastAPI shutdown hook."""
+    global _async_client
+    if _async_client is not None and not _async_client.is_closed:
+        await _async_client.aclose()
+        _async_client = None
+
 PATENT_FIELDS = [
     "patent_id",
     "patent_title",
@@ -220,13 +243,13 @@ async def search_patents_async(payload: dict) -> list[dict]:
     if "s" in payload:
         params["s"] = _json_param(payload["s"])
 
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            url,
-            params=params,
-            headers=headers,
-            timeout=30,
-        )
+    client = _get_async_client()
+    resp = await client.get(
+        url,
+        params=params,
+        headers=headers,
+        timeout=30,
+    )
 
     if resp.status_code != 200:
         log.error("PatentsView %s for q=%s: %s", resp.status_code, q_str[:150], resp.text[:300])

@@ -128,6 +128,12 @@ async def on_startup():
         log.warning("Could not ensure admin user (database may be unreachable). Will retry on first request.")
 
 
+@app.on_event("shutdown")
+async def on_shutdown():
+    from app.services.patentsview import close_async_client
+    await close_async_client()
+
+
 # ── Static file serving (for production Docker build) ───────────────
 static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
 if os.path.isdir(static_dir):

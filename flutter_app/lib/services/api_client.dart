@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -115,7 +116,12 @@ class ApiClient {
       },
       'limit': limit,
     };
-    final data = await _post('/patents/analyze', body);
+    final data = await _post(
+      '/patents/analyze',
+      body,
+      timeout: const Duration(seconds: 180),
+      retries: 1,
+    );
     return PatentAnalysisResponse.fromJson(data);
   }
 
@@ -196,7 +202,12 @@ class ApiClient {
       'spec': spec.toJson(),
       'hits': hits.map((h) => h.toJson()).toList(),
     };
-    final data = await _post('/build/patent-draft', body);
+    final data = await _post(
+      '/build/patent-draft',
+      body,
+      timeout: const Duration(seconds: 180),
+      retries: 1,
+    );
     return ProvisionalPatentResponse.fromJson(data);
   }
 
@@ -237,35 +248,53 @@ class ApiClient {
 
   Future<Map<String, dynamic>> _post(
     String path,
-    Map<String, dynamic> body,
-  ) async {
+    Map<String, dynamic> body, {
+    Duration timeout = const Duration(seconds: 60),
+    int retries = 0,
+  }) async {
     final uri = Uri.parse('$_baseUrl$path');
 
-    final http.Response response;
-    try {
-      response =
-          await http.post(uri, headers: _authHeaders, body: jsonEncode(body));
-    } catch (e) {
-      throw ApiException('Network error: $e');
+    for (int attempt = 0; attempt <= retries; attempt++) {
+      final http.Response response;
+      try {
+        response = await http
+            .post(uri, headers: _authHeaders, body: jsonEncode(body))
+            .timeout(timeout);
+      } on TimeoutException {
+        if (attempt < retries) continue;
+        throw const ApiException(
+          'Request timed out. The server may be busy — please try again.',
+        );
+      } catch (e) {
+        if (attempt < retries) {
+          // Wait briefly before retry
+          await Future.delayed(const Duration(seconds: 2));
+          continue;
+        }
+        throw ApiException('Network error: $e');
+      }
+
+      if (response.statusCode == 401) await _handleUnauthorized();
+
+      if (response.statusCode == 402) {
+        throw const InsufficientCreditsException();
+      }
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiException(
+          'Server error (${response.statusCode}): ${response.body}',
+        );
+      }
+
+      try {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (e) {
+        throw ApiException('Failed to parse response: $e');
+      }
     }
 
-    if (response.statusCode == 401) await _handleUnauthorized();
-
-    if (response.statusCode == 402) {
-      throw const InsufficientCreditsException();
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException(
-        'Server error (${response.statusCode}): ${response.body}',
-      );
-    }
-
-    try {
-      return jsonDecode(response.body) as Map<String, dynamic>;
-    } catch (e) {
-      throw ApiException('Failed to parse response: $e');
-    }
+    // Should not reach here, but just in case
+    throw const ApiException('Request failed after retries.');
   }
 
   Future<Map<String, dynamic>> _get(String path) async {
