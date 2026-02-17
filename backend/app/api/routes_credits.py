@@ -89,11 +89,15 @@ async def verify_purchase(
                 product_id=req.product_id,
             )
             await credit_session.commit()
-        except Exception:
-            # Likely IntegrityError from duplicate apple_transaction_id
+        except Exception as e:
+            log.warning("Credit grant failed for user %s: %s: %s", user.id, type(e).__name__, e)
             await credit_session.rollback()
-            balance = await get_balance(credit_session, user.id)
-            return VerifyPurchaseResponse(success=True, credits_granted=0, new_balance=balance)
+            # IntegrityError = duplicate transaction (already granted) — return current balance
+            from sqlalchemy.exc import IntegrityError
+            if isinstance(e, IntegrityError):
+                balance = await get_balance(credit_session, user.id)
+                return VerifyPurchaseResponse(success=True, credits_granted=0, new_balance=balance)
+            raise  # surface unexpected errors instead of swallowing them
 
     log.info("Granted %d credits to user %s (product: %s)", credits_amount, user.id, req.product_id)
     return VerifyPurchaseResponse(
