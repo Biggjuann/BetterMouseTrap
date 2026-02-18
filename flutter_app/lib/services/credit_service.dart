@@ -11,6 +11,8 @@ class CreditService {
 
   bool get hasCredits => isAdmin.value || balance.value > 0;
 
+  bool hasCreditsFor(int amount) => isAdmin.value || balance.value >= amount;
+
   /// Fetch balance from server.
   Future<void> refresh() async {
     try {
@@ -23,9 +25,9 @@ class CreditService {
   }
 
   /// Locally decrement after a successful paid API call.
-  void localDeduct() {
+  void localDeduct([int amount = 1]) {
     if (!isAdmin.value) {
-      balance.value = (balance.value - 1).clamp(0, 999999);
+      balance.value = (balance.value - amount).clamp(0, 999999);
     }
   }
 

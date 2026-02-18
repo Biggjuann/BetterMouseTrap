@@ -56,16 +56,17 @@ async def deduct_credit(
     transaction_type: str,
     reference_id: str | None = None,
     description: str | None = None,
+    amount: int = 1,
 ) -> int:
-    """Deduct 1 credit. Returns new balance. Raises ValueError if insufficient."""
+    """Deduct credits. Returns new balance. Raises ValueError if insufficient."""
     current = await get_balance(session, user_id)
-    if current < 1:
+    if current < amount:
         raise ValueError("Insufficient credits")
 
-    new_balance = current - 1
+    new_balance = current - amount
     txn = CreditTransaction(
         user_id=user_id,
-        amount=-1,
+        amount=-amount,
         balance_after=new_balance,
         transaction_type=transaction_type,
         reference_id=reference_id,

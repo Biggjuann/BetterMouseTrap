@@ -5,6 +5,7 @@ class GenerateIdeasRequest(BaseModel):
     text: str = Field(max_length=5000)
     category: str | None = Field(default=None, max_length=100)
     random: bool = False
+    guided_context: dict | None = None
 
 
 class IdeaScores(BaseModel):

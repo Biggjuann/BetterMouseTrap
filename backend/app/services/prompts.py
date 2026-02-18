@@ -177,6 +177,87 @@ For each top idea and moonshot, include 3-5 keywords useful for patent searching
 {safe_json_instructions()}"""
 
 
+def build_guided_variants_prompt(
+    product_text: str,
+    guided_context: dict,
+    category: str | None = None,
+) -> str:
+    """Build a richer prompt using the user's guided wizard answers."""
+    pain_points = guided_context.get("pain_points", "").strip()
+    target_customer = guided_context.get("target_customer", "").strip()
+    hypothesis = guided_context.get("hypothesis", "").strip()
+    market_context = guided_context.get("market_context", "").strip()
+
+    cat_line = f"\nProduct category: {category}" if category else ""
+
+    brief_sections = []
+    if pain_points:
+        brief_sections.append(f"PAIN POINTS & FRUSTRATIONS:\n{pain_points}")
+    if target_customer:
+        brief_sections.append(f"TARGET CUSTOMER:\n{target_customer}")
+    if hypothesis:
+        brief_sections.append(f"OWNER'S HYPOTHESIS / INSTINCT:\n{hypothesis}")
+    if market_context:
+        brief_sections.append(f"COMPETITIVE LANDSCAPE & WHITE SPACE:\n{market_context}")
+
+    brief_block = "\n\n".join(brief_sections)
+
+    return f"""Product: {product_text}{cat_line}
+
+--- CLIENT BRIEF FROM THE PRODUCT OWNER ---
+The product owner has provided first-hand research and insights. Treat this as
+primary qualitative research — it should heavily influence your idea generation.
+
+{brief_block}
+--- END CLIENT BRIEF ---
+
+Using the owner's brief as your primary input, follow this process:
+
+STEP 1 — Validate and enrich the starting point:
+- Confirm or refine the product definition using the owner's brief
+- Identify the buyer (use the owner's target customer input as the starting point)
+- Map the top 5 purchase drivers — prioritize the pain points the owner identified
+- Map the top 5 complaints/frictions — start from the owner's frustrations
+
+STEP 2 — Find the "unfair advantages" (informed by the owner's hypothesis):
+Generate 10-15 candidate differentiators. Weight the owner's instincts heavily:
+- Convenience multipliers (time saved, steps removed)
+- Reliability improvements (less failure, fewer errors)
+- Status/aesthetics/identity
+- Personalization
+- Bundling/attachment/consumables
+- Subscription/refill economics
+- Marketplace/network effect possibilities
+- Sensor/data/automation opportunities
+- Regulatory or compliance angles (if relevant)
+- White space identified in the owner's market context
+
+STEP 3 — Generate only BEST-IN-CLASS outputs:
+A) 8 "Upgrade the product" concepts (next-gen versions) — align with owner's hypothesis
+B) 5 "Adjacent products" that this buyer would also want
+C) 3 "Platform/recurring revenue" plays (subscription, consumables, services, data)
+
+STEP 4 — Score and select winners:
+For every idea, score 1-10 on: Customer urgency, Differentiation strength, Speed to revenue,
+Margin potential, Defensibility, Distribution advantage.
+Then choose:
+- Top 3 "Most Sellable Now"
+- Top 1 "Moonshot but Plausible"
+
+OUTPUT REQUIREMENTS:
+- "customer_truth": buyer analysis from Step 1 (enriched by owner's brief)
+- "top_ideas": exactly 3 most sellable ideas with FULL detail (all fields filled)
+- "moonshot": 1 moonshot idea with FULL detail
+- "more_upgrades": 5 remaining upgrade ideas (name + pitch + why)
+- "adjacent_products": 5 adjacent products (name + pitch + why)
+- "recurring_revenue": 3 recurring revenue plays (name + model + why)
+
+For each top idea and moonshot, include 3-5 keywords useful for patent searching
+(include technical synonyms).
+
+{safe_json_instructions()}"""
+
+
 # ── Prompt B: Generate Idea Spec (claim-like) ────────────────────────
 
 GENERATE_SPEC_SYSTEM = (

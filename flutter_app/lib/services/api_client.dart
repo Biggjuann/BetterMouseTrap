@@ -54,12 +54,14 @@ class ApiClient {
     required String text,
     String? category,
     bool random = false,
+    Map<String, String>? guidedContext,
   }) async {
     final body = <String, dynamic>{
       'text': text,
       'random': random,
     };
     if (category != null) body['category'] = category;
+    if (guidedContext != null) body['guided_context'] = guidedContext;
 
     final data = await _post('/ideas/generate', body);
     return GenerateIdeasResponse.fromJson(data);

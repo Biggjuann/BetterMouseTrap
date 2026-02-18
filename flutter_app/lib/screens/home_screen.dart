@@ -9,6 +9,7 @@ import '../theme.dart';
 import '../widgets/buy_credits_sheet.dart';
 import '../widgets/disclaimer_banner.dart';
 import '../widgets/loading_overlay.dart';
+import 'guided_wizard_screen.dart';
 import 'history_screen.dart';
 import 'ideas_list_screen.dart';
 import 'login_screen.dart';
@@ -25,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _productController = TextEditingController();
   final _urlController = TextEditingController();
   bool _isLoading = false;
+  bool _guidedMode = false;
   String _insightText = '';
   bool _insightLoading = true;
 
@@ -299,7 +301,43 @@ class _HomeScreenState extends State<HomeScreen> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.xxl),
+                    const SizedBox(height: AppSpacing.lg),
+
+                    // Quick / Guided toggle
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      padding: const EdgeInsets.all(4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _ModeChip(
+                            label: 'Quick',
+                            icon: Icons.bolt,
+                            selected: !_guidedMode,
+                            onTap: () => setState(() => _guidedMode = false),
+                          ),
+                          _ModeChip(
+                            label: 'Guided',
+                            icon: Icons.explore,
+                            selected: _guidedMode,
+                            onTap: () => setState(() => _guidedMode = true),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Quick: 1 credit  \u00B7  Guided: 2 credits',
+                      style: TextStyle(
+                        color: AppColors.mist,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
 
                     // Search input — Stitch: icon + rounded-xl
                     TextField(
@@ -342,14 +380,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         child: FilledButton(
                           onPressed: _canGenerate
-                              ? () => _generate(random: false)
+                              ? () => _guidedMode
+                                  ? _startGuided()
+                                  : _generate(random: false)
                               : null,
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.auto_awesome, size: 20),
-                              SizedBox(width: AppSpacing.sm),
-                              Text('Make it a Hero'),
+                              Icon(_guidedMode ? Icons.explore : Icons.auto_awesome, size: 20),
+                              const SizedBox(width: AppSpacing.sm),
+                              Text(_guidedMode ? 'Start Discovery' : 'Make it a Hero'),
                             ],
                           ),
                         ),
@@ -494,6 +534,24 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _startGuided() {
+    if (!CreditService.instance.hasCreditsFor(2)) {
+      _showBuyCreditsSheet();
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GuidedWizardScreen(
+          productText: _productController.text.trim(),
+          productUrl: _urlController.text.trim().isEmpty
+              ? null
+              : _urlController.text.trim(),
+        ),
+      ),
+    );
+  }
+
   Future<void> _generate({required bool random}) async {
     // Credit gate
     if (!CreditService.instance.hasCredits) {
@@ -602,6 +660,56 @@ class _QuickAction extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// Mode toggle chip
+class _ModeChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ModeChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: AppDuration.fast,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          boxShadow: selected ? AppShadows.card : [],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: selected ? Colors.white : AppColors.mist,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : AppColors.mist,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

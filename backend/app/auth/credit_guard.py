@@ -28,3 +28,25 @@ async def require_credits(
             },
         )
     return user
+
+
+def require_credits_amount(amount: int):
+    """Factory: verify the user has >= N credits. Admins bypass."""
+    async def _guard(
+        user: User = Depends(get_current_user),
+        session: AsyncSession = Depends(get_session),
+    ) -> User:
+        if user.is_admin:
+            return user
+        balance = await get_balance(session, user.id)
+        if balance < amount:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail={
+                    "error": "insufficient_credits",
+                    "message": f"You need {amount} credits for this feature. Purchase more in the app.",
+                    "balance": balance,
+                },
+            )
+        return user
+    return _guard

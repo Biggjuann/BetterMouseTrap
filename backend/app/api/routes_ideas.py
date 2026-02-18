@@ -28,6 +28,7 @@ from app.services.prompts import (
     GENERATE_VARIANTS_SYSTEM,
     build_generate_spec_prompt,
     build_generate_variants_prompt,
+    build_guided_variants_prompt,
 )
 
 log = logging.getLogger("mousetrap.routes_ideas")
@@ -254,6 +255,22 @@ async def generate_ideas(
 ):
     """Generate idea variants for a product."""
     product = req.text or "generic product"
+    is_guided = bool(req.guided_context)
+    credit_cost = 2 if is_guided else 1
+
+    # Verify sufficient credits for guided mode (require_credits only checks >= 1)
+    if is_guided and not user.is_admin:
+        from app.services.credits import get_balance
+        balance = await get_balance(session, user.id)
+        if balance < 2:
+            raise HTTPException(
+                status_code=402,
+                detail={
+                    "error": "insufficient_credits",
+                    "message": "Guided mode requires 2 credits. Purchase more in the app.",
+                    "balance": balance,
+                },
+            )
 
     if not _has_llm_key():
         log.warning("No LLM API key configured — returning mock variants")
@@ -262,7 +279,10 @@ async def generate_ideas(
             customer_truth=_mock_customer_truth(product),
         )
 
-    prompt = build_generate_variants_prompt(product, req.category, random=req.random)
+    if is_guided:
+        prompt = build_guided_variants_prompt(product, req.guided_context, req.category)
+    else:
+        prompt = build_generate_variants_prompt(product, req.category, random=req.random)
     try:
         data = call_llm(
             prompt,
@@ -312,13 +332,15 @@ async def generate_ideas(
     for raw in data.get("recurring_revenue", data.get("recurringRevenue", [])):
         variants.append(_parse_brief_idea(raw, "recurring"))
 
-    # Deduct credit after successful generation (admin bypass)
+    # Deduct credits after successful generation (admin bypass)
     if not user.is_admin:
         from app.services.credits import deduct_credit
+        tx_type = "guided_idea_generation" if is_guided else "idea_generation"
         await deduct_credit(
             session, user.id,
-            transaction_type="idea_generation",
-            description=f"Idea generation for: {product[:100]}",
+            transaction_type=tx_type,
+            description=f"{'Guided idea' if is_guided else 'Idea'} generation for: {product[:100]}",
+            amount=credit_cost,
         )
         await session.commit()
 
