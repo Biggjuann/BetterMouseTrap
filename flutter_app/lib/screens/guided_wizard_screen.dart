@@ -350,10 +350,31 @@ class _GuidedWizardScreenState extends State<GuidedWizardScreen> {
               color: AppColors.ink,
               height: 1.5,
             ),
+            cursorColor: AppColors.primary,
             decoration: InputDecoration(
+              filled: true,
+              fillColor: AppColors.cardWhite,
               hintText: step.hint,
               hintMaxLines: 3,
               alignLabelWithHint: true,
+              hintStyle: TextStyle(
+                color: AppColors.ink.withValues(alpha: 0.3),
+                fontSize: 15,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                borderSide: BorderSide(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  width: 2,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 2,
+                ),
+              ),
             ),
             onChanged: (_) => setState(() {}),
           ),

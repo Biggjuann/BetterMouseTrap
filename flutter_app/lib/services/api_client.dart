@@ -63,7 +63,14 @@ class ApiClient {
     if (category != null) body['category'] = category;
     if (guidedContext != null) body['guided_context'] = guidedContext;
 
-    final data = await _post('/ideas/generate', body);
+    final data = await _post(
+      '/ideas/generate',
+      body,
+      timeout: guidedContext != null
+          ? const Duration(seconds: 120)
+          : const Duration(seconds: 60),
+      retries: guidedContext != null ? 1 : 0,
+    );
     return GenerateIdeasResponse.fromJson(data);
   }
 
