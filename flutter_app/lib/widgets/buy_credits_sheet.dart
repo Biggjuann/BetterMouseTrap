@@ -82,52 +82,20 @@ class BuyCreditsSheet extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.base),
 
-            // DIAG: Always-visible debug panel
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'BUILD: v2-diag',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.blue,
-                    ),
+            // Error display
+            ValueListenableBuilder<String?>(
+              valueListenable: PurchaseService.instance.purchaseError,
+              builder: (_, error, __) {
+                if (error == null) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.sm),
+                  child: Text(
+                    error,
+                    style: TextStyle(color: AppColors.coral, fontSize: 13),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 4),
-                  ValueListenableBuilder<bool>(
-                    valueListenable: PurchaseService.instance.isPurchasing,
-                    builder: (_, val, __) => Text(
-                      'isPurchasing: $val',
-                      style: TextStyle(fontSize: 11, color: Colors.black87),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'packs: ${PurchaseService.instance.availablePacks.length} loaded',
-                    style: TextStyle(fontSize: 11, color: Colors.black87),
-                  ),
-                  const SizedBox(height: 2),
-                  ValueListenableBuilder<String?>(
-                    valueListenable: PurchaseService.instance.purchaseError,
-                    builder: (_, error, __) => Text(
-                      'msg: ${error ?? "null"}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: error != null ? AppColors.coral : Colors.black54,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ],
         ),

@@ -36,10 +36,6 @@ class PurchaseService {
   /// True once init has finished clearing stale transactions.
   bool _ready = false;
 
-  /// Counts for diagnostics.
-  int _staleCleared = 0;
-  int _streamEvents = 0;
-
   static const _productIds = {
     'com.mousetrap.credits.10',
     'com.mousetrap.credits.25',
@@ -55,18 +51,14 @@ class PurchaseService {
   List<CreditPack> availablePacks = [];
 
   Future<void> init() async {
-    final available = await _iap.isAvailable();
-    if (!available) {
-      purchaseError.value = 'DIAG: IAP not available on this device';
-      return;
-    }
+    if (!await _iap.isAvailable()) return;
 
     // Phase 1: Attach listener to capture stale transactions.
     // Any purchased/restored transactions that arrive before _ready=true
     // are stale and will be completed immediately (no backend call).
     _subscription = _iap.purchaseStream.listen(
       _onPurchaseUpdate,
-      onError: (e) => purchaseError.value = 'Stream error: $e',
+      onError: (e) => purchaseError.value = e.toString(),
     );
 
     // Give StoreKit a moment to deliver any stale transactions
@@ -76,11 +68,6 @@ class PurchaseService {
     _ready = true;
 
     final response = await _iap.queryProductDetails(_productIds);
-    if (response.notFoundIDs.isNotEmpty) {
-      purchaseError.value =
-          'DIAG: Products not found: ${response.notFoundIDs.join(", ")}';
-    }
-
     availablePacks = response.productDetails.map((p) {
       return CreditPack(
         productId: p.id,
@@ -90,84 +77,54 @@ class PurchaseService {
       );
     }).toList()
       ..sort((a, b) => a.credits.compareTo(b.credits));
-
-    if (_staleCleared > 0) {
-      purchaseError.value =
-          'DIAG: cleared $_staleCleared stale txn(s). Ready for purchases.';
-    }
   }
 
   Future<void> buyCredits(CreditPack pack) async {
-    if (pack.storeProduct == null) {
-      purchaseError.value = 'DIAG: storeProduct is null for ${pack.productId}';
-      return;
-    }
-    if (!_ready) {
-      purchaseError.value = 'DIAG: still initializing, please wait...';
-      return;
-    }
+    if (pack.storeProduct == null) return;
+    if (!_ready) return;
 
     isPurchasing.value = true;
-    purchaseError.value = 'DIAG: calling buyConsumable...';
+    purchaseError.value = null;
 
     try {
       final purchaseParam = PurchaseParam(productDetails: pack.storeProduct!);
       final started = await _iap.buyConsumable(purchaseParam: purchaseParam);
       if (!started) {
         isPurchasing.value = false;
-        purchaseError.value =
-            'DIAG: buyConsumable=false (cleared=$_staleCleared)';
-      } else {
-        purchaseError.value =
-            'DIAG: buyConsumable=true, waiting for StoreKit dialog...';
+        purchaseError.value = 'Could not start purchase. Please try again.';
       }
     } catch (e) {
       isPurchasing.value = false;
-      purchaseError.value = 'DIAG: buyConsumable threw: $e';
+      purchaseError.value = 'Purchase failed: $e';
     }
   }
 
   Future<void> _onPurchaseUpdate(List<PurchaseDetails> purchases) async {
     for (final purchase in purchases) {
-      _streamEvents++;
-      final pid = purchase.purchaseID ?? 'no-id';
+      final pid = purchase.purchaseID ?? '';
 
       switch (purchase.status) {
         case PurchaseStatus.pending:
           isPurchasing.value = true;
-          purchaseError.value = 'DIAG: #$_streamEvents pending id=$pid';
           break;
 
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
-          if (!_ready) {
-            // STALE: arrived during init — complete immediately, no backend call
-            _staleCleared++;
+          if (!_ready || _completedIds.contains(pid)) {
+            // Stale or already-processed transaction — just complete it
             _completedIds.add(pid);
-            purchaseError.value =
-                'DIAG: clearing stale #$_staleCleared id=$pid';
-            try {
-              await _iap.completePurchase(purchase);
-            } catch (_) {}
-          } else if (_completedIds.contains(pid)) {
-            // Already processed this exact transaction
-            purchaseError.value =
-                'DIAG: #$_streamEvents re-skip id=$pid';
             try {
               await _iap.completePurchase(purchase);
             } catch (_) {}
           } else {
-            // REAL purchase after user tap
-            purchaseError.value =
-                'DIAG: #$_streamEvents verifying id=$pid...';
+            // Real purchase after user tap
             await _verifyAndComplete(purchase);
           }
           break;
 
         case PurchaseStatus.error:
           isPurchasing.value = false;
-          purchaseError.value =
-              'DIAG: #$_streamEvents error=${purchase.error?.message} id=$pid';
+          purchaseError.value = purchase.error?.message ?? 'Purchase failed';
           try {
             await _iap.completePurchase(purchase);
           } catch (_) {}
@@ -175,7 +132,6 @@ class PurchaseService {
 
         case PurchaseStatus.canceled:
           isPurchasing.value = false;
-          purchaseError.value = 'DIAG: #$_streamEvents canceled id=$pid';
           try {
             await _iap.completePurchase(purchase);
           } catch (_) {}
@@ -185,7 +141,7 @@ class PurchaseService {
   }
 
   Future<void> _verifyAndComplete(PurchaseDetails purchase) async {
-    final pid = purchase.purchaseID ?? 'no-id';
+    final pid = purchase.purchaseID ?? '';
 
     try {
       final result = await ApiClient.instance.verifyPurchase(
@@ -194,22 +150,15 @@ class PurchaseService {
         signedTransaction: purchase.verificationData.serverVerificationData,
       );
 
-      final granted = result['credits_granted'] as int;
       final newBalance = result['new_balance'] as int;
       CreditService.instance.balance.value = newBalance;
       _completedIds.add(pid);
 
       isPurchasing.value = false;
-      if (granted > 0) {
-        purchaseError.value =
-            'DIAG: +$granted credits! balance=$newBalance';
-      } else {
-        purchaseError.value =
-            'DIAG: granted=0 id=$pid (already processed). Tap again.';
-      }
+      purchaseError.value = null;
     } catch (e) {
       isPurchasing.value = false;
-      purchaseError.value = 'DIAG: verify error id=$pid — $e';
+      purchaseError.value = 'Verification failed: $e';
     } finally {
       try {
         await _iap.completePurchase(purchase);
