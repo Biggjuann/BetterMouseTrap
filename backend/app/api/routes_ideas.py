@@ -20,7 +20,7 @@ from app.schemas.idea import (
     IdeaSpec,
     IdeaVariant,
 )
-from app.services.llm import LLMError, call_llm
+from app.services.llm import LLMError, call_llm_async
 from app.services.prompts import (
     GENERATE_SPEC_SCHEMA,
     GENERATE_SPEC_SYSTEM,
@@ -284,7 +284,7 @@ async def generate_ideas(
     else:
         prompt = build_generate_variants_prompt(product, req.category, random=req.random)
     try:
-        data = call_llm(
+        data = await call_llm_async(
             prompt,
             json_schema_hint=GENERATE_VARIANTS_SCHEMA,
             system=GENERATE_VARIANTS_SYSTEM,
@@ -363,7 +363,7 @@ async def generate_spec(req: GenerateSpecRequest):
         variant_keywords=v.keywords,
     )
     try:
-        data = call_llm(
+        data = await call_llm_async(
             prompt,
             json_schema_hint=GENERATE_SPEC_SCHEMA,
             system=GENERATE_SPEC_SYSTEM,

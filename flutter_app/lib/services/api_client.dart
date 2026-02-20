@@ -66,10 +66,8 @@ class ApiClient {
     final data = await _post(
       '/ideas/generate',
       body,
-      timeout: guidedContext != null
-          ? const Duration(seconds: 120)
-          : const Duration(seconds: 60),
-      retries: guidedContext != null ? 1 : 0,
+      timeout: const Duration(seconds: 120),
+      retries: 1,
     );
     return GenerateIdeasResponse.fromJson(data);
   }

@@ -11,7 +11,7 @@ from app.schemas.build_this import (
     ProvisionalPatentResponse,
     Specification,
 )
-from app.services.llm import LLMError, call_llm
+from app.services.llm import LLMError, call_llm_async
 from app.services.prompts import (
     PROVISIONAL_PATENT_SCHEMA,
     PROVISIONAL_PATENT_SYSTEM,
@@ -227,7 +227,7 @@ async def generate_patent_draft(req: ProvisionalPatentRequest):
         patent_hits=hits_data,
     )
     try:
-        data = call_llm(
+        data = await call_llm_async(
             prompt,
             json_schema_hint=PROVISIONAL_PATENT_SCHEMA,
             system=PROVISIONAL_PATENT_SYSTEM,
@@ -271,7 +271,7 @@ Generate a JSON object with these fields:
 Respond with ONLY valid JSON, no markdown fences."""
 
         try:
-            followup = call_llm(followup_prompt, system=PROVISIONAL_PATENT_SYSTEM, max_tokens=4096)
+            followup = await call_llm_async(followup_prompt, system=PROVISIONAL_PATENT_SYSTEM, max_tokens=4096)
             if missing_abstract and followup.get("abstract"):
                 data["abstract"] = followup["abstract"]
             if missing_claims:

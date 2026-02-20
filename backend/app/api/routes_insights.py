@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 
 from app.auth.dependencies import get_current_user
 from app.core.config import settings
-from app.services.llm import LLMError, call_llm
+from app.services.llm import LLMError, call_llm_async
 from app.services.prompts import (
     DAILY_INSIGHT_SCHEMA,
     DAILY_INSIGHT_SYSTEM,
@@ -136,7 +136,7 @@ async def get_daily_insight():
 
     try:
         prompt = build_daily_insight_prompt()
-        result = call_llm(
+        result = await call_llm_async(
             prompt=prompt,
             json_schema_hint=DAILY_INSIGHT_SCHEMA,
             system=DAILY_INSIGHT_SYSTEM,
@@ -159,7 +159,7 @@ async def get_market_trends():
 
     try:
         prompt = build_market_trends_prompt()
-        result = call_llm(
+        result = await call_llm_async(
             prompt=prompt,
             json_schema_hint=MARKET_TRENDS_SCHEMA,
             system=MARKET_TRENDS_SYSTEM,
