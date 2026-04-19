@@ -10,6 +10,9 @@ import 'theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Register Google Fonts (Fraunces / Inter / JetBrains Mono) so the
+  // theme's `fontFamily: 'Fraunces'` strings resolve correctly.
+  await initFonts();
   await AuthService.instance.init();
 
   if (AuthService.instance.isLoggedIn) {

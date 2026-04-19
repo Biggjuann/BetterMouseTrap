@@ -10,8 +10,8 @@ import '../theme.dart';
 import '../widgets/buy_credits_sheet.dart';
 import '../utils/pdf_downloader.dart';
 import '../utils/pdf_generator.dart';
-import '../widgets/keyword_tag.dart';
 import '../widgets/loading_overlay.dart';
+import '../widgets/studio_widgets.dart';
 import 'prior_art_screen.dart';
 
 class IdeaDetailScreen extends StatefulWidget {
@@ -36,7 +36,6 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
   IdeaSpec? _spec;
   bool _isLoadingSpec = false;
   bool _isLoadingPatents = false;
-  String? _errorMessage;
 
   @override
   void initState() {
@@ -46,155 +45,42 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final v = widget.variant;
+
     return Scaffold(
+      backgroundColor: AppColors.bg,
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
-          ),
           CustomScrollView(
             slivers: [
-              // Sticky header — Stitch style
-              SliverAppBar(
-                pinned: true,
-                backgroundColor: AppColors.cream.withValues(alpha: 0.8),
-                surfaceTintColor: Colors.transparent,
-                leading: IconButton(
-                  icon: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.cardWhite,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.05),
-                      ),
-                      boxShadow: AppShadows.card,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back_ios_new,
-                      color: AppColors.primary,
-                      size: 18,
-                    ),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                title: Column(
-                  children: [
-                    Text(
-                      'IDEA DEEP DIVE',
-                      style: TextStyle(
-                        color: AppColors.primary.withValues(alpha: 0.6),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                    Text(
-                      widget.variant.title,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.ink,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-                actions: [
-                  IconButton(
-                    icon: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.cardWhite,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.05),
-                        ),
-                        boxShadow: AppShadows.card,
-                      ),
-                      child: const Icon(
-                        Icons.copy_rounded,
-                        color: AppColors.primary,
-                        size: 18,
-                      ),
-                    ),
-                    tooltip: 'Copy',
-                    onPressed: () {
-                      final md = _buildMarkdown();
-                      Clipboard.setData(ClipboardData(text: md));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Copied to clipboard!'),
-                          backgroundColor: AppColors.success,
-                        ),
-                      );
-                    },
-                  ),
-                  IconButton(
-                    icon: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.cardWhite,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.05),
-                        ),
-                        boxShadow: AppShadows.card,
-                      ),
-                      child: const Icon(
-                        Icons.picture_as_pdf,
-                        color: AppColors.primary,
-                        size: 18,
-                      ),
-                    ),
-                    tooltip: 'Download PDF',
-                    onPressed: () => _downloadPdf(),
-                  ),
-                ],
-              ),
-
-              // Hero card — gradient overlay like Stitch
+              // Top bar
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg, AppSpacing.base, AppSpacing.lg, 0,
-                  ),
-                  child: Container(
-                    width: double.infinity,
-                    height: 192,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(AppRadius.xl),
-                      gradient: AppGradients.hero,
-                      boxShadow: AppShadows.elevated,
-                    ),
-                    child: Stack(
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
+                    child: Row(
                       children: [
-                        // Gradient overlay for text readability
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(AppRadius.xl),
-                              gradient: AppGradients.cardOverlay,
-                            ),
-                          ),
+                        IconBtn(
+                          icon: Icons.arrow_back_rounded,
+                          onPressed: () => Navigator.pop(context),
                         ),
-                        // Text at bottom
-                        Positioned(
-                          left: 20,
-                          right: 20,
-                          bottom: 20,
-                          child: Text(
-                            widget.variant.summary,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              height: 1.5,
-                            ),
-                          ),
+                        const Spacer(),
+                        Text('THE DOSSIER', style: AppText.monoMeta),
+                        const Spacer(),
+                        IconBtn(
+                          icon: Icons.content_copy_rounded,
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: _buildMarkdown()));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Copied to clipboard')),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        IconBtn(
+                          icon: Icons.picture_as_pdf_outlined,
+                          onPressed: _downloadPdf,
                         ),
                       ],
                     ),
@@ -202,457 +88,258 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                 ),
               ),
 
-              // Keyword pills — Stitch
+              // Hero
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0,
-                  ),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: widget.variant.keywords
-                        .map((k) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.pill),
-                                border: Border.all(
-                                  color:
-                                      AppColors.primary.withValues(alpha: 0.2),
-                                ),
-                              ),
-                              child: Text(
-                                '#$k',
-                                style: const TextStyle(
-                                  color: AppColors.primary,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ))
-                        .toList(),
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          TierDot(tierOf(v.tier)),
+                          const SizedBox(width: 10),
+                          Text('File Nº ${_stubId(v.title)}', style: AppText.monoMeta),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(v.title, style: AppText.display2),
+                      const SizedBox(height: AppSpacing.md),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(width: 28, height: 1, margin: const EdgeInsets.only(top: 12, right: 12), color: AppColors.ink),
+                          Expanded(
+                            child: Text(
+                              v.summary,
+                              style: AppText.bodyLg.copyWith(color: AppColors.graphite),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (v.keywords.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.lg),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: v.keywords
+                              .map((k) => StudioChip(label: k))
+                              .toList(),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ),
 
-              // Rich variant details (for top/moonshot tiers)
-              if (widget.variant.isDetailed)
+              // Rich details
+              if (v.isDetailed)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: _variantDetailsSection(),
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xxl, AppSpacing.lg, 0),
+                    child: _buildVariantDetails(v),
                   ),
                 ),
 
-              // Spec content or loading
+              // Spec section
               if (_isLoadingSpec)
                 SliverToBoxAdapter(child: _buildLoadingState())
               else if (_spec != null)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: _specSection(_spec!),
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xxl, AppSpacing.lg, 0),
+                    child: _buildSpec(_spec!),
                   ),
                 ),
 
-              // Bottom spacer for fixed footer
-              const SliverToBoxAdapter(child: SizedBox(height: 160)),
+              const SliverToBoxAdapter(child: SizedBox(height: 140)),
             ],
           ),
 
-          // Fixed bottom action bar — Stitch
+          // Floating CTA
           if (_spec != null && !_isLoadingSpec)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg, AppSpacing.base, AppSpacing.lg, AppSpacing.xl,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  border: Border(
-                    top: BorderSide(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                    ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.base),
+                  child: StudioButton(
+                    label: 'Check prior art',
+                    icon: Icons.gavel_rounded,
+                    onPressed: _isLoadingPatents ? null : () => _searchPatents(_spec!),
                   ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Check Patents button — Stitch teal
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: FilledButton(
-                        onPressed:
-                            _isLoadingPatents ? null : () => _searchPatents(_spec!),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.teal,
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.gavel, size: 20),
-                            SizedBox(width: AppSpacing.sm),
-                            Text('Check Patents'),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ),
 
           if (_isLoadingPatents)
             const LoadingOverlay(
-                message:
-                    'Analyzing invention & searching patents...\nThis takes 30-60 seconds.'),
+              message: 'Reading the patent ledger…\nThirty to sixty seconds.',
+            ),
         ],
       ),
     );
   }
 
-  Widget _variantDetailsSection() {
-    final v = widget.variant;
+  // ── VARIANT DETAIL sections ─────────────────────────────────────
+  Widget _buildVariantDetails(IdeaVariant v) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Scores bar
         if (v.scores != null) ...[
-          _sectionCard(
-            icon: Icons.bar_chart,
-            title: 'Idea Scores',
-            child: _scoresGrid(v.scores!),
+          SectionHeader(title: 'Scorecard', trailing: 'six axes · out of 10'),
+          StudioCard(
+            padding: const EdgeInsets.all(AppSpacing.base),
+            child: _ScoreTable(scores: v.scores!),
           ),
-          const SizedBox(height: AppSpacing.base),
+          const SizedBox(height: AppSpacing.lg),
         ],
 
-        // Target Customer & Core Problem
-        if (v.targetCustomer != null || v.coreProblem != null)
-          ...[
-            _sectionCard(
-              icon: Icons.people_alt,
-              title: 'Target Customer',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (v.targetCustomer != null && v.targetCustomer!.isNotEmpty)
-                    Text(
-                      v.targetCustomer!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            height: 1.6,
-                            color: AppColors.ink,
-                          ),
-                    ),
-                  if (v.coreProblem != null && v.coreProblem!.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      'CORE PROBLEM',
-                      style: TextStyle(
-                        color: AppColors.slateLight,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      v.coreProblem!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            height: 1.6,
-                            color: AppColors.ink,
-                          ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.base),
-          ],
+        if (v.targetCustomer != null && v.targetCustomer!.isNotEmpty) ...[
+          SectionHeader(title: 'Who buys it'),
+          Text(v.targetCustomer!, style: AppText.body.copyWith(height: 1.6)),
+          const SizedBox(height: AppSpacing.lg),
+        ],
 
-        // Solution
+        if (v.coreProblem != null && v.coreProblem!.isNotEmpty) ...[
+          SectionHeader(title: 'The pinch'),
+          Text(v.coreProblem!, style: AppText.body.copyWith(height: 1.6)),
+          const SizedBox(height: AppSpacing.lg),
+        ],
+
         if (v.solution != null && v.solution!.isNotEmpty) ...[
-          _sectionCard(
-            icon: Icons.lightbulb,
-            title: 'Solution',
-            child: Text(
-              v.solution!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    height: 1.6,
-                    color: AppColors.ink,
-                  ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.base),
+          SectionHeader(title: 'The solution'),
+          Text(v.solution!, style: AppText.body.copyWith(height: 1.6)),
+          const SizedBox(height: AppSpacing.lg),
         ],
 
-        // Why It Wins
         if (v.whyItWins.isNotEmpty) ...[
-          _sectionCard(
-            icon: Icons.emoji_events,
-            title: 'Why It Wins',
-            child: Column(
-              children: v.whyItWins
-                  .asMap()
-                  .entries
-                  .map((entry) => Padding(
-                        padding: EdgeInsets.only(
-                          bottom: entry.key < v.whyItWins.length - 1 ? 10 : 0,
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(Icons.check_circle,
-                                size: 18, color: AppColors.teal),
-                            const SizedBox(width: AppSpacing.md),
-                            Expanded(
-                              child: Text(
-                                entry.value,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      height: 1.5,
-                                      color: AppColors.ink,
-                                    ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ))
-                  .toList(),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.base),
+          SectionHeader(title: 'Why it wins'),
+          ..._bulletList(v.whyItWins, bullet: Icons.check_rounded, bulletColor: AppColors.accent),
+          const SizedBox(height: AppSpacing.lg),
         ],
 
-        // Monetization & Unit Economics
-        if (v.monetization != null || v.unitEconomics != null) ...[
-          _sectionCard(
-            icon: Icons.attach_money,
-            title: 'Monetization',
+        if ((v.monetization != null && v.monetization!.isNotEmpty) ||
+            (v.unitEconomics != null && v.unitEconomics!.isNotEmpty)) ...[
+          SectionHeader(title: 'Money'),
+          StudioCard(
+            padding: const EdgeInsets.all(AppSpacing.base),
+            background: AppColors.accentSoft,
+            border: Border.all(color: Colors.transparent),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (v.monetization != null && v.monetization!.isNotEmpty)
                   Text(
                     v.monetization!,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          height: 1.6,
-                          color: AppColors.ink,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    style: AppText.display4.copyWith(
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.accentInk,
+                    ),
                   ),
-                if (v.unitEconomics != null &&
-                    v.unitEconomics!.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    v.unitEconomics!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          height: 1.5,
-                          color: AppColors.ink,
-                        ),
-                  ),
+                if (v.unitEconomics != null && v.unitEconomics!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(v.unitEconomics!, style: AppText.bodySm),
                 ],
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.base),
+          const SizedBox(height: AppSpacing.lg),
         ],
 
-        // Defensibility
         if (v.defensibilityNote != null && v.defensibilityNote!.isNotEmpty) ...[
-          _sectionCard(
-            icon: Icons.shield,
-            title: 'Defensibility',
-            child: Text(
-              v.defensibilityNote!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    height: 1.6,
-                    color: AppColors.ink,
-                  ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.base),
+          SectionHeader(title: 'The moat'),
+          Text(v.defensibilityNote!, style: AppText.body.copyWith(height: 1.6)),
+          const SizedBox(height: AppSpacing.lg),
         ],
 
-        // MVP in 90 Days
         if (v.mvp90Days != null && v.mvp90Days!.isNotEmpty) ...[
-          _sectionCard(
-            icon: Icons.rocket_launch,
-            title: 'MVP in 90 Days',
-            child: Text(
-              v.mvp90Days!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    height: 1.6,
-                    color: AppColors.ink,
-                  ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.base),
+          SectionHeader(title: 'First ninety days'),
+          Text(v.mvp90Days!, style: AppText.body.copyWith(height: 1.6)),
+          const SizedBox(height: AppSpacing.lg),
         ],
 
-        // Go-to-Market
         if (v.goToMarket.isNotEmpty) ...[
-          _sectionCard(
-            icon: Icons.storefront,
-            title: 'Go-to-Market',
-            child: Column(
-              children: v.goToMarket
-                  .asMap()
-                  .entries
-                  .map((entry) => Padding(
-                        padding: EdgeInsets.only(
-                          bottom:
-                              entry.key < v.goToMarket.length - 1 ? 10 : 0,
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(Icons.arrow_right,
-                                size: 20, color: AppColors.primary),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Text(
-                                entry.value,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      height: 1.5,
-                                      color: AppColors.ink,
-                                    ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ))
-                  .toList(),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.base),
+          SectionHeader(title: 'Go-to-market'),
+          ..._bulletList(v.goToMarket, bullet: Icons.arrow_forward_rounded),
+          const SizedBox(height: AppSpacing.lg),
         ],
 
-        // Risks
         if (v.risks.isNotEmpty) ...[
-          _sectionCard(
-            icon: Icons.warning_amber,
-            title: 'Risks & Mitigations',
-            child: Column(
-              children: v.risks
-                  .asMap()
-                  .entries
-                  .map((entry) => Padding(
-                        padding: EdgeInsets.only(
-                          bottom: entry.key < v.risks.length - 1 ? 10 : 0,
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(Icons.info_outline,
-                                size: 18, color: AppColors.primary),
-                            const SizedBox(width: AppSpacing.md),
-                            Expanded(
-                              child: Text(
-                                entry.value,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      height: 1.5,
-                                      color: AppColors.ink,
-                                    ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ))
-                  .toList(),
-            ),
-          ),
+          SectionHeader(title: 'Risks'),
+          ..._bulletList(v.risks, bullet: Icons.priority_high_rounded, bulletColor: AppColors.warm),
+          const SizedBox(height: AppSpacing.lg),
         ],
       ],
     );
   }
 
-  Widget _scoresGrid(IdeaScores scores) {
-    final items = [
-      ('Urgency', scores.urgency),
-      ('Differentiation', scores.differentiation),
-      ('Speed to Revenue', scores.speedToRevenue),
-      ('Margin', scores.margin),
-      ('Defensibility', scores.defensibility),
-      ('Distribution', scores.distribution),
-    ];
-
-    return Column(
-      children: [
-        for (var i = 0; i < items.length; i += 2)
+  List<Widget> _bulletList(List<String> items, {IconData bullet = Icons.circle, Color? bulletColor}) {
+    return items.map((s) => Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Padding(
-            padding: EdgeInsets.only(bottom: i < items.length - 2 ? 10 : 0),
-            child: Row(
-              children: [
-                Expanded(child: _scoreBar(items[i].$1, items[i].$2)),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: i + 1 < items.length
-                      ? _scoreBar(items[i + 1].$1, items[i + 1].$2)
-                      : const SizedBox.shrink(),
-                ),
-              ],
-            ),
+            padding: const EdgeInsets.only(top: 3, right: 10),
+            child: Icon(bullet, size: 14, color: bulletColor ?? AppColors.ink),
           ),
-      ],
-    );
+          Expanded(child: Text(s, style: AppText.body.copyWith(height: 1.55))),
+        ],
+      ),
+    )).toList();
   }
 
-  Widget _scoreBar(String label, int score) {
-    final color = score >= 8
-        ? AppColors.emeraldText
-        : score >= 5
-            ? AppColors.primary
-            : AppColors.error;
-
+  // ── SPEC sections ──────────────────────────────────────────────
+  Widget _buildSpec(IdeaSpec spec) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: AppColors.ink,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            Text(
-              '$score/10',
-              style: TextStyle(
-                color: color,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
+        SectionHeader(title: 'Concept spec', trailing: 'what · how · against what'),
+        _specBlock('A.', 'What makes it new', spec.novelty),
+        const SizedBox(height: AppSpacing.lg),
+        _specBlock('B.', 'How it works', spec.mechanism),
+        const SizedBox(height: AppSpacing.lg),
+        _specBlock('C.', 'What exists today', spec.baseline),
+        const SizedBox(height: AppSpacing.lg),
+
+        SectionHeader(title: 'Differentiators'),
+        ..._bulletList(spec.differentiators, bullet: Icons.check_rounded, bulletColor: AppColors.accent),
+
+        if (spec.keywords.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.lg),
+          SectionHeader(title: 'Patent-search keywords'),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: spec.keywords.map((k) => StudioChip(label: k)).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _specBlock(String marker, String title, String body) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 28,
+          child: Text(
+            marker,
+            style: TextStyle(fontFamily: fontMono, fontSize: 11, color: AppColors.mist),
+          ),
         ),
-        const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: score / 10.0,
-            backgroundColor: color.withValues(alpha: 0.1),
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 6,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: AppText.display4),
+              const SizedBox(height: 4),
+              Text(body, style: AppText.body.copyWith(height: 1.6, color: AppColors.graphite)),
+            ],
           ),
         ),
       ],
@@ -660,305 +347,74 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
   }
 
   Widget _buildLoadingState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
-        child: Column(
-          children: [
-            SizedBox(
-              width: 48,
-              height: 48,
-              child: CircularProgressIndicator(
-                strokeWidth: 3,
-                strokeCap: StrokeCap.round,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Breaking down what makes this clever...',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.ink,
-                  ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _specSection(IdeaSpec spec) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _specCard(
-          'What Makes It Unique',
-          spec.novelty,
-          Icons.auto_awesome,
-          AppColors.primary,
-        ),
-        const SizedBox(height: AppSpacing.base),
-        _specCard(
-          'How It Works',
-          spec.mechanism,
-          Icons.settings_suggest,
-          AppColors.primary,
-        ),
-        const SizedBox(height: AppSpacing.base),
-        _specCard(
-          'What Exists Today',
-          spec.baseline,
-          Icons.search,
-          AppColors.primary,
-        ),
-        const SizedBox(height: AppSpacing.base),
-
-        // Differentiators — Stitch: checkmark list
-        _sectionCard(
-          icon: Icons.verified_user,
-          title: 'Key Differentiators',
-          child: Column(
-            children: spec.differentiators
-                .asMap()
-                .entries
-                .map(
-                  (entry) => Padding(
-                    padding: EdgeInsets.only(
-                      bottom:
-                          entry.key < spec.differentiators.length - 1 ? 12 : 0,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.check_circle,
-                          size: 18,
-                          color: AppColors.teal,
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Text(
-                            entry.value,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              height: 1.5,
-                              color: AppColors.ink,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.base),
-
-        // Keywords card
-        _sectionCard(
-          icon: Icons.label_outline,
-          title: 'Keywords',
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: spec.keywords.map((k) => KeywordTag(text: k)).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _specCard(
-      String title, String text, IconData icon, Color color) {
-    return _sectionCard(
-      icon: icon,
-      title: title,
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              height: 1.6,
-              color: AppColors.ink,
-            ),
-      ),
-    );
-  }
-
-  // Stitch section card: icon + uppercase title + content
-  Widget _sectionCard({
-    required IconData icon,
-    required String title,
-    required Widget child,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.cardWhite,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.05),
-        ),
-        boxShadow: AppShadows.card,
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, color: AppColors.primary, size: 22),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  title.toUpperCase(),
-                  style: TextStyle(
-                    color: AppColors.slateLight,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-              ),
-            ],
+          SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.ink),
           ),
           const SizedBox(height: AppSpacing.md),
-          child,
+          Text('Breaking down what makes this clever…', style: AppText.bodySm),
         ],
       ),
     );
   }
 
+  // ── Utilities ──────────────────────────────────────────────────
+  String _stubId(String title) {
+    final hash = title.hashCode.abs() % 10000;
+    return hash.toString().padLeft(4, '0');
+  }
+
   String _buildMarkdown() {
     final v = widget.variant;
     final buf = StringBuffer();
-    buf.writeln('# ${v.title}');
-    buf.writeln();
-    buf.writeln('**Product:** ${widget.productText}');
-    buf.writeln();
-    buf.writeln('## Summary');
-    buf.writeln(v.summary);
-    buf.writeln();
-
-    if (v.keywords.isNotEmpty) {
-      buf.writeln('**Keywords:** ${v.keywords.join(", ")}');
-      buf.writeln();
-    }
-
+    buf.writeln('# ${v.title}\n');
+    buf.writeln('**Product:** ${widget.productText}\n');
+    buf.writeln('## Summary\n${v.summary}\n');
+    if (v.keywords.isNotEmpty) buf.writeln('**Keywords:** ${v.keywords.join(", ")}\n');
     if (v.isDetailed) {
       if (v.scores != null) {
-        buf.writeln('## Idea Scores');
+        buf.writeln('## Scorecard');
         final s = v.scores!;
         buf.writeln('- Urgency: ${s.urgency}/10');
         buf.writeln('- Differentiation: ${s.differentiation}/10');
         buf.writeln('- Speed to Revenue: ${s.speedToRevenue}/10');
         buf.writeln('- Margin: ${s.margin}/10');
         buf.writeln('- Defensibility: ${s.defensibility}/10');
-        buf.writeln('- Distribution: ${s.distribution}/10');
-        buf.writeln();
+        buf.writeln('- Distribution: ${s.distribution}/10\n');
       }
-
-      if (v.targetCustomer != null && v.targetCustomer!.isNotEmpty) {
-        buf.writeln('## Target Customer');
-        buf.writeln(v.targetCustomer!);
-        buf.writeln();
-      }
-
-      if (v.coreProblem != null && v.coreProblem!.isNotEmpty) {
-        buf.writeln('## Core Problem');
-        buf.writeln(v.coreProblem!);
-        buf.writeln();
-      }
-
-      if (v.solution != null && v.solution!.isNotEmpty) {
-        buf.writeln('## Solution');
-        buf.writeln(v.solution!);
-        buf.writeln();
-      }
-
-      if (v.whyItWins.isNotEmpty) {
-        buf.writeln('## Why It Wins');
-        for (final w in v.whyItWins) {
-          buf.writeln('- $w');
-        }
-        buf.writeln();
-      }
-
-      if (v.monetization != null && v.monetization!.isNotEmpty) {
-        buf.writeln('## Monetization');
-        buf.writeln(v.monetization!);
-        buf.writeln();
-      }
-
-      if (v.unitEconomics != null && v.unitEconomics!.isNotEmpty) {
-        buf.writeln('### Unit Economics');
-        buf.writeln(v.unitEconomics!);
-        buf.writeln();
-      }
-
-      if (v.defensibilityNote != null && v.defensibilityNote!.isNotEmpty) {
-        buf.writeln('## Defensibility');
-        buf.writeln(v.defensibilityNote!);
-        buf.writeln();
-      }
-
-      if (v.mvp90Days != null && v.mvp90Days!.isNotEmpty) {
-        buf.writeln('## MVP in 90 Days');
-        buf.writeln(v.mvp90Days!);
-        buf.writeln();
-      }
-
-      if (v.goToMarket.isNotEmpty) {
-        buf.writeln('## Go-to-Market');
-        for (final g in v.goToMarket) {
-          buf.writeln('- $g');
-        }
-        buf.writeln();
-      }
-
-      if (v.risks.isNotEmpty) {
-        buf.writeln('## Risks & Mitigations');
-        for (final r in v.risks) {
-          buf.writeln('- $r');
-        }
-        buf.writeln();
-      }
+      if (v.targetCustomer?.isNotEmpty ?? false) buf.writeln('## Target customer\n${v.targetCustomer}\n');
+      if (v.coreProblem?.isNotEmpty ?? false) buf.writeln('## Core problem\n${v.coreProblem}\n');
+      if (v.solution?.isNotEmpty ?? false) buf.writeln('## Solution\n${v.solution}\n');
+      if (v.whyItWins.isNotEmpty) { buf.writeln('## Why it wins'); for (final w in v.whyItWins) buf.writeln('- $w'); buf.writeln(); }
+      if (v.monetization?.isNotEmpty ?? false) buf.writeln('## Monetization\n${v.monetization}\n');
+      if (v.unitEconomics?.isNotEmpty ?? false) buf.writeln('### Unit economics\n${v.unitEconomics}\n');
+      if (v.defensibilityNote?.isNotEmpty ?? false) buf.writeln('## Defensibility\n${v.defensibilityNote}\n');
+      if (v.mvp90Days?.isNotEmpty ?? false) buf.writeln('## MVP in 90 days\n${v.mvp90Days}\n');
+      if (v.goToMarket.isNotEmpty) { buf.writeln('## Go-to-market'); for (final g in v.goToMarket) buf.writeln('- $g'); buf.writeln(); }
+      if (v.risks.isNotEmpty) { buf.writeln('## Risks'); for (final r in v.risks) buf.writeln('- $r'); buf.writeln(); }
     }
-
     if (_spec != null) {
-      buf.writeln('---');
-      buf.writeln();
-      buf.writeln('## Concept Spec');
-      buf.writeln();
-      buf.writeln('### What Makes It Unique');
-      buf.writeln(_spec!.novelty);
-      buf.writeln();
-      buf.writeln('### How It Works');
-      buf.writeln(_spec!.mechanism);
-      buf.writeln();
-      buf.writeln('### What Exists Today');
-      buf.writeln(_spec!.baseline);
-      buf.writeln();
-      buf.writeln('### Key Differentiators');
-      for (final d in _spec!.differentiators) {
-        buf.writeln('- $d');
-      }
-      buf.writeln();
-      buf.writeln('### Keywords');
-      buf.writeln(_spec!.keywords.join(', '));
-      buf.writeln();
+      buf.writeln('---\n\n## Concept spec\n');
+      buf.writeln('### Novelty\n${_spec!.novelty}\n');
+      buf.writeln('### Mechanism\n${_spec!.mechanism}\n');
+      buf.writeln('### Baseline\n${_spec!.baseline}\n');
+      buf.writeln('### Differentiators'); for (final d in _spec!.differentiators) buf.writeln('- $d'); buf.writeln();
+      buf.writeln('### Keywords\n${_spec!.keywords.join(", ")}\n');
     }
-
-    buf.writeln('---');
-    buf.writeln('*Generated by Better Mousetrap*');
-
+    buf.writeln('---\n*Generated by MouseTrap Studio*');
     return buf.toString();
   }
 
   Future<void> _downloadPdf() async {
     try {
-      final md = _buildMarkdown();
       final bytes = await PdfGenerator.generateFromMarkdown(
         title: widget.variant.title,
-        content: md,
+        content: _buildMarkdown(),
       );
       final safeName = widget.variant.title
           .replaceAll(RegExp(r'[^\w\s-]'), '')
@@ -967,10 +423,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
       downloadPdfBytes(bytes, '$safeName.pdf');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('PDF downloaded!'),
-            backgroundColor: AppColors.success,
-          ),
+          const SnackBar(content: Text('PDF downloaded')),
         );
       }
     } catch (e) {
@@ -1000,9 +453,8 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage = e.toString());
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_errorMessage!)),
+          SnackBar(content: Text(e.toString())),
         );
       }
     } finally {
@@ -1020,12 +472,10 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
   }
 
   Future<void> _searchPatents(IdeaSpec spec) async {
-    // Credit gate
     if (!CreditService.instance.hasCredits) {
       _showBuyCreditsSheet();
       return;
     }
-
     setState(() => _isLoadingPatents = true);
     try {
       final analysisResponse = await ApiClient.instance.analyzePatents(
@@ -1033,14 +483,11 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
         variant: widget.variant,
         spec: spec,
       );
-
-      // Deduct credit locally after success
       CreditService.instance.localDeduct();
 
       if (widget.sessionId != null) {
         ApiClient.instance.updateSession(widget.sessionId!, {
-          'patent_hits_json':
-              analysisResponse.hits.map((h) => h.toJson()).toList(),
+          'patent_hits_json': analysisResponse.hits.map((h) => h.toJson()).toList(),
           'patent_confidence': analysisResponse.confidence,
           'status': 'patents_searched',
         }).catchError((_) {});
@@ -1051,10 +498,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
         context,
         MaterialPageRoute(
           builder: (_) => PriorArtScreen(
-            product: ProductInput(
-              text: widget.productText,
-              url: widget.productURL,
-            ),
+            product: ProductInput(text: widget.productText, url: widget.productURL),
             variant: widget.variant,
             spec: spec,
             analysisResponse: analysisResponse,
@@ -1068,79 +512,52 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
       return;
     } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage = e.toString());
-        _showErrorDialog(e.toString());
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Patent search failed: $e')),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoadingPatents = false);
     }
   }
+}
 
-  void _showErrorDialog(String error) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 24),
-            const SizedBox(width: AppSpacing.sm),
-            const Expanded(
-              child: Text(
-                'Patent Search Failed',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink,
-                ),
+class _ScoreTable extends StatelessWidget {
+  final IdeaScores scores;
+  const _ScoreTable({required this.scores});
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      ('Urgency', scores.urgency),
+      ('Differentiation', scores.differentiation),
+      ('Speed to revenue', scores.speedToRevenue),
+      ('Margin', scores.margin),
+      ('Defensibility', scores.defensibility),
+      ('Distribution', scores.distribution),
+    ];
+    return Column(
+      children: items
+          .asMap()
+          .entries
+          .map((e) {
+            final isLast = e.key == items.length - 1;
+            return Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 14),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 130,
+                    child: Text(e.value.$1, style: AppText.caption.copyWith(color: AppColors.graphite)),
+                  ),
+                  Expanded(child: ScoreBar(value: e.value.$2 / 10.0)),
+                  const SizedBox(width: 8),
+                  Text('${e.value.$2}', style: AppText.monoMeta),
+                ],
               ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'The patent search could not be completed. This usually means the search service is temporarily unavailable.',
-              style: TextStyle(color: AppColors.ink, height: 1.5),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.cream,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: Text(
-                error.length > 200 ? '${error.substring(0, 200)}...' : error,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontFamily: 'monospace',
-                  color: AppColors.slateLight,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              if (_spec != null) _searchPatents(_spec!);
-            },
-            style: FilledButton.styleFrom(backgroundColor: AppColors.teal),
-            child: const Text('Retry'),
-          ),
-        ],
-      ),
+            );
+          })
+          .toList(),
     );
   }
 }

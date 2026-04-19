@@ -36,6 +36,7 @@ dependencies:
   pdf: ^3.11.1
   sign_in_with_apple: ^7.0.1
   in_app_purchase: ^3.2.0
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -75,7 +76,3 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  fonts:
-    - family: Manrope
-      fonts:
-        - asset: assets/fonts/Manrope-Variable.ttf

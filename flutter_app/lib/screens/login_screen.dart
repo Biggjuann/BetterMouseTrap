@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../services/credit_service.dart';
 import '../services/purchase_service.dart';
 import '../theme.dart';
+import '../widgets/studio_widgets.dart';
 import 'forgot_password_screen.dart';
 import 'home_screen.dart';
 import 'onboarding_screen.dart';
@@ -33,262 +34,320 @@ class _LoginScreenState extends State<LoginScreen> {
     final showApple = AuthService.instance.isAppleSignInAvailable;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
-          ),
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.xl),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Hero icon — Stitch: rotated bg + icon (matches home)
+      backgroundColor: AppColors.bg,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Masthead
+                  Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: AppColors.ink,
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                        ),
+                        child: const Icon(Icons.memory_rounded, color: AppColors.canvas, size: 18),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        'MOUSE·TRAP',
+                        style: TextStyle(
+                          fontFamily: fontMono,
+                          fontSize: 10,
+                          letterSpacing: 2.5,
+                          color: AppColors.ink,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xxl),
+
+                  const Eyebrow('File Nº 0049 · the entrance'),
+                  const SizedBox(height: AppSpacing.md),
+                  RichText(
+                    text: TextSpan(
+                      style: AppText.display1,
+                      children: [
+                        TextSpan(text: _isRegisterMode ? 'Open the\n' : 'Welcome\n'),
+                        TextSpan(
+                          text: _isRegisterMode ? 'workshop.' : 'back.',
+                          style: AppText.display1.copyWith(
+                            fontStyle: FontStyle.italic,
+                            color: AppColors.accent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.base),
+                  Text(
+                    _isRegisterMode
+                        ? 'Three free credits on arrival. No card needed.'
+                        : 'Sign in to pick up where you left off.',
+                    style: AppText.bodyLg.copyWith(color: AppColors.graphite),
+                  ),
+                  const SizedBox(height: AppSpacing.xxl),
+
+                  if (showApple) ...[
                     SizedBox(
-                      width: 96,
-                      height: 96,
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: Transform.rotate(
-                              angle: 0.1,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(AppRadius.xl),
-                                ),
-                              ),
-                            ),
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton.icon(
+                        onPressed: _isLoading ? null : _signInWithApple,
+                        icon: const Icon(Icons.apple, size: 22),
+                        label: const Text('Continue with Apple'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.ink,
+                          foregroundColor: AppColors.canvas,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.md),
                           ),
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                borderRadius: BorderRadius.circular(AppRadius.xl),
-                                boxShadow: AppShadows.button,
-                              ),
-                              child: const Icon(
-                                Icons.precision_manufacturing,
-                                size: 48,
-                                color: Colors.white,
-                              ),
-                            ),
+                          textStyle: const TextStyle(
+                            fontFamily: fontSans,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
                           ),
-                        ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
-
-                    // Title — "MouseTrap" with gold accent
-                    RichText(
-                      text: const TextSpan(
-                        style: TextStyle(
-                          fontFamily: 'Manrope',
-                          fontSize: 40,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
-                          color: AppColors.ink,
-                        ),
-                        children: [
-                          TextSpan(text: 'Mouse'),
-                          TextSpan(
-                            text: 'Trap',
-                            style: TextStyle(color: AppColors.primary),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    // Subtitle
-                    Text(
-                      _isRegisterMode ? 'Create your account' : 'Welcome back!',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppColors.ink,
-                            fontWeight: FontWeight.w500,
-                          ),
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-
-                    // Sign in with Apple button (iOS only)
-                    if (showApple) ...[
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton.icon(
-                          onPressed: _isLoading ? null : _signInWithApple,
-                          icon: const Icon(Icons.apple, size: 24),
-                          label: const Text(
-                            'Sign in with Apple',
+                    Row(
+                      children: [
+                        const Expanded(child: Divider(color: AppColors.hairline, height: 1)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                          child: Text(
+                            'or by email',
                             style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
+                              fontFamily: fontMono,
+                              fontSize: 10,
+                              letterSpacing: 2,
+                              color: AppColors.mist,
                             ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.xl),
-                            ),
-                            elevation: 0,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
+                        const Expanded(child: Divider(color: AppColors.hairline, height: 1)),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
 
-                      // "or" divider
-                      Row(
-                        children: [
-                          Expanded(child: Divider(color: AppColors.ink.withValues(alpha: 0.15))),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
-                            child: Text(
-                              'or',
-                              style: TextStyle(
-                                color: AppColors.ink.withValues(alpha: 0.4),
-                                fontWeight: FontWeight.w500,
+                  // Specimen form — email / password
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.canvas,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: AppColors.ink.withValues(alpha: 0.9)),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: const BoxDecoration(
+                            color: AppColors.ink,
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                _isRegisterMode ? 'NEW · CREDENTIALS' : 'RETURNING · CREDENTIALS',
+                                style: TextStyle(
+                                  fontFamily: fontMono,
+                                  fontSize: 10,
+                                  color: AppColors.canvas,
+                                  letterSpacing: 2,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
+                              const Spacer(),
+                              Text(
+                                '01 / 02',
+                                style: TextStyle(
+                                  fontFamily: fontMono,
+                                  fontSize: 10,
+                                  color: AppColors.canvas,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ],
                           ),
-                          Expanded(child: Divider(color: AppColors.ink.withValues(alpha: 0.15))),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                    ],
-
-                    // Form card — Stitch: white, primary/5 border, xl radius
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardWhite,
-                        borderRadius: BorderRadius.circular(AppRadius.xl),
-                        border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.05),
                         ),
-                        boxShadow: AppShadows.elevated,
-                      ),
-                      child: Column(
-                        children: [
-                          TextField(
+                        _formField(
+                          marker: 'A.',
+                          label: 'EMAIL',
+                          child: TextField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
-                            decoration: InputDecoration(
-                              hintText: 'Email address',
-                              prefixIcon: Icon(
-                                Icons.email_outlined,
-                                color: AppColors.primary.withValues(alpha: 0.6),
-                              ),
+                            style: AppText.display4.copyWith(color: AppColors.ink),
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              filled: false,
+                              hintText: 'you@workshop.com',
+                              contentPadding: EdgeInsets.zero,
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.base),
-
-                          TextField(
+                        ),
+                        const Divider(height: 1, thickness: 1, color: AppColors.hairline, indent: 14, endIndent: 14),
+                        _formField(
+                          marker: 'B.',
+                          label: 'PASSWORD',
+                          child: TextField(
                             controller: _passwordController,
                             obscureText: true,
                             textInputAction: TextInputAction.done,
                             onSubmitted: (_) => _submit(),
-                            decoration: InputDecoration(
-                              hintText: 'Password',
-                              prefixIcon: Icon(
-                                Icons.lock_outlined,
-                                color: AppColors.primary.withValues(alpha: 0.6),
-                              ),
+                            style: AppText.display4.copyWith(color: AppColors.ink),
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              filled: false,
+                              hintText: '••••••••',
+                              contentPadding: EdgeInsets.zero,
                             ),
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
 
-                          if (!_isRegisterMode)
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: _isLoading
-                                    ? null
-                                    : () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                const ForgotPasswordScreen(),
-                                          ),
-                                        ),
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                  if (!_isRegisterMode)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const ForgotPasswordScreen(),
                                   ),
-                                  textStyle: const TextStyle(fontSize: 13),
                                 ),
-                                child: const Text('Forgot password?'),
-                              ),
-                            ),
-
-                          const SizedBox(height: AppSpacing.lg),
-
-                          // Primary CTA — Stitch gold button with shadow
-                          SizedBox(
-                            width: double.infinity,
-                            height: 56,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                boxShadow: _isLoading ? [] : AppShadows.button,
-                                borderRadius: BorderRadius.circular(AppRadius.xl),
-                              ),
-                              child: FilledButton(
-                                onPressed: _isLoading ? null : _submit,
-                                child: _isLoading
-                                    ? SizedBox(
-                                        height: 22,
-                                        width: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.5,
-                                          strokeCap: StrokeCap.round,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            _isRegisterMode
-                                                ? Icons.person_add
-                                                : Icons.login,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: AppSpacing.sm),
-                                          Text(
-                                            _isRegisterMode ? 'Create Account' : 'Sign In',
-                                          ),
-                                        ],
-                                      ),
-                              ),
-                            ),
+                        child: Text(
+                          'Forgot password?',
+                          style: TextStyle(
+                            fontFamily: fontSans,
+                            fontSize: 13,
+                            color: AppColors.graphite,
+                            decoration: TextDecoration.underline,
+                            decorationColor: AppColors.mist,
                           ),
-                        ],
+                        ),
                       ),
                     ),
 
-                    const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: AppSpacing.lg),
 
-                    // Toggle link
-                    TextButton(
+                  StudioButton(
+                    label: _isRegisterMode ? 'Create account' : 'Sign in',
+                    icon: _isRegisterMode ? Icons.person_add_rounded : Icons.arrow_forward_rounded,
+                    onPressed: _isLoading ? null : _submit,
+                  ),
+                  const SizedBox(height: AppSpacing.base),
+
+                  Center(
+                    child: TextButton(
                       onPressed: _isLoading
                           ? null
-                          : () => setState(() {
-                                _isRegisterMode = !_isRegisterMode;
-                              }),
-                      child: Text(
-                        _isRegisterMode
-                            ? 'Already have an account? Sign in'
-                            : "Don't have an account? Create one",
+                          : () => setState(() => _isRegisterMode = !_isRegisterMode),
+                      child: RichText(
+                        text: TextSpan(
+                          style: const TextStyle(
+                            fontFamily: fontSans,
+                            fontSize: 13,
+                            color: AppColors.graphite,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: _isRegisterMode
+                                  ? 'Already a member? '
+                                  : "First visit? ",
+                            ),
+                            TextSpan(
+                              text: _isRegisterMode ? 'Sign in' : 'Create an account',
+                              style: const TextStyle(
+                                color: AppColors.ink,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  if (_isLoading) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.ink,
+                        ),
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _formField({required String marker, required String label, required Widget child}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 22,
+                child: Text(
+                  marker,
+                  style: TextStyle(
+                    fontFamily: fontMono,
+                    fontSize: 10,
+                    color: AppColors.mist,
+                  ),
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: fontMono,
+                  fontSize: 9.5,
+                  letterSpacing: 2,
+                  color: AppColors.mist,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(left: 22),
+            child: child,
           ),
         ],
       ),

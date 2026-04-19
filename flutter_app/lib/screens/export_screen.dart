@@ -6,346 +6,164 @@ import '../models/api_responses.dart';
 import '../theme.dart';
 import '../utils/pdf_downloader.dart';
 import '../utils/pdf_generator.dart';
-import '../widgets/disclaimer_banner.dart';
+import '../widgets/studio_widgets.dart';
+
+// ─────────────────────────────────────────────────────────────────────
+// Export — The One-Pager
+//
+// A single editorial document on a cream "page" sheet. Slim top rail
+// with file number + inline Copy / PDF actions. Markdown rendered in
+// Fraunces heads, Inter body, with an accent rule at the top of the
+// page. Bottom has a pair of StudioButtons for the obvious exits.
+// ─────────────────────────────────────────────────────────────────────
 
 class ExportScreen extends StatelessWidget {
   final ExportResponse exportResponse;
   const ExportScreen({super.key, required this.exportResponse});
 
+  String _fileNum() {
+    final t = exportResponse.markdown;
+    var h = 0;
+    for (final c in t.codeUnits) {
+      h = (h * 31 + c) & 0xffff;
+    }
+    return 'OP-${3000 + (h % 6999)}';
+  }
+
+  void _copy(BuildContext context) {
+    Clipboard.setData(ClipboardData(text: exportResponse.plainText));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Copied to clipboard.')),
+    );
+  }
+
+  Future<void> _pdf(BuildContext context) async {
+    try {
+      final bytes = await PdfGenerator.generateFromMarkdown(
+        title: 'Invention Summary',
+        content: exportResponse.markdown,
+      );
+      downloadPdfBytes(bytes, 'invention_summary.pdf');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PDF downloaded.')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF failed: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
+      backgroundColor: AppColors.bg,
+      body: Column(
         children: [
-          Container(
-            decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
+          // Header bar
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+              child: Row(
+                children: [
+                  IconBtn(icon: Icons.arrow_back_rounded, onPressed: () => Navigator.pop(context)),
+                  const Spacer(),
+                  Text('THE ONE-PAGER', style: AppText.monoMeta),
+                  const Spacer(),
+                  IconBtn(icon: Icons.ios_share_rounded, onPressed: () => _pdf(context)),
+                ],
+              ),
+            ),
           ),
-          Column(
-            children: [
-              // Stitch nav bar
-              Container(
+
+          // Document strip
+          Padding(
+            padding: const EdgeInsets.fromLTRB(22, 4, 22, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'File Nº ${_fileNum()}  ·  Invention summary',
+                    style: AppText.monoMeta,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                _InlineAction(icon: Icons.copy_rounded, label: 'Copy', onTap: () => _copy(context)),
+                const SizedBox(width: 10),
+                _InlineAction(icon: Icons.picture_as_pdf_outlined, label: 'PDF', onTap: () => _pdf(context)),
+              ],
+            ),
+          ),
+
+          // The "page"
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(22, 8, 22, 24),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
                 decoration: BoxDecoration(
-                  color: AppColors.cream.withValues(alpha: 0.8),
-                  border: Border(
-                    bottom: BorderSide(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                    ),
-                  ),
+                  color: AppColors.canvas,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(color: AppColors.hairline),
                 ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.base,
-                      vertical: AppSpacing.sm,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(width: 32, height: 2, color: AppColors.accentInk),
+                    const SizedBox(height: 16),
+                    Text('Invention Summary'.toUpperCase(), style: AppText.monoMeta),
+                    const SizedBox(height: 20),
+
+                    MarkdownBody(
+                      data: exportResponse.markdown,
+                      selectable: true,
+                      styleSheet: _markdownStyle(),
                     ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.cardWhite,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.05),
-                              ),
-                              boxShadow: AppShadows.card,
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back_ios_new,
-                              color: AppColors.primary,
-                              size: 18,
-                            ),
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        Expanded(
-                          child: Column(
-                            children: [
-                              Text(
-                                'ONE-PAGER',
-                                style: TextStyle(
-                                  color: AppColors.primary.withValues(alpha: 0.6),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 2,
-                                ),
-                              ),
-                              const Text(
-                                'Invention Summary',
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.ink,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.copy_rounded, size: 20),
-                              color: AppColors.primary,
-                              tooltip: 'Copy',
-                              onPressed: () {
-                                Clipboard.setData(
-                                  ClipboardData(text: exportResponse.plainText),
-                                );
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Text('Copied to clipboard!'),
-                                    backgroundColor: AppColors.success,
-                                  ),
-                                );
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.picture_as_pdf, size: 20),
-                              color: AppColors.primary,
-                              tooltip: 'Download PDF',
-                              onPressed: () async {
-                                try {
-                                  final bytes = await PdfGenerator.generateFromMarkdown(
-                                    title: 'Invention Summary',
-                                    content: exportResponse.markdown,
-                                  );
-                                  downloadPdfBytes(bytes, 'invention_summary.pdf');
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text('PDF downloaded!'),
-                                        backgroundColor: AppColors.success,
-                                      ),
-                                    );
-                                  }
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('PDF failed: $e')),
-                                    );
-                                  }
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
+
+                    const SizedBox(height: 28),
+                    Container(height: 1, color: AppColors.hairline),
+                    const SizedBox(height: 14),
+                    Text(
+                      'A drafting aid. Review before sharing.',
+                      style: AppText.monoMeta,
                     ),
-                  ),
+                  ],
                 ),
               ),
-
-              // Content
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Document card — Stitch style
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardWhite,
-                          borderRadius: BorderRadius.circular(AppRadius.xl),
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.05),
-                          ),
-                          boxShadow: AppShadows.elevated,
-                        ),
-                        child: MarkdownBody(
-                          data: exportResponse.markdown,
-                          selectable: true,
-                          styleSheet: MarkdownStyleSheet(
-                            h1: const TextStyle(
-                              fontFamily: 'Manrope',
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.ink,
-                              height: 1.3,
-                            ),
-                            h2: TextStyle(
-                              fontFamily: 'Manrope',
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                              letterSpacing: 0.3,
-                              height: 1.4,
-                            ),
-                            h3: const TextStyle(
-                              fontFamily: 'Manrope',
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.ink,
-                              height: 1.4,
-                            ),
-                            p: const TextStyle(
-                              fontFamily: 'Manrope',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                              color: AppColors.ink,
-                              height: 1.6,
-                            ),
-                            strong: const TextStyle(
-                              fontFamily: 'Manrope',
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.ink,
-                            ),
-                            em: const TextStyle(
-                              fontFamily: 'Manrope',
-                              fontStyle: FontStyle.italic,
-                              color: AppColors.ink,
-                            ),
-                            listBullet: const TextStyle(
-                              fontFamily: 'Manrope',
-                              fontSize: 14,
-                              color: AppColors.primary,
-                            ),
-                            blockquoteDecoration: BoxDecoration(
-                              border: Border(
-                                left: BorderSide(
-                                  color: AppColors.primary,
-                                  width: 3,
-                                ),
-                              ),
-                            ),
-                            blockquotePadding: const EdgeInsets.only(
-                              left: AppSpacing.md,
-                              top: AppSpacing.sm,
-                              bottom: AppSpacing.sm,
-                            ),
-                            horizontalRuleDecoration: BoxDecoration(
-                              border: Border(
-                                top: BorderSide(
-                                  color: AppColors.primary.withValues(alpha: 0.15),
-                                ),
-                              ),
-                            ),
-                            h1Padding: const EdgeInsets.only(
-                              top: AppSpacing.sm,
-                              bottom: AppSpacing.md,
-                            ),
-                            h2Padding: const EdgeInsets.only(
-                              top: AppSpacing.lg,
-                              bottom: AppSpacing.sm,
-                            ),
-                            h3Padding: const EdgeInsets.only(
-                              top: AppSpacing.md,
-                              bottom: AppSpacing.xs,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-
-                      const DisclaimerBanner(),
-
-                      // Extra bottom padding for the fixed footer
-                      const SizedBox(height: 120),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
 
-          // Fixed bottom action bar — Stitch
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
+          // Footer action bar
+          SafeArea(
+            top: false,
             child: Container(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, AppSpacing.base, AppSpacing.lg, AppSpacing.xl,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.9),
-                border: Border(
-                  top: BorderSide(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                  ),
-                ),
+              padding: const EdgeInsets.fromLTRB(22, 12, 22, 12),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.hairline)),
               ),
               child: Row(
                 children: [
                   Expanded(
-                    child: SizedBox(
-                      height: 56,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          boxShadow: AppShadows.button,
-                          borderRadius: BorderRadius.circular(AppRadius.xl),
-                        ),
-                        child: FilledButton(
-                          onPressed: () {
-                            Clipboard.setData(
-                              ClipboardData(text: exportResponse.plainText),
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('Copied to clipboard!'),
-                                backgroundColor: AppColors.success,
-                              ),
-                            );
-                          },
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.copy_rounded, size: 20),
-                              SizedBox(width: AppSpacing.sm),
-                              Text('Copy'),
-                            ],
-                          ),
-                        ),
-                      ),
+                    child: StudioButton(
+                      label: 'Copy text',
+                      icon: Icons.copy_rounded,
+                      kind: BtnKind.primary,
+                      onPressed: () => _copy(context),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.md),
-                  SizedBox(
-                    height: 56,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        boxShadow: AppShadows.button,
-                        borderRadius: BorderRadius.circular(AppRadius.xl),
-                      ),
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          try {
-                            final bytes = await PdfGenerator.generateFromMarkdown(
-                              title: 'Invention Summary',
-                              content: exportResponse.markdown,
-                            );
-                            downloadPdfBytes(bytes, 'invention_summary.pdf');
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('PDF downloaded!'),
-                                  backgroundColor: AppColors.success,
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('PDF failed: $e')),
-                              );
-                            }
-                          }
-                        },
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.picture_as_pdf, size: 20),
-                            SizedBox(width: AppSpacing.sm),
-                            Text('PDF'),
-                          ],
-                        ),
-                      ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: StudioButton(
+                      label: 'Save PDF',
+                      icon: Icons.picture_as_pdf_outlined,
+                      kind: BtnKind.ghost,
+                      onPressed: () => _pdf(context),
                     ),
                   ),
                 ],
@@ -353,6 +171,79 @@ class ExportScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  MarkdownStyleSheet _markdownStyle() {
+    return MarkdownStyleSheet(
+      h1: AppText.display2.copyWith(height: 1.15),
+      h2: TextStyle(
+        fontFamily: fontDisplay, fontSize: 22, fontWeight: FontWeight.w400,
+        color: AppColors.ink, height: 1.25, letterSpacing: -0.4,
+      ),
+      h3: TextStyle(
+        fontFamily: fontDisplay, fontSize: 17, fontWeight: FontWeight.w500,
+        color: AppColors.ink, fontStyle: FontStyle.italic, height: 1.3,
+      ),
+      h4: AppText.monoMeta.copyWith(color: AppColors.accentInk),
+      p: AppText.body.copyWith(height: 1.65),
+      strong: const TextStyle(fontFamily: fontSans, fontWeight: FontWeight.w600, color: AppColors.ink),
+      em: TextStyle(fontFamily: fontSans, fontStyle: FontStyle.italic, color: AppColors.ink),
+      listBullet: AppText.body.copyWith(color: AppColors.accentInk),
+      blockquote: AppText.body.copyWith(
+        fontStyle: FontStyle.italic, color: AppColors.accentInk, height: 1.6,
+      ),
+      blockquoteDecoration: const BoxDecoration(
+        border: Border(left: BorderSide(color: AppColors.accentInk, width: 2)),
+      ),
+      blockquotePadding: const EdgeInsets.only(left: 14, top: 4, bottom: 4),
+      code: TextStyle(
+        fontFamily: fontMono, fontSize: 12.5, color: AppColors.graphite,
+        backgroundColor: AppColors.bg,
+      ),
+      horizontalRuleDecoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.hairline)),
+      ),
+      h1Padding: const EdgeInsets.only(top: 10, bottom: 12),
+      h2Padding: const EdgeInsets.only(top: 22, bottom: 8),
+      h3Padding: const EdgeInsets.only(top: 16, bottom: 4),
+      h4Padding: const EdgeInsets.only(top: 12, bottom: 2),
+      blockSpacing: 12,
+    );
+  }
+}
+
+class _InlineAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _InlineAction({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.hairline),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 13, color: AppColors.graphite),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: fontSans, fontSize: 11, fontWeight: FontWeight.w600,
+                color: AppColors.graphite,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

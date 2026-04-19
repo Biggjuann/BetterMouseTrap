@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
 import '../theme.dart';
+import '../widgets/studio_widgets.dart';
 import 'home_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -40,204 +41,142 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: PageView(
-                    controller: _pageController,
-                    onPageChanged: (i) => setState(() => _currentPage = i),
-                    children: [
-                      _buildWelcomePage(),
-                      _buildHowItWorksPage(),
-                      _buildReadyPage(),
-                    ],
+      backgroundColor: AppColors.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
+              child: Row(
+                children: [
+                  Text(
+                    '0${_currentPage + 1} / 03',
+                    style: TextStyle(
+                      fontFamily: fontMono,
+                      fontSize: 10,
+                      letterSpacing: 2,
+                      color: AppColors.mist,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-
-                // Dot indicators
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(3, (i) => AnimatedContainer(
-                      duration: AppDuration.fast,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: _currentPage == i ? 24 : 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _currentPage == i
-                            ? AppColors.primary
-                            : AppColors.primary.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: _completeOnboarding,
+                    child: Text(
+                      'Skip',
+                      style: TextStyle(
+                        fontFamily: fontMono,
+                        fontSize: 10,
+                        letterSpacing: 2,
+                        color: AppColors.graphite,
+                        fontWeight: FontWeight.w600,
                       ),
-                    )),
+                    ),
                   ),
-                ),
-
-                // Bottom buttons
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xxl,
-                  ),
-                  child: _currentPage == 2
-                      ? SizedBox(
-                          width: double.infinity,
-                          height: 58,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              boxShadow: AppShadows.button,
-                              borderRadius: BorderRadius.circular(AppRadius.xl),
-                            ),
-                            child: FilledButton(
-                              onPressed: _completeOnboarding,
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.rocket_launch, size: 20),
-                                  SizedBox(width: AppSpacing.sm),
-                                  Text("Let's Go"),
-                                ],
-                              ),
-                            ),
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            TextButton(
-                              onPressed: _completeOnboarding,
-                              child: const Text('Skip'),
-                            ),
-                            SizedBox(
-                              height: 48,
-                              child: FilledButton(
-                                onPressed: _nextPage,
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text('Next'),
-                                    SizedBox(width: AppSpacing.xs),
-                                    Icon(Icons.arrow_forward, size: 18),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (i) => setState(() => _currentPage = i),
+                children: [
+                  _buildWelcomePage(),
+                  _buildHowItWorksPage(),
+                  _buildReadyPage(),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.base),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(3, (i) => AnimatedContainer(
+                  duration: AppDuration.fast,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: _currentPage == i ? 18 : 6,
+                  height: 2,
+                  decoration: BoxDecoration(
+                    color: _currentPage == i ? AppColors.ink : AppColors.border,
+                  ),
+                )),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xl),
+              child: _currentPage == 2
+                  ? StudioButton(
+                      label: 'Enter the workshop',
+                      icon: Icons.arrow_forward_rounded,
+                      onPressed: _completeOnboarding,
+                    )
+                  : StudioButton(
+                      label: 'Continue',
+                      icon: Icons.arrow_forward_rounded,
+                      onPressed: _nextPage,
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // ── Page 1: Welcome ─────────────────────────────────────────────────
-
   Widget _buildWelcomePage() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Hero icon
-          SizedBox(
-            width: 96,
-            height: 96,
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: Transform.rotate(
-                    angle: 0.1,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(AppRadius.xl),
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(AppRadius.xl),
-                      boxShadow: AppShadows.button,
-                    ),
-                    child: const Icon(
-                      Icons.card_giftcard,
-                      size: 48,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xxl),
-
-          // Title
+          const Eyebrow('Chapter one · the premise'),
+          const SizedBox(height: AppSpacing.md),
           RichText(
-            text: TextStyle(
-              fontFamily: 'Manrope',
-              fontSize: 34,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-              color: AppColors.ink,
-            ).let((s) => TextSpan(
+            text: TextSpan(
+              style: AppText.display1,
               children: [
-                TextSpan(text: 'Welcome to\n', style: s.copyWith(fontSize: 24, fontWeight: FontWeight.w600)),
-                TextSpan(text: 'Mouse', style: s),
-                TextSpan(text: 'Trap', style: s.copyWith(color: AppColors.primary)),
-              ],
-            )),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.xxl),
-
-          // Credit badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppRadius.xl),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.toll, size: 24, color: AppColors.primary),
-                const SizedBox(width: AppSpacing.md),
-                Text(
-                  '5 free credits to get started!',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+                const TextSpan(text: 'A quiet place\nto '),
+                TextSpan(
+                  text: 'invent.',
+                  style: AppText.display1.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: AppColors.accent,
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-
           Text(
-            'Use them to discover your\nnext big idea.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.ink.withValues(alpha: 0.7),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              height: 1.5,
+            'Name any product. MouseTrap writes back with seven invention angles — tiered by ambition, scored by evidence, patent-aware.',
+            style: AppText.bodyLg.copyWith(color: AppColors.graphite),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.base),
+            decoration: BoxDecoration(
+              color: AppColors.accentSoft,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.star_border_rounded, color: AppColors.accentInk, size: 20),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      style: AppText.body.copyWith(color: AppColors.accentInk),
+                      children: [
+                        const TextSpan(
+                          text: 'Five credits on arrival. ',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const TextSpan(text: 'Spend them on ideas.'),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -245,103 +184,67 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ── Page 2: How it works ────────────────────────────────────────────
-
   Widget _buildHowItWorksPage() {
     const steps = [
-      (Icons.search, 'Enter a product', 'Type any product name or paste a URL'),
-      (Icons.auto_awesome, 'AI generates ideas', 'Get ranked ideas with scores and strategies'),
-      (Icons.gavel, 'Check patents', 'AI-powered prior art analysis in seconds'),
-      (Icons.description, 'Export one-pager', 'Download a polished PDF to share'),
+      ('A.', 'Describe the product', 'Type a name or paste a reference url.'),
+      ('B.', 'Receive the brief', 'Seven angles, tiered and scored, within a minute.'),
+      ('C.', 'Weigh the prior art', 'We read the patent ledger for you.'),
+      ('D.', 'Export the one-pager', 'PDF ready to email, print, or pin up.'),
     ];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            'How It Works',
-            style: TextStyle(
-              fontFamily: 'Manrope',
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-              color: AppColors.ink,
+          const Eyebrow('Chapter two · the method'),
+          const SizedBox(height: AppSpacing.md),
+          RichText(
+            text: TextSpan(
+              style: AppText.display1,
+              children: [
+                const TextSpan(text: 'Four\n'),
+                TextSpan(
+                  text: 'movements.',
+                  style: AppText.display1.copyWith(fontStyle: FontStyle.italic, color: AppColors.accent),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: AppSpacing.xxl),
-
-          ...steps.asMap().entries.map((entry) {
-            final i = entry.key;
-            final (icon, title, subtitle) = entry.value;
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: i < steps.length - 1 ? AppSpacing.base : 0,
+          const SizedBox(height: AppSpacing.xl),
+          ...steps.map((s) {
+            final (marker, title, body) = s;
+            return Container(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.hairline)),
               ),
-              child: Container(
-                padding: const EdgeInsets.all(AppSpacing.base),
-                decoration: BoxDecoration(
-                  color: AppColors.cardWhite,
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.05),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 28,
+                    child: Text(
+                      marker,
+                      style: TextStyle(
+                        fontFamily: fontMono,
+                        fontSize: 12,
+                        color: AppColors.mist,
+                      ),
+                    ),
                   ),
-                  boxShadow: AppShadows.card,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${i + 1}',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: AppText.display4),
+                        const SizedBox(height: 3),
+                        Text(body, style: AppText.bodySm),
+                      ],
                     ),
-                    const SizedBox(width: AppSpacing.base),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(icon, size: 18, color: AppColors.primary),
-                              const SizedBox(width: AppSpacing.sm),
-                              Text(
-                                title,
-                                style: TextStyle(
-                                  color: AppColors.ink,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            subtitle,
-                            style: TextStyle(
-                              color: AppColors.ink.withValues(alpha: 0.5),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           }),
@@ -350,80 +253,50 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ── Page 3: Ready ───────────────────────────────────────────────────
-
   Widget _buildReadyPage() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Hero icon
-          SizedBox(
-            width: 96,
-            height: 96,
-            child: Stack(
+          const Eyebrow('Chapter three · begin'),
+          const SizedBox(height: AppSpacing.md),
+          RichText(
+            text: TextSpan(
+              style: AppText.display1,
               children: [
-                Positioned.fill(
-                  child: Transform.rotate(
-                    angle: -0.1,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.teal.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(AppRadius.xl),
-                      ),
-                    ),
-                  ),
+                const TextSpan(text: 'The desk is\n'),
+                TextSpan(
+                  text: 'ready.',
+                  style: AppText.display1.copyWith(fontStyle: FontStyle.italic, color: AppColors.accent),
                 ),
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.teal,
-                      borderRadius: BorderRadius.circular(AppRadius.xl),
-                      boxShadow: AppShadows.button,
-                    ),
-                    child: const Icon(
-                      Icons.rocket_launch,
-                      size: 48,
-                      color: Colors.white,
-                    ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            'Your first idea is sixty seconds away. Be specific — hero products earn the best briefs.',
+            style: AppText.bodyLg.copyWith(color: AppColors.graphite),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          StudioCard(
+            padding: const EdgeInsets.all(AppSpacing.base),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '"The bottle is the moat. Refill models quietly make incumbents look disposable."',
+                    style: AppText.display4.copyWith(fontStyle: FontStyle.italic),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.xxl),
-
-          Text(
-            'Ready to Build\nSomething Great?',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Manrope',
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-              color: AppColors.ink,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-
-          Text(
-            'Your first idea is just\nseconds away.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.ink.withValues(alpha: 0.7),
-              fontSize: 17,
-              fontWeight: FontWeight.w500,
-              height: 1.5,
-            ),
-          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text('Today\'s dispatch', style: AppText.monoMeta),
         ],
       ),
     );
   }
-}
-
-// Extension to use TextStyle as TextSpan parent
-extension _TextStyleExt on TextStyle {
-  TextSpan let(TextSpan Function(TextStyle) fn) => fn(this);
 }

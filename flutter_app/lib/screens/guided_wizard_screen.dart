@@ -5,7 +5,18 @@ import '../services/credit_service.dart';
 import '../theme.dart';
 import '../widgets/buy_credits_sheet.dart';
 import '../widgets/loading_overlay.dart';
+import '../widgets/studio_widgets.dart';
 import 'ideas_list_screen.dart';
+
+// ─────────────────────────────────────────────────────────────────────
+// Guided Wizard — The Interview
+//
+// Four-card interview. Each "card" is a labelled field with a serif
+// prompt and an Inter subprompt. Progress is rendered as a file-tab
+// strip (01 / 02 / 03 / 04) so the wizard reads as chapters in a
+// dossier rather than a modal slideshow. Footer sticks with
+// StudioButton primary + ghost.
+// ─────────────────────────────────────────────────────────────────────
 
 class GuidedWizardScreen extends StatefulWidget {
   final String productText;
@@ -33,31 +44,32 @@ class _GuidedWizardScreenState extends State<GuidedWizardScreen> {
 
   static const _steps = [
     _WizardStep(
-      icon: Icons.report_problem_outlined,
+      eyebrow: 'CHAPTER 01 · THE COMPLAINT',
       title: "What's broken?",
       subtitle:
-          'A great product starts with a real problem. What frustrations or limitations have you noticed?',
+          'A good product starts with a real grievance. What leaks, snaps, frustrates, or wastes time?',
       hint: 'e.g. "The lid never seals properly, it leaks in bags..."',
+      required_: true,
     ),
     _WizardStep(
-      icon: Icons.people_outline,
+      eyebrow: 'CHAPTER 02 · THE PERSON',
       title: 'Who needs this most?',
       subtitle:
-          'The best products serve a specific customer. Who would benefit most from an improvement?',
+          'Products sharpen around a specific user. Who would notice an improvement the most?',
       hint: 'e.g. "Busy parents who pack lunches every morning..."',
     ),
     _WizardStep(
-      icon: Icons.lightbulb_outline,
-      title: "What's your instinct?",
+      eyebrow: 'CHAPTER 03 · THE INSTINCT',
+      title: "What's your hypothesis?",
       subtitle:
-          'Great consultants start with a hypothesis. What improvements or directions excite you?',
+          'Where does your intuition point? Jot it down — it shapes the angle we explore.',
       hint: 'e.g. "A magnetic seal system that\'s one-handed..."',
     ),
     _WizardStep(
-      icon: Icons.landscape_outlined,
-      title: "What's out there?",
+      eyebrow: 'CHAPTER 04 · THE LANDSCAPE',
+      title: "What's already out there?",
       subtitle:
-          'Understanding the landscape helps find white space. What alternatives exist? What\'s missing?',
+          'A quick scan of what exists helps us find the white space the incumbents miss.',
       hint: 'e.g. "Yeti and Stanley dominate but they\'re all screw-top..."',
     ),
   ];
@@ -74,16 +86,11 @@ class _GuidedWizardScreenState extends State<GuidedWizardScreen> {
 
   TextEditingController _controllerForStep(int step) {
     switch (step) {
-      case 0:
-        return _painPointsController;
-      case 1:
-        return _targetCustomerController;
-      case 2:
-        return _hypothesisController;
-      case 3:
-        return _marketContextController;
-      default:
-        return _painPointsController;
+      case 0: return _painPointsController;
+      case 1: return _targetCustomerController;
+      case 2: return _hypothesisController;
+      case 3: return _marketContextController;
+      default: return _painPointsController;
     }
   }
 
@@ -91,20 +98,18 @@ class _GuidedWizardScreenState extends State<GuidedWizardScreen> {
 
   void _nextPage() {
     if (_currentPage < _steps.length - 1) {
-      _pageController.nextPage(
-        duration: AppDuration.normal,
-        curve: Curves.easeInOut,
-      );
+      _pageController.nextPage(duration: AppDuration.normal, curve: Curves.easeInOut);
     }
   }
 
   void _prevPage() {
     if (_currentPage > 0) {
-      _pageController.previousPage(
-        duration: AppDuration.normal,
-        curve: Curves.easeInOut,
-      );
+      _pageController.previousPage(duration: AppDuration.normal, curve: Curves.easeInOut);
     }
+  }
+
+  void _jumpTo(int i) {
+    _pageController.animateToPage(i, duration: AppDuration.normal, curve: Curves.easeInOut);
   }
 
   void _showBuyCreditsSheet() {
@@ -129,15 +134,13 @@ class _GuidedWizardScreenState extends State<GuidedWizardScreen> {
         guidedContext['pain_points'] = _painPointsController.text.trim();
       }
       if (_targetCustomerController.text.trim().isNotEmpty) {
-        guidedContext['target_customer'] =
-            _targetCustomerController.text.trim();
+        guidedContext['target_customer'] = _targetCustomerController.text.trim();
       }
       if (_hypothesisController.text.trim().isNotEmpty) {
         guidedContext['hypothesis'] = _hypothesisController.text.trim();
       }
       if (_marketContextController.text.trim().isNotEmpty) {
-        guidedContext['market_context'] =
-            _marketContextController.text.trim();
+        guidedContext['market_context'] = _marketContextController.text.trim();
       }
 
       final response = await ApiClient.instance.generateIdeas(
@@ -147,7 +150,6 @@ class _GuidedWizardScreenState extends State<GuidedWizardScreen> {
 
       CreditService.instance.localDeduct(2);
 
-      // Create session and save variants
       String? sessionId;
       try {
         final sessionData = await ApiClient.instance.createSession(
@@ -156,8 +158,7 @@ class _GuidedWizardScreenState extends State<GuidedWizardScreen> {
         );
         sessionId = sessionData['id'] as String;
         await ApiClient.instance.updateSession(sessionId, {
-          'variants_json':
-              response.variants.map((v) => v.toJson()).toList(),
+          'variants_json': response.variants.map((v) => v.toJson()).toList(),
           'status': 'ideas_generated',
         });
       } catch (_) {}
@@ -181,9 +182,7 @@ class _GuidedWizardScreenState extends State<GuidedWizardScreen> {
       return;
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -193,93 +192,67 @@ class _GuidedWizardScreenState extends State<GuidedWizardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bg,
       body: Stack(
         children: [
-          Container(
-            decoration:
-                const BoxDecoration(gradient: AppGradients.pageBackground),
-          ),
           SafeArea(
             child: Column(
               children: [
-                // App bar
+                // Header
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.sm,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
                   child: Row(
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new,
-                            size: 20, color: AppColors.ink),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      Expanded(
-                        child: Text(
-                          widget.productText,
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.ink,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 48), // balance the back button
+                      IconBtn(icon: Icons.arrow_back_rounded, onPressed: () => Navigator.pop(context)),
+                      const Spacer(),
+                      Text('THE INTERVIEW', style: AppText.monoMeta),
+                      const Spacer(),
+                      const SizedBox(width: 40),
                     ],
                   ),
                 ),
 
-                // Progress dots
+                // Subject line
                 Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.base),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      _steps.length,
-                      (i) => AnimatedContainer(
-                        duration: AppDuration.fast,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: _currentPage == i ? 24 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: _currentPage == i
-                              ? AppColors.primary
-                              : AppColors.primary.withValues(alpha: 0.2),
-                          borderRadius:
-                              BorderRadius.circular(AppRadius.pill),
-                        ),
-                      ),
+                  padding: const EdgeInsets.fromLTRB(22, 2, 22, 14),
+                  child: Text(
+                    'Re: ${widget.productText}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: fontDisplay,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.graphite,
                     ),
                   ),
+                ),
+
+                // Chapter tabs
+                _ChapterTabs(
+                  count: _steps.length,
+                  current: _currentPage,
+                  onTap: _jumpTo,
                 ),
 
                 // Pages
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
-                    onPageChanged: (i) =>
-                        setState(() => _currentPage = i),
+                    onPageChanged: (i) => setState(() => _currentPage = i),
                     itemCount: _steps.length,
                     itemBuilder: (context, index) {
                       final step = _steps[index];
                       final controller = _controllerForStep(index);
-                      return _buildStepPage(step, controller);
+                      return _buildStepPage(step, controller, index);
                     },
                   ),
                 ),
 
-                // Bottom navigation
+                // Footer
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.xl,
-                    AppSpacing.base,
-                    AppSpacing.xl,
-                    AppSpacing.xxl,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(22, 12, 22, 16),
                   child: _currentPage == _steps.length - 1
                       ? _buildLastPageButtons()
                       : _buildNavButtons(),
@@ -287,108 +260,66 @@ class _GuidedWizardScreenState extends State<GuidedWizardScreen> {
               ],
             ),
           ),
-          if (_isLoading)
-            const LoadingOverlay(
-                message: 'Crafting your personalized ideas...'),
+          if (_isLoading) const LoadingOverlay(message: 'Crafting your personalized ideas...'),
         ],
       ),
     );
   }
 
-  Widget _buildStepPage(_WizardStep step, TextEditingController controller) {
+  Widget _buildStepPage(_WizardStep step, TextEditingController controller, int index) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+      padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              Text(step.eyebrow, style: AppText.monoMeta),
+              const SizedBox(width: 8),
+              if (step.required_)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentSoft,
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
+                  ),
+                  child: Text(
+                    'REQUIRED',
+                    style: AppText.monoMeta.copyWith(color: AppColors.accentInk, fontSize: 9),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(step.title, style: AppText.display2),
+          const SizedBox(height: 8),
+          Text(step.subtitle, style: AppText.lede),
+          const SizedBox(height: 20),
 
-          // Icon
           Container(
-            width: 56,
-            height: 56,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppRadius.lg),
+              color: AppColors.canvas,
+              border: Border.all(color: AppColors.hairline),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: Icon(step.icon, color: AppColors.primary, size: 28),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-
-          // Title
-          Text(
-            step.title,
-            style: const TextStyle(
-              fontFamily: 'Manrope',
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.3,
-              color: AppColors.ink,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-
-          // Subtitle
-          Text(
-            step.subtitle,
-            style: TextStyle(
-              color: AppColors.ink.withValues(alpha: 0.6),
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-
-          // Text field
-          TextField(
-            controller: controller,
-            maxLines: 6,
-            minLines: 4,
-            style: const TextStyle(
-              fontSize: 15,
-              color: AppColors.ink,
-              height: 1.5,
-            ),
-            cursorColor: AppColors.primary,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: AppColors.cardWhite,
-              hintText: step.hint,
-              hintMaxLines: 3,
-              alignLabelWithHint: true,
-              hintStyle: TextStyle(
-                color: AppColors.ink.withValues(alpha: 0.3),
-                fontSize: 15,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.xl),
-                borderSide: BorderSide(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  width: 2,
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+            child: TextField(
+              controller: controller,
+              maxLines: 7,
+              minLines: 5,
+              style: AppText.body.copyWith(height: 1.55),
+              cursorColor: AppColors.accentInk,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                isCollapsed: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                hintText: step.hint,
+                hintMaxLines: 3,
+                hintStyle: AppText.body.copyWith(
+                  color: AppColors.mist, fontStyle: FontStyle.italic, height: 1.5,
                 ),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.xl),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
-                  width: 2,
-                ),
-              ),
-            ),
-            onChanged: (_) => setState(() {}),
-          ),
-
-          // Step indicator
-          Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.lg),
-            child: Text(
-              'Step ${_currentPage + 1} of ${_steps.length}${_currentPage == 0 ? '  (required)' : '  (optional)'}',
-              style: TextStyle(
-                color: AppColors.mist,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+              onChanged: (_) => setState(() {}),
             ),
           ),
         ],
@@ -400,36 +331,20 @@ class _GuidedWizardScreenState extends State<GuidedWizardScreen> {
     return Row(
       children: [
         if (_currentPage > 0)
-          SizedBox(
-            height: 48,
-            child: TextButton(
-              onPressed: _prevPage,
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.arrow_back, size: 18),
-                  SizedBox(width: AppSpacing.xs),
-                  Text('Back'),
-                ],
-              ),
-            ),
+          StudioButton(
+            label: 'Back',
+            icon: Icons.arrow_back_rounded,
+            kind: BtnKind.ghost,
+            onPressed: _prevPage,
           )
         else
           const SizedBox.shrink(),
         const Spacer(),
-        SizedBox(
-          height: 48,
-          child: FilledButton(
-            onPressed: _nextPage,
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Next'),
-                SizedBox(width: AppSpacing.xs),
-                Icon(Icons.arrow_forward, size: 18),
-              ],
-            ),
-          ),
+        StudioButton(
+          label: 'Next',
+          icon: Icons.arrow_forward_rounded,
+          kind: BtnKind.primary,
+          onPressed: _nextPage,
         ),
       ],
     );
@@ -440,48 +355,24 @@ class _GuidedWizardScreenState extends State<GuidedWizardScreen> {
       children: [
         SizedBox(
           width: double.infinity,
-          height: 58,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              boxShadow: _canGenerate ? AppShadows.button : [],
-              borderRadius: BorderRadius.circular(AppRadius.xl),
-            ),
-            child: FilledButton(
-              onPressed: _canGenerate ? _generate : null,
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.auto_awesome, size: 20),
-                  SizedBox(width: AppSpacing.sm),
-                  Text('Generate Ideas'),
-                ],
-              ),
-            ),
+          child: StudioButton(
+            label: 'Generate ideas',
+            icon: Icons.auto_awesome_rounded,
+            kind: BtnKind.primary,
+            onPressed: _canGenerate ? _generate : null,
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            TextButton(
+            StudioButton(
+              label: 'Back',
+              icon: Icons.arrow_back_rounded,
+              kind: BtnKind.ghost,
               onPressed: _prevPage,
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.arrow_back, size: 18),
-                  SizedBox(width: AppSpacing.xs),
-                  Text('Back'),
-                ],
-              ),
             ),
-            Text(
-              '2 credits',
-              style: TextStyle(
-                color: AppColors.mist,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text('2 credits', style: AppText.monoMeta),
           ],
         ),
       ],
@@ -489,16 +380,61 @@ class _GuidedWizardScreenState extends State<GuidedWizardScreen> {
   }
 }
 
+class _ChapterTabs extends StatelessWidget {
+  final int count;
+  final int current;
+  final ValueChanged<int> onTap;
+  const _ChapterTabs({required this.count, required this.current, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 36,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 22),
+        itemCount: count,
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        itemBuilder: (_, i) {
+          final active = i == current;
+          return InkWell(
+            onTap: () => onTap(i),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: active ? AppColors.ink : AppColors.canvas,
+                border: Border.all(color: active ? AppColors.ink : AppColors.hairline),
+                borderRadius: BorderRadius.circular(AppRadius.xs),
+              ),
+              child: Text(
+                '${(i + 1).toString().padLeft(2, '0')}',
+                style: TextStyle(
+                  fontFamily: fontMono, fontSize: 11, fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                  color: active ? AppColors.canvas : AppColors.graphite,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _WizardStep {
-  final IconData icon;
+  final String eyebrow;
   final String title;
   final String subtitle;
   final String hint;
+  final bool required_;
 
   const _WizardStep({
-    required this.icon,
+    required this.eyebrow,
     required this.title,
     required this.subtitle,
     required this.hint,
+    this.required_ = false,
   });
 }

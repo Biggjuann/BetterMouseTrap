@@ -1,8 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-// ── Design Tokens ───────────────────────────────────────────────────
+/// Call once during app startup (before runApp) to license Google Fonts
+/// for offline use and pre-warm the type system. Safe to call repeatedly.
+Future<void> initFonts() async {
+  GoogleFonts.config.allowRuntimeFetching = true;
+  // Pre-cache the families we use so the first render is non-flashing.
+  await Future.wait<void>([
+    GoogleFonts.pendingFonts([
+      GoogleFonts.fraunces(fontWeight: FontWeight.w400),
+      GoogleFonts.fraunces(fontWeight: FontWeight.w500),
+      GoogleFonts.fraunces(fontWeight: FontWeight.w600),
+      GoogleFonts.fraunces(fontStyle: FontStyle.italic),
+      GoogleFonts.inter(fontWeight: FontWeight.w400),
+      GoogleFonts.inter(fontWeight: FontWeight.w500),
+      GoogleFonts.inter(fontWeight: FontWeight.w600),
+      GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w400),
+      GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w500),
+      GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w600),
+    ]),
+  ]);
+}
+
+// ── Design Tokens — "Studio" direction ──────────────────────────────
 //
-// Theme: "Warm Confidence" — Stitch-generated Manrope + Gold design system
+// Soft Scandi / warm inventor's desk aesthetic. Canvas off-white, sage
+// accent, Fraunces display for editorial headlines, Inter body, mono
+// for metadata labels. Matches the redesign prototype.
 //
 
 abstract class AppSpacing {
@@ -10,99 +34,119 @@ abstract class AppSpacing {
   static const double sm = 8;
   static const double md = 12;
   static const double base = 16;
-  static const double lg = 24;
-  static const double xl = 32;
-  static const double xxl = 48;
-  static const double xxxl = 64;
+  static const double lg = 20;
+  static const double xl = 28;
+  static const double xxl = 40;
+  static const double xxxl = 56;
 }
 
 abstract class AppRadius {
-  static const double sm = 8;
-  static const double md = 12;
-  static const double lg = 16;
-  static const double xl = 24;
+  static const double xs = 4;
+  static const double sm = 10;
+  static const double md = 14;
+  static const double lg = 20;
+  static const double xl = 28;
   static const double pill = 9999;
 }
 
 abstract class AppDuration {
   static const Duration instant = Duration(milliseconds: 100);
-  static const Duration fast = Duration(milliseconds: 200);
-  static const Duration normal = Duration(milliseconds: 350);
+  static const Duration fast = Duration(milliseconds: 180);
+  static const Duration normal = Duration(milliseconds: 320);
   static const Duration slow = Duration(milliseconds: 500);
   static const Duration calm = Duration(milliseconds: 700);
 }
 
-// ── Colors ──────────────────────────────────────────────────────────
+// ── Colors — Studio palette ─────────────────────────────────────────
 
 abstract class AppColors {
-  // ─ Core brand (Stitch palette)
-  static const Color primary = Color(0xFFD4A954);
-  static const Color amber = Color(0xFFD4A954);    // alias
-  static const Color teal = Color(0xFF2A9D8F);
-  static const Color coral = Color(0xFFE8724A);
+  // Surfaces
+  static const Color bg         = Color(0xFFEFEAE0); // canvas / page
+  static const Color canvas     = Color(0xFFF5F1E8); // card surface
+  static const Color surface    = Color(0xFFFAF7F0); // subtle surface
+  static const Color cardWhite  = Color(0xFFF5F1E8); // alias
+  static const Color cream      = Color(0xFFEFEAE0); // alias for legacy
 
-  // ─ Surfaces
-  static const Color cream = Color(0xFFF8F7F6);
-  static const Color warmWhite = Color(0xFFFFF9F0);
-  static const Color softCream = Color(0xFFFFF1E0);
-  static const Color cardWhite = Color(0xFFFFFFFF);
+  // Ink / text
+  static const Color ink        = Color(0xFF1F1C17); // primary text
+  static const Color charcoal   = Color(0xFF1F1C17); // alias
+  static const Color graphite   = Color(0xFF3A3632); // secondary
+  static const Color stone      = Color(0xFF3A3632); // alias
+  static const Color mist       = Color(0xFF8A8376); // tertiary
+  static const Color slateLight = Color(0xFF8A8376); // alias
 
-  // ─ Text
-  static const Color ink = Color(0xFF3D2E1F);
-  static const Color charcoal = Color(0xFF1D1B16);
-  static const Color stone = Color(0xFF4C4639);
-  static const Color mist = Color(0xFF7D7667);
-  static const Color slateLight = Color(0xFF94A3B8); // Stitch section headers
+  // Hairlines
+  static const Color hairline   = Color(0x141F1C16); // rules
+  static const Color rule       = Color(0x141F1C16); // alias
+  static const Color border     = Color(0x291F1C16);
+  static const Color borderLight = Color(0x141F1C16);
+  static const Color borderPrimary5 = Color(0x0D739E80);
 
-  // ─ Borders
-  static const Color border = Color(0xFFCEC6B4);
-  static const Color borderLight = Color(0xFFE8E2D5);
-  static const Color borderPrimary5 = Color(0x0DD4A954); // primary at 5%
+  // Accent — Studio sage (primary)
+  static const Color primary    = Color(0xFF5D7A6A); // sage
+  static const Color amber      = Color(0xFF5D7A6A); // legacy alias → sage
+  static const Color accent     = Color(0xFF5D7A6A);
+  static const Color accentSoft = Color(0xFFE2E8DE); // soft sage wash
+  static const Color accentInk  = Color(0xFF2F4537); // dark sage
 
-  // ─ Semantic / Risk (Stitch risk colors)
-  static const Color success = Color(0xFF10B981);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color error = Color(0xFFEF4444);
+  // Semantic accents (kept muted, studio-tonal)
+  static const Color warm       = Color(0xFFC66B3D); // terracotta
+  static const Color warmSoft   = Color(0xFFF3DDCB);
+  static const Color sun        = Color(0xFFDEB75D); // mustard
+  static const Color sunSoft    = Color(0xFFF1E4C3);
+  static const Color teal       = Color(0xFF2A9D8F); // kept for compat
+  static const Color coral      = Color(0xFFB86B3E); // alias of warm
 
-  // ─ Badge backgrounds (Stitch mode badges)
-  static const Color emeraldBg = Color(0xFFECFDF5);
-  static const Color emeraldText = Color(0xFF059669);
-  static const Color blueBg = Color(0xFFEFF6FF);
-  static const Color blueText = Color(0xFF2563EB);
-  static const Color purpleBg = Color(0xFFFAF5FF);
-  static const Color purpleText = Color(0xFF9333EA);
+  // Risk tiers — from tokens.jsx
+  static const Color top        = Color(0xFF5D7A6A); // sage
+  static const Color moonshot   = Color(0xFF6B4E89); // plum
+  static const Color upgrade    = Color(0xFF3D6A8A); // dusty blue
+  static const Color adjacent   = Color(0xFFB8924F); // goldenrod
+  static const Color recurring  = Color(0xFF8A6A52); // clay
 
-  // ─ Dark mode
-  static const Color darkBase = Color(0xFF1F1B13);
-  static const Color darkSurface = Color(0xFF2A2419);
-  static const Color darkElevated = Color(0xFF352E22);
-  static const Color darkOnSurface = Color(0xFFE8E2DB);
-  static const Color darkMuted = Color(0xFF8B8272);
-  static const Color darkBorder = Color(0xFF3D3526);
-  static const Color darkAmber = Color(0xFFE8C06A);
-  static const Color darkTeal = Color(0xFF3DCFCF);
+  // Semantic — risk.low / risk.med / risk.high
+  static const Color success    = Color(0xFF5D7A6A);
+  static const Color warning    = Color(0xFFC6943D);
+  static const Color error      = Color(0xFFB8532F);
+
+  // Legacy mode badges — mapped onto Studio palette
+  static const Color emeraldBg   = Color(0xFFE3EDE4);
+  static const Color emeraldText = Color(0xFF3F5F4A);
+  static const Color blueBg      = Color(0xFFE3E8EE);
+  static const Color blueText    = Color(0xFF445A78);
+  static const Color purpleBg    = Color(0xFFEAE1EC);
+  static const Color purpleText  = Color(0xFF6B4A6E);
+
+  // Dark mode
+  static const Color darkBase     = Color(0xFF1A1714);
+  static const Color darkSurface  = Color(0xFF24201B);
+  static const Color darkElevated = Color(0xFF2E2923);
+  static const Color darkOnSurface = Color(0xFFEFEAE0);
+  static const Color darkMuted    = Color(0xFF8A8376);
+  static const Color darkBorder   = Color(0xFF3A342C);
+  static const Color darkAmber    = Color(0xFF9FC0A8); // dark sage
+  static const Color darkTeal     = Color(0xFF3DCFCF);
 }
 
 // ── Gradients ───────────────────────────────────────────────────────
 
 abstract class AppGradients {
+  // Kept as a gentle sage wash — no more heavy gold gradient
   static const LinearGradient hero = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFFD4A954),
-      Color(0xFFE8BC6A),
-      Color(0xFFEFCB80),
+      Color(0xFF739E80),
+      Color(0xFF8DB39A),
     ],
-    stops: [0.0, 0.5, 1.0],
   );
 
   static const LinearGradient pageBackground = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [
-      Color(0xFFF8F7F6),
-      Color(0xFFF3F0EC),
+      AppColors.bg,
+      AppColors.bg,
     ],
   );
 
@@ -110,8 +154,8 @@ abstract class AppGradients {
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [
-      Color(0xFF1F1B13),
-      Color(0xFF252015),
+      Color(0xFF1A1714),
+      Color(0xFF201C17),
     ],
   );
 
@@ -119,8 +163,8 @@ abstract class AppGradients {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFF2A9D8F),
-      Color(0xFF35B3A4),
+      Color(0xFF739E80),
+      Color(0xFF8DB39A),
     ],
   );
 
@@ -135,31 +179,30 @@ abstract class AppGradients {
   );
 }
 
-// ── Shadows ─────────────────────────────────────────────────────────
+// ── Shadows — softer, editorial ─────────────────────────────────────
 
 abstract class AppShadows {
-  // Stitch: box-shadow: 0 4px 20px -2px rgba(212,169,84,0.15)
   static List<BoxShadow> get card => [
     BoxShadow(
-      color: const Color(0xFFD4A954).withValues(alpha: 0.10),
+      color: const Color(0xFF1F1C16).withValues(alpha: 0.04),
       blurRadius: 12,
       offset: const Offset(0, 2),
-      spreadRadius: -2,
+      spreadRadius: 0,
     ),
   ];
 
   static List<BoxShadow> get elevated => [
     BoxShadow(
-      color: const Color(0xFFD4A954).withValues(alpha: 0.15),
-      blurRadius: 20,
-      offset: const Offset(0, 4),
-      spreadRadius: -2,
+      color: const Color(0xFF1F1C16).withValues(alpha: 0.06),
+      blurRadius: 24,
+      offset: const Offset(0, 6),
+      spreadRadius: -4,
     ),
   ];
 
   static List<BoxShadow> get button => [
     BoxShadow(
-      color: const Color(0xFFD4A954).withValues(alpha: 0.30),
+      color: const Color(0xFF1F1C16).withValues(alpha: 0.10),
       blurRadius: 16,
       offset: const Offset(0, 4),
       spreadRadius: -2,
@@ -168,263 +211,283 @@ abstract class AppShadows {
 
   static List<BoxShadow> glow(Color color) => [
     BoxShadow(
-      color: color.withValues(alpha: 0.25),
-      blurRadius: 16,
-      offset: const Offset(0, 4),
+      color: color.withValues(alpha: 0.20),
+      blurRadius: 20,
+      offset: const Offset(0, 6),
     ),
   ];
 }
 
-// ── Theme ───────────────────────────────────────────────────────────
+// ── Typography ──────────────────────────────────────────────────────
+//
+// We use three families:
+//   - Fraunces  → display headlines (with italic for callouts)
+//   - Inter     → body, buttons, UI chrome
+//   - JetBrains Mono → eyebrows, metadata, file Nº labels
+//
+// Declare these in pubspec.yaml (or via google_fonts package). Fallback
+// to Manrope/system if not loaded.
 
-const String _fontFamily = 'Manrope';
+const String fontDisplay = 'Fraunces';
+const String fontSans    = 'Inter';
+const String fontMono    = 'JetBrains Mono';
+const String _fontFamily = fontSans;
 
-TextTheme _manropeTextTheme(TextTheme base, {Color color = AppColors.ink}) {
-  return base.apply(fontFamily: _fontFamily, bodyColor: color, displayColor: color);
+TextStyle _display(double size, {FontWeight w = FontWeight.w400, bool italic = false, Color color = AppColors.ink, double letter = -0.8, double height = 1.05}) {
+  return TextStyle(
+    fontFamily: fontDisplay,
+    fontSize: size,
+    fontWeight: w,
+    fontStyle: italic ? FontStyle.italic : FontStyle.normal,
+    color: color,
+    letterSpacing: letter,
+    height: height,
+  );
 }
+
+TextStyle _mono(double size, {Color color = AppColors.mist, double letter = 2, FontWeight w = FontWeight.w500}) {
+  return TextStyle(
+    fontFamily: fontMono,
+    fontSize: size,
+    fontWeight: w,
+    color: color,
+    letterSpacing: letter,
+  );
+}
+
+abstract class AppText {
+  // Display — Fraunces
+  static TextStyle get display1 => _display(44, letter: -1.4, height: 1.0);
+  static TextStyle get display2 => _display(36, letter: -1.2);
+  static TextStyle get display3 => _display(28, letter: -0.8, height: 1.1);
+  static TextStyle get display4 => _display(22, w: FontWeight.w500, letter: -0.4, height: 1.15);
+  static TextStyle get displayItalic => _display(36, italic: true, letter: -1.2);
+
+  // Body — Inter
+  static const TextStyle bodyLg = TextStyle(fontFamily: fontSans, fontSize: 16, fontWeight: FontWeight.w400, color: AppColors.ink, height: 1.5);
+  static const TextStyle body   = TextStyle(fontFamily: fontSans, fontSize: 14, fontWeight: FontWeight.w400, color: AppColors.ink, height: 1.5);
+  static const TextStyle bodySm = TextStyle(fontFamily: fontSans, fontSize: 13, fontWeight: FontWeight.w400, color: AppColors.graphite, height: 1.5);
+  static const TextStyle lede   = TextStyle(fontFamily: fontSans, fontSize: 15, fontWeight: FontWeight.w400, color: AppColors.graphite, height: 1.55);
+  static const TextStyle caption = TextStyle(fontFamily: fontSans, fontSize: 12, fontWeight: FontWeight.w400, color: AppColors.graphite, height: 1.45);
+
+  // UI labels — Inter
+  static const TextStyle label  = TextStyle(fontFamily: fontSans, fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink, letterSpacing: -0.1);
+  static const TextStyle labelSm = TextStyle(fontFamily: fontSans, fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.ink);
+
+  // Eyebrow — tiny caps metadata (mono)
+  static TextStyle get eyebrow   => _mono(10, letter: 2, color: AppColors.mist);
+  static TextStyle get monoMeta  => _mono(11, letter: 1, color: AppColors.mist);
+  static TextStyle get monoValue => _mono(12, letter: 0.5, color: AppColors.ink, w: FontWeight.w600);
+}
+
+TextTheme _studioTextTheme(Color color) {
+  return TextTheme(
+    headlineLarge: _display(36, color: color, letter: -1.2),
+    headlineMedium: _display(28, color: color, letter: -0.8, height: 1.1),
+    headlineSmall: _display(22, w: FontWeight.w500, color: color, letter: -0.4, height: 1.15),
+    titleLarge: TextStyle(fontFamily: fontSans, fontSize: 17, fontWeight: FontWeight.w600, color: color, letterSpacing: -0.2, height: 1.35),
+    titleMedium: TextStyle(fontFamily: fontSans, fontSize: 15, fontWeight: FontWeight.w600, color: color, height: 1.4),
+    titleSmall: TextStyle(fontFamily: fontSans, fontSize: 13, fontWeight: FontWeight.w600, color: color, height: 1.4),
+    bodyLarge: TextStyle(fontFamily: fontSans, fontSize: 15, fontWeight: FontWeight.w400, color: color, height: 1.55),
+    bodyMedium: TextStyle(fontFamily: fontSans, fontSize: 14, fontWeight: FontWeight.w400, color: color, height: 1.5),
+    bodySmall: TextStyle(fontFamily: fontSans, fontSize: 12, fontWeight: FontWeight.w400, color: color, height: 1.5),
+    labelLarge: TextStyle(fontFamily: fontSans, fontSize: 14, fontWeight: FontWeight.w600, color: color, letterSpacing: 0),
+    labelMedium: TextStyle(fontFamily: fontMono, fontSize: 11, fontWeight: FontWeight.w500, color: color, letterSpacing: 1.5),
+    labelSmall: TextStyle(fontFamily: fontMono, fontSize: 10, fontWeight: FontWeight.w500, color: color, letterSpacing: 2),
+  );
+}
+
+// ── Theme builders ──────────────────────────────────────────────────
 
 ThemeData buildLightTheme() {
   final colorScheme = ColorScheme.fromSeed(
-    seedColor: AppColors.primary,
+    seedColor: AppColors.accent,
     brightness: Brightness.light,
-    primary: AppColors.primary,
+    primary: AppColors.accent,
     onPrimary: Colors.white,
-    surface: AppColors.cream,
+    surface: AppColors.bg,
     onSurface: AppColors.ink,
-    onSurfaceVariant: AppColors.ink,
+    onSurfaceVariant: AppColors.graphite,
     outline: AppColors.border,
-    outlineVariant: AppColors.borderLight,
+    outlineVariant: AppColors.hairline,
   );
 
-  final textTheme = _manropeTextTheme(const TextTheme(
-    headlineLarge: TextStyle(
-      fontSize: 32,
-      fontWeight: FontWeight.w800,
-      letterSpacing: -0.5,
-      height: 1.2,
-    ),
-    headlineMedium: TextStyle(
-      fontSize: 26,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -0.3,
-      height: 1.25,
-    ),
-    headlineSmall: TextStyle(
-      fontSize: 22,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -0.2,
-      height: 1.3,
-    ),
-    titleLarge: TextStyle(
-      fontSize: 18,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -0.1,
-      height: 1.35,
-    ),
-    titleMedium: TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w600,
-      height: 1.4,
-    ),
-    titleSmall: TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w600,
-      height: 1.4,
-    ),
-    bodyLarge: TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w400,
-      height: 1.5,
-    ),
-    bodyMedium: TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w400,
-      height: 1.5,
-    ),
-    bodySmall: TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w400,
-      height: 1.5,
-    ),
-    labelLarge: TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 0.2,
-    ),
-    labelMedium: TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      letterSpacing: 0.2,
-    ),
-    labelSmall: TextStyle(
-      fontSize: 11,
-      fontWeight: FontWeight.w500,
-      letterSpacing: 0.3,
-    ),
-  ));
+  final textTheme = _studioTextTheme(AppColors.ink);
 
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
-    scaffoldBackgroundColor: AppColors.cream,
+    scaffoldBackgroundColor: AppColors.bg,
     textTheme: textTheme,
 
-    // App Bar — Stitch: sticky bg/80 + backdrop-blur
     appBarTheme: AppBarTheme(
       centerTitle: true,
       elevation: 0,
       scrolledUnderElevation: 0,
-      backgroundColor: AppColors.cream,
+      backgroundColor: AppColors.bg,
       surfaceTintColor: Colors.transparent,
-      titleTextStyle: TextStyle(fontFamily: _fontFamily,
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
+      titleTextStyle: TextStyle(
+        fontFamily: fontSans,
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
         color: AppColors.ink,
-        letterSpacing: -0.1,
+        letterSpacing: -0.2,
       ),
-      iconTheme: const IconThemeData(color: AppColors.primary, size: 24),
+      iconTheme: const IconThemeData(color: AppColors.ink, size: 22),
     ),
 
-    // Cards — Stitch: white bg, border primary/5, rounded-lg, warm shadow
+    // Cards — Studio: canvas surface, hairline border, soft shadow
     cardTheme: CardThemeData(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.05)),
+        side: const BorderSide(color: AppColors.hairline),
       ),
-      color: AppColors.cardWhite,
+      color: AppColors.canvas,
       surfaceTintColor: Colors.transparent,
       margin: EdgeInsets.zero,
     ),
 
-    // Filled Buttons — Stitch: bg-primary, white text, rounded-xl, shadow
+    // Primary (filled) button — ink on canvas, rounded pill-ish
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        backgroundColor: AppColors.ink,
+        foregroundColor: AppColors.canvas,
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.xl),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
-        textStyle: TextStyle(fontFamily: _fontFamily,
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
+        textStyle: const TextStyle(
+          fontFamily: fontSans,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.1,
         ),
       ),
     ),
 
-    // Elevated Buttons
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        backgroundColor: AppColors.ink,
+        foregroundColor: AppColors.canvas,
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.xl),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         elevation: 0,
-        textStyle: TextStyle(fontFamily: _fontFamily,
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
+        textStyle: const TextStyle(
+          fontFamily: fontSans,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
         ),
       ),
     ),
 
-    // Outlined Buttons
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.primary,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        foregroundColor: AppColors.ink,
+        backgroundColor: AppColors.canvas,
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.xl),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
-        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.2), width: 1.5),
-        textStyle: TextStyle(fontFamily: _fontFamily,
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
+        side: const BorderSide(color: AppColors.border, width: 1),
+        textStyle: const TextStyle(
+          fontFamily: fontSans,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
         ),
       ),
     ),
 
-    // Text Buttons
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.primary,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        foregroundColor: AppColors.accentInk,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.sm),
         ),
-        textStyle: TextStyle(fontFamily: _fontFamily,
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
+        textStyle: const TextStyle(
+          fontFamily: fontSans,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
         ),
       ),
     ),
 
-    // Input Fields — Stitch: white bg, border primary/10, rounded-xl
+    // Inputs — underline-less, hairline border on canvas
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.cardWhite,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      fillColor: AppColors.canvas,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.1)),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderSide: const BorderSide(color: AppColors.hairline),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.1), width: 2),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderSide: const BorderSide(color: AppColors.hairline),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderSide: const BorderSide(color: AppColors.ink, width: 1.5),
       ),
-      hintStyle: TextStyle(fontFamily: _fontFamily,
-        color: AppColors.ink.withValues(alpha: 0.3),
-        fontSize: 16,
+      hintStyle: const TextStyle(
+        fontFamily: fontSans,
+        color: AppColors.mist,
+        fontSize: 15,
+        fontWeight: FontWeight.w400,
       ),
     ),
 
-    // Chips — Stitch: pill shape, primary tint
     chipTheme: ChipThemeData(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.pill),
+        side: const BorderSide(color: AppColors.hairline),
       ),
-      side: BorderSide(color: AppColors.primary.withValues(alpha: 0.2)),
-      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+      side: const BorderSide(color: AppColors.hairline),
+      backgroundColor: AppColors.canvas,
+      labelStyle: const TextStyle(
+        fontFamily: fontSans,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: AppColors.ink,
+      ),
     ),
 
-    // Snack Bar
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.pill),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
-      backgroundColor: AppColors.ink.withValues(alpha: 0.9),
+      backgroundColor: AppColors.ink,
+      contentTextStyle: const TextStyle(
+        fontFamily: fontSans,
+        color: AppColors.canvas,
+        fontSize: 14,
+      ),
     ),
 
-    // Tab Bar — Stitch: primary indicator, bold selected
     tabBarTheme: TabBarThemeData(
       indicatorSize: TabBarIndicatorSize.label,
-      indicatorColor: AppColors.primary,
-      labelColor: AppColors.primary,
-      unselectedLabelColor: AppColors.slateLight,
-      labelStyle: TextStyle(fontFamily: _fontFamily,fontSize: 14, fontWeight: FontWeight.w700),
-      unselectedLabelStyle: TextStyle(fontFamily: _fontFamily,fontSize: 14, fontWeight: FontWeight.w600),
+      indicatorColor: AppColors.ink,
+      labelColor: AppColors.ink,
+      unselectedLabelColor: AppColors.mist,
+      labelStyle: const TextStyle(fontFamily: fontSans, fontSize: 13, fontWeight: FontWeight.w600),
+      unselectedLabelStyle: const TextStyle(fontFamily: fontSans, fontSize: 13, fontWeight: FontWeight.w500),
     ),
 
-    // Divider
-    dividerTheme: DividerThemeData(
-      color: AppColors.primary.withValues(alpha: 0.1),
+    dividerTheme: const DividerThemeData(
+      color: AppColors.hairline,
       thickness: 1,
     ),
 
-    // Bottom nav
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: Colors.white.withValues(alpha: 0.8),
-      indicatorColor: AppColors.primary.withValues(alpha: 0.1),
+      backgroundColor: AppColors.canvas,
+      indicatorColor: AppColors.accentSoft,
       surfaceTintColor: Colors.transparent,
       labelTextStyle: WidgetStateProperty.all(
-        TextStyle(fontFamily: _fontFamily,fontSize: 10, fontWeight: FontWeight.w700),
+        const TextStyle(fontFamily: fontMono, fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 1.5),
       ),
     ),
   );
@@ -432,7 +495,7 @@ ThemeData buildLightTheme() {
 
 ThemeData buildDarkTheme() {
   final colorScheme = ColorScheme.fromSeed(
-    seedColor: AppColors.primary,
+    seedColor: AppColors.darkAmber,
     brightness: Brightness.dark,
     primary: AppColors.darkAmber,
     onPrimary: AppColors.darkBase,
@@ -443,72 +506,7 @@ ThemeData buildDarkTheme() {
     outlineVariant: AppColors.darkBorder,
   );
 
-  final textTheme = _manropeTextTheme(const TextTheme(
-    headlineLarge: TextStyle(
-      fontSize: 32,
-      fontWeight: FontWeight.w800,
-      letterSpacing: -0.5,
-      height: 1.2,
-    ),
-    headlineMedium: TextStyle(
-      fontSize: 26,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -0.3,
-      height: 1.25,
-    ),
-    headlineSmall: TextStyle(
-      fontSize: 22,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -0.2,
-      height: 1.3,
-    ),
-    titleLarge: TextStyle(
-      fontSize: 18,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -0.1,
-      height: 1.35,
-    ),
-    titleMedium: TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w600,
-      height: 1.4,
-    ),
-    titleSmall: TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w600,
-      height: 1.4,
-    ),
-    bodyLarge: TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w400,
-      height: 1.5,
-    ),
-    bodyMedium: TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w400,
-      height: 1.5,
-    ),
-    bodySmall: TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w400,
-      height: 1.5,
-    ),
-    labelLarge: TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 0.2,
-    ),
-    labelMedium: TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      letterSpacing: 0.2,
-    ),
-    labelSmall: TextStyle(
-      fontSize: 11,
-      fontWeight: FontWeight.w500,
-      letterSpacing: 0.3,
-    ),
-  ), color: AppColors.darkOnSurface);
+  final textTheme = _studioTextTheme(AppColors.darkOnSurface);
 
   return ThemeData(
     useMaterial3: true,
@@ -522,20 +520,21 @@ ThemeData buildDarkTheme() {
       scrolledUnderElevation: 0,
       backgroundColor: AppColors.darkBase,
       surfaceTintColor: Colors.transparent,
-      titleTextStyle: TextStyle(fontFamily: _fontFamily,
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
+      titleTextStyle: const TextStyle(
+        fontFamily: fontSans,
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
         color: AppColors.darkOnSurface,
-        letterSpacing: -0.1,
+        letterSpacing: -0.2,
       ),
-      iconTheme: const IconThemeData(color: AppColors.darkAmber, size: 24),
+      iconTheme: const IconThemeData(color: AppColors.darkOnSurface, size: 22),
     ),
 
     cardTheme: CardThemeData(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.05)),
+        side: const BorderSide(color: AppColors.darkBorder),
       ),
       color: AppColors.darkSurface,
       surfaceTintColor: Colors.transparent,
@@ -546,13 +545,14 @@ ThemeData buildDarkTheme() {
       style: FilledButton.styleFrom(
         backgroundColor: AppColors.darkAmber,
         foregroundColor: AppColors.darkBase,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.xl),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
-        textStyle: TextStyle(fontFamily: _fontFamily,
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
+        textStyle: const TextStyle(
+          fontFamily: fontSans,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
         ),
       ),
     ),
@@ -561,9 +561,9 @@ ThemeData buildDarkTheme() {
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.darkAmber,
         foregroundColor: AppColors.darkBase,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.xl),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         elevation: 0,
       ),
@@ -572,11 +572,11 @@ ThemeData buildDarkTheme() {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.darkAmber,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.xl),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
-        side: const BorderSide(color: AppColors.darkBorder, width: 1.5),
+        side: const BorderSide(color: AppColors.darkBorder, width: 1),
       ),
     ),
 
@@ -589,25 +589,25 @@ ThemeData buildDarkTheme() {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AppColors.darkElevated,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderSide: const BorderSide(color: AppColors.darkBorder),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderSide: const BorderSide(color: AppColors.darkBorder),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        borderSide: const BorderSide(color: AppColors.darkAmber, width: 2),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderSide: const BorderSide(color: AppColors.darkAmber, width: 1.5),
       ),
     ),
 
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.pill),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       backgroundColor: AppColors.darkElevated,
     ),
@@ -617,8 +617,8 @@ ThemeData buildDarkTheme() {
       indicatorColor: AppColors.darkAmber,
       labelColor: AppColors.darkAmber,
       unselectedLabelColor: AppColors.darkMuted,
-      labelStyle: TextStyle(fontFamily: _fontFamily,fontSize: 14, fontWeight: FontWeight.w700),
-      unselectedLabelStyle: TextStyle(fontFamily: _fontFamily,fontSize: 14, fontWeight: FontWeight.w600),
+      labelStyle: const TextStyle(fontFamily: fontSans, fontSize: 13, fontWeight: FontWeight.w600),
+      unselectedLabelStyle: const TextStyle(fontFamily: fontSans, fontSize: 13, fontWeight: FontWeight.w500),
     ),
 
     dividerTheme: const DividerThemeData(
@@ -627,3 +627,8 @@ ThemeData buildDarkTheme() {
     ),
   );
 }
+
+// ── Helper — keep legacy `_fontFamily` reference alive for any
+//    straggler code still importing it.
+// ignore: unused_element
+const String legacyFontFamily = _fontFamily;

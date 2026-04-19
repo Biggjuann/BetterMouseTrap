@@ -11,43 +11,42 @@ class LoadingOverlay extends StatelessWidget {
     return Stack(
       children: [
         Positioned.fill(
-          child: ColoredBox(color: Colors.black.withValues(alpha: 0.4)),
+          child: ColoredBox(color: AppColors.ink.withValues(alpha: 0.35)),
         ),
         Center(
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.xl,
-              vertical: AppSpacing.lg,
-            ),
+            margin: const EdgeInsets.symmetric(horizontal: 28),
+            padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
             decoration: BoxDecoration(
-              color: AppColors.cardWhite,
-              borderRadius: BorderRadius.circular(AppRadius.xl),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.05),
-              ),
-              boxShadow: AppShadows.elevated,
+              color: AppColors.canvas,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: AppColors.hairline),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Container(width: 28, height: 2, color: AppColors.accentInk),
+                const SizedBox(height: 16),
+                Text('PROCESSING', style: AppText.monoMeta),
+                const SizedBox(height: 14),
                 SizedBox(
-                  width: 48,
-                  height: 48,
+                  width: 28,
+                  height: 28,
                   child: CircularProgressIndicator(
-                    strokeWidth: 3,
+                    strokeWidth: 2,
                     strokeCap: StrokeCap.round,
-                    color: AppColors.primary,
+                    color: AppColors.accentInk,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.base),
+                const SizedBox(height: 16),
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.ink,
-                      ),
+                  style: AppText.body.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: AppColors.graphite,
+                    height: 1.5,
+                  ),
                 ),
               ],
             ),

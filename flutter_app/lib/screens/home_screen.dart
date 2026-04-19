@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../models/api_responses.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/credit_service.dart';
@@ -9,6 +8,7 @@ import '../theme.dart';
 import '../widgets/buy_credits_sheet.dart';
 import '../widgets/disclaimer_banner.dart';
 import '../widgets/loading_overlay.dart';
+import '../widgets/studio_widgets.dart';
 import 'guided_wizard_screen.dart';
 import 'history_screen.dart';
 import 'ideas_list_screen.dart';
@@ -35,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     ApiClient.instance.onUnauthorized = _goToLogin;
     CreditService.instance.refresh();
+    PurchaseService.instance.init();
     _loadInsight();
   }
 
@@ -56,7 +57,8 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _insightText = 'Sustainable packaging is trending in the luxury cosmetics sector. Refill models are creating built-in recurring revenue for scrappy consumer brands.';
+        _insightText =
+            'The bottle is the moat. Refill models quietly make incumbents look disposable.';
         _insightLoading = false;
       });
     }
@@ -81,26 +83,20 @@ class _HomeScreenState extends State<HomeScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.canvas,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
+          side: const BorderSide(color: AppColors.hairline),
         ),
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: AppColors.coral, size: 24),
-            SizedBox(width: AppSpacing.sm),
-            Text(
-              'Delete Account?',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.ink,
-              ),
-            ),
-          ],
-        ),
+        title: Text('Delete account?', style: AppText.display4),
         content: const Text(
           'This will permanently delete your account, all your saved ideas, and credit balance. This cannot be undone.',
-          style: TextStyle(color: AppColors.ink, height: 1.5),
+          style: TextStyle(
+            fontFamily: fontSans,
+            color: AppColors.graphite,
+            height: 1.55,
+            fontSize: 14,
+          ),
         ),
         actions: [
           TextButton(
@@ -110,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.coral,
+              backgroundColor: AppColors.warm,
             ),
             child: const Text('Delete'),
           ),
@@ -139,384 +135,200 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bg,
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
-          ),
           SafeArea(
             child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-                child: Column(
-                  children: [
-                    const SizedBox(height: AppSpacing.lg),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.xxl,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _TopBar(
+                    onHistory: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                    ),
+                    onBuyCredits: _showBuyCreditsSheet,
+                    onLogout: _logout,
+                    onDelete: _deleteAccount,
+                  ),
+                  const SizedBox(height: AppSpacing.xxl),
 
-                    // Top bar — credits + history + logout
-                    Row(
+                  // ── Editorial hero ──────────────────────────────
+                  const Eyebrow('File Nº 0048 · an inventor\'s tool'),
+                  const SizedBox(height: AppSpacing.md),
+                  RichText(
+                    text: TextSpan(
+                      style: AppText.display1,
                       children: [
-                        // Credit balance pill
-                        ValueListenableBuilder<int>(
-                          valueListenable: CreditService.instance.balance,
-                          builder: (context, balance, _) {
-                            final isAdmin = CreditService.instance.isAdmin.value;
-                            return GestureDetector(
-                              onTap: () => _showBuyCreditsSheet(),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                                  border: Border.all(
-                                    color: AppColors.primary.withValues(alpha: 0.2),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.toll, size: 16, color: AppColors.primary),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      isAdmin ? 'Unlimited' : '$balance',
-                                      style: TextStyle(
-                                        color: AppColors.primary,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          icon: const Icon(Icons.history_rounded, color: AppColors.primary),
-                          tooltip: 'My Ideas',
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                        const TextSpan(text: 'Build a '),
+                        TextSpan(
+                          text: 'better\n',
+                          style: AppText.display1.copyWith(
+                            fontStyle: FontStyle.italic,
+                            color: AppColors.accent,
                           ),
                         ),
-                        PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert_rounded, color: AppColors.mist),
-                          onSelected: (value) {
-                            if (value == 'logout') _logout();
-                            if (value == 'delete') _deleteAccount();
-                          },
-                          itemBuilder: (_) => [
-                            const PopupMenuItem(
-                              value: 'logout',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.logout_rounded, size: 20, color: AppColors.ink),
-                                  SizedBox(width: AppSpacing.sm),
-                                  Text('Sign out'),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuItem(
-                              value: 'delete',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.delete_forever, size: 20, color: AppColors.coral),
-                                  SizedBox(width: AppSpacing.sm),
-                                  Text(
-                                    'Delete account',
-                                    style: TextStyle(color: AppColors.coral),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                        const TextSpan(text: 'mousetrap.'),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.xxl),
-
-                    // Hero icon — Stitch: rotated bg + icon
-                    SizedBox(
-                      width: 96,
-                      height: 96,
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: Transform.rotate(
-                              angle: 0.1,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(AppRadius.xl),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                borderRadius: BorderRadius.circular(AppRadius.xl),
-                                boxShadow: AppShadows.button,
-                              ),
-                              child: const Icon(
-                                Icons.precision_manufacturing,
-                                size: 48,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Title — Stitch: "Mouse<primary>Trap</primary>"
-                    RichText(
-                      text: TextStyle(
-                        fontFamily: 'Manrope',
-                        fontSize: 40,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                        color: AppColors.ink,
-                      ).let((s) => TextSpan(
-                        children: [
-                          TextSpan(text: 'Mouse', style: s),
-                          TextSpan(
-                            text: 'Trap',
-                            style: s.copyWith(color: AppColors.primary),
-                          ),
-                        ],
-                      )),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    // Subtitle
-                    Text(
-                      'Turn any product into your\nnext big idea.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.ink,
-                        height: 1.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Quick / Guided toggle
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                      padding: const EdgeInsets.all(4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _ModeChip(
-                            label: 'Quick',
-                            icon: Icons.bolt,
-                            selected: !_guidedMode,
-                            onTap: () => setState(() => _guidedMode = false),
-                          ),
-                          _ModeChip(
-                            label: 'Guided',
-                            icon: Icons.explore,
-                            selected: _guidedMode,
-                            onTap: () => setState(() => _guidedMode = true),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      'Quick: 1 credit  \u00B7  Guided: 2 credits',
-                      style: TextStyle(
-                        color: AppColors.mist,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Search input — Stitch: icon + rounded-xl
-                    TextField(
-                      controller: _productController,
-                      maxLines: 1,
-                      style: const TextStyle(fontSize: 18),
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: AppColors.primary.withValues(alpha: 0.6),
-                        ),
-                        hintText: 'Enter a product name...',
-                      ),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                    const SizedBox(height: AppSpacing.base),
-
-                    // URL input
-                    TextField(
-                      controller: _urlController,
-                      keyboardType: TextInputType.url,
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(
-                          Icons.link_rounded,
-                          color: AppColors.mist,
-                        ),
-                        hintText: 'Product URL (optional)',
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Primary CTA — Stitch: bg-primary, white, rounded-xl, shadow
-                    SizedBox(
-                      width: double.infinity,
-                      height: 58,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          boxShadow: _canGenerate ? AppShadows.button : [],
-                          borderRadius: BorderRadius.circular(AppRadius.xl),
-                        ),
-                        child: FilledButton(
-                          onPressed: _canGenerate
-                              ? () => _guidedMode
-                                  ? _startGuided()
-                                  : _generate(random: false)
-                              : null,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(_guidedMode ? Icons.explore : Icons.auto_awesome, size: 20),
-                              const SizedBox(width: AppSpacing.sm),
-                              Text(_guidedMode ? 'Start Discovery' : 'Make it a Hero'),
-                            ],
-                          ),
+                  ),
+                  const SizedBox(height: AppSpacing.base),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(width: 28, height: 1, margin: const EdgeInsets.only(top: 10, right: 12), color: AppColors.ink),
+                      Expanded(
+                        child: Text(
+                          'Name any product. Leave with seven invention angles — tiered, scored, patent-aware.',
+                          style: AppText.bodyLg.copyWith(color: AppColors.graphite),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
 
-                    // Secondary CTA — "Surprise Me"
-                    SizedBox(
-                      width: double.infinity,
-                      height: 58,
-                      child: FilledButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () => _generate(random: true),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                          foregroundColor: AppColors.primary,
+                  // ── Specimen form ───────────────────────────────
+                  _SpecimenForm(
+                    productController: _productController,
+                    urlController: _urlController,
+                    onChanged: () => setState(() {}),
+                  ),
+                  const SizedBox(height: AppSpacing.base),
+
+                  // ── Mode toggle — Quick / Guided cards ──────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _ModeCard(
+                          title: 'Quick',
+                          subtitle: '1 CREDIT · 60S',
+                          selected: !_guidedMode,
+                          onTap: () => setState(() => _guidedMode = false),
                         ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _ModeCard(
+                          title: 'Guided',
+                          subtitle: '2 CREDITS · 4 MIN',
+                          selected: _guidedMode,
+                          onTap: () => setState(() => _guidedMode = true),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // ── Primary CTA ─────────────────────────────────
+                  StudioButton(
+                    label: _guidedMode ? 'Begin interview' : 'Generate ideas',
+                    icon: _guidedMode ? Icons.auto_stories_rounded : Icons.auto_awesome_rounded,
+                    onPressed: _canGenerate
+                        ? () => _guidedMode
+                            ? _startGuided()
+                            : _generate(random: false)
+                        : null,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  StudioButton(
+                    label: 'Surprise me',
+                    kind: BtnKind.ghost,
+                    large: false,
+                    onPressed: _isLoading ? null : () => _generate(random: true),
+                  ),
+                  const SizedBox(height: AppSpacing.xxl),
+
+                  // ── Dispatch card — today's insight ─────────────
+                  StudioCard(
+                    background: AppColors.accentSoft,
+                    border: Border.all(color: Colors.transparent),
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Icon(Icons.auto_awesome, size: 20),
-                            SizedBox(width: AppSpacing.sm),
-                            Text('Surprise Me'),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-
-                    // Quick action row — 2 items: Recent Ideas + Market Trends
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _QuickAction(
-                          icon: Icons.history,
-                          label: 'Recent\nIdeas',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const HistoryScreen()),
-                          ),
-                        ),
-                        Container(
-                          width: 1,
-                          height: 40,
-                          color: AppColors.primary.withValues(alpha: 0.2),
-                        ),
-                        _QuickAction(
-                          icon: Icons.lightbulb,
-                          label: 'Market\nTrends',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const MarketTrendsScreen()),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-
-                    // Today's Insight card — Stitch
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(AppRadius.xl),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "TODAY'S INSIGHT",
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          if (_insightLoading)
-                            Row(
-                              children: [
-                                SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.sm),
-                                Text(
-                                  'Loading fresh insight...',
-                                  style: TextStyle(
-                                    color: AppColors.mist,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            )
-                          else
-                            Text(
-                              _insightText,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.ink,
-                                fontWeight: FontWeight.w600,
+                            Expanded(
+                              child: Eyebrow(
+                                'Dispatch · today',
+                                color: AppColors.accentInk,
                               ),
                             ),
-                        ],
-                      ),
+                            Text(
+                              '06:00 PT',
+                              style: AppText.monoMeta,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        if (_insightLoading)
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.accentInk,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Text(
+                                'Loading fresh insight…',
+                                style: AppText.bodySm,
+                              ),
+                            ],
+                          )
+                        else
+                          _PullQuote(text: _insightText),
+                      ],
                     ),
-                    const SizedBox(height: AppSpacing.xl),
+                  ),
 
-                    // Disclaimer
-                    const DisclaimerBanner(),
-                    const SizedBox(height: AppSpacing.xl),
-                  ],
-                ),
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // ── Index — navigational ledger ─────────────────
+                  _LedgerRow(
+                    title: 'Archive of past sessions',
+                    trailing: 'Open',
+                    isFirst: true,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                    ),
+                  ),
+                  _LedgerRow(
+                    title: 'Weekly market dispatch',
+                    trailing: 'Read',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MarketTrendsScreen()),
+                    ),
+                  ),
+                  _LedgerRow(
+                    title: 'Credits & account',
+                    trailing: 'Manage',
+                    onTap: _showBuyCreditsSheet,
+                    isLast: true,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+
+                  const DisclaimerBanner(),
+                ],
               ),
             ),
           ),
           if (_isLoading)
             const LoadingOverlay(
-                message: 'Finding your next hero product...'),
+              message: 'Finding your next hero product…',
+            ),
         ],
       ),
     );
@@ -553,7 +365,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _generate({required bool random}) async {
-    // Credit gate
     if (!CreditService.instance.hasCredits) {
       _showBuyCreditsSheet();
       return;
@@ -571,10 +382,8 @@ class _HomeScreenState extends State<HomeScreen> {
         random: random,
       );
 
-      // Deduct credit locally after success
       CreditService.instance.localDeduct();
 
-      // Create session and save variants
       String? sessionId;
       try {
         final sessionData = await ApiClient.instance.createSession(
@@ -586,9 +395,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'variants_json': response.variants.map((v) => v.toJson()).toList(),
           'status': 'ideas_generated',
         });
-      } catch (_) {
-        // Session save failure shouldn't block the flow
-      }
+      } catch (_) {}
 
       if (!mounted) return;
       Navigator.push(
@@ -620,43 +427,232 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Quick action circle — Stitch design
-class _QuickAction extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
+// ── Top bar: credits pill + history + menu ──────────────────────────
+class _TopBar extends StatelessWidget {
+  final VoidCallback onHistory;
+  final VoidCallback onBuyCredits;
+  final VoidCallback onLogout;
+  final VoidCallback onDelete;
 
-  const _QuickAction({
-    required this.icon,
-    required this.label,
-    required this.onTap,
+  const _TopBar({
+    required this.onHistory,
+    required this.onBuyCredits,
+    required this.onLogout,
+    required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+    return Row(
+      children: [
+        // Brand mark
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: AppColors.ink,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
+          child: const Icon(Icons.memory_rounded, color: AppColors.canvas, size: 18),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'MOUSE·TRAP',
+                style: TextStyle(
+                  fontFamily: fontMono,
+                  fontSize: 10,
+                  letterSpacing: 2.5,
+                  color: AppColors.ink,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Studio · Vol. II',
+                style: AppText.monoMeta,
+              ),
+            ],
+          ),
+        ),
+        ValueListenableBuilder<int>(
+          valueListenable: CreditService.instance.balance,
+          builder: (context, balance, _) {
+            final isAdmin = CreditService.instance.isAdmin.value;
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onBuyCredits,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.canvas,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    border: Border.all(color: AppColors.hairline),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star_border_rounded, size: 14, color: AppColors.warm),
+                      const SizedBox(width: 4),
+                      Text(
+                        isAdmin ? '∞' : '$balance',
+                        style: TextStyle(
+                          fontFamily: fontMono,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.ink,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 8),
+        IconBtn(
+          icon: Icons.history_rounded,
+          onPressed: onHistory,
+        ),
+        const SizedBox(width: 8),
+        PopupMenuButton<String>(
+          icon: IconBtn(icon: Icons.more_horiz_rounded, onPressed: null),
+          color: AppColors.canvas,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            side: const BorderSide(color: AppColors.hairline),
+          ),
+          onSelected: (value) {
+            if (value == 'logout') onLogout();
+            if (value == 'delete') onDelete();
+          },
+          itemBuilder: (_) => [
+            const PopupMenuItem(
+              value: 'logout',
+              child: Row(children: [
+                Icon(Icons.logout_rounded, size: 18, color: AppColors.ink),
+                SizedBox(width: 10),
+                Text('Sign out', style: TextStyle(fontFamily: fontSans, fontSize: 13, color: AppColors.ink)),
+              ]),
+            ),
+            const PopupMenuItem(
+              value: 'delete',
+              child: Row(children: [
+                Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.warm),
+                SizedBox(width: 10),
+                Text('Delete account', style: TextStyle(fontFamily: fontSans, fontSize: 13, color: AppColors.warm)),
+              ]),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// ── Specimen form — labelled inputs, paper-form aesthetic ───────────
+class _SpecimenForm extends StatelessWidget {
+  final TextEditingController productController;
+  final TextEditingController urlController;
+  final VoidCallback onChanged;
+
+  const _SpecimenForm({
+    required this.productController,
+    required this.urlController,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.canvas,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.ink.withValues(alpha: 0.9)),
+      ),
       child: Column(
         children: [
+          // Header strip
           Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: const BoxDecoration(
+              color: AppColors.ink,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
             ),
-            child: Icon(icon, color: AppColors.primary),
+            child: Row(
+              children: [
+                Text(
+                  'SPECIMEN',
+                  style: TextStyle(
+                    fontFamily: fontMono,
+                    fontSize: 10,
+                    color: AppColors.canvas,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '01 / 02',
+                  style: TextStyle(
+                    fontFamily: fontMono,
+                    fontSize: 10,
+                    color: AppColors.canvas,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.ink.withValues(alpha: 0.5),
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1,
-              height: 1.3,
+          // Row A — product
+          _FormRow(
+            marker: 'A.',
+            child: TextField(
+              controller: productController,
+              onChanged: (_) => onChanged(),
+              style: AppText.display4.copyWith(color: AppColors.ink),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
+                hintText: 'All-purpose spray cleaner',
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+          const Divider(height: 1, thickness: 1, color: AppColors.hairline, indent: 14, endIndent: 14),
+          // Row B — url
+          _FormRow(
+            marker: 'B.',
+            child: TextField(
+              controller: urlController,
+              keyboardType: TextInputType.url,
+              style: TextStyle(
+                fontFamily: fontMono,
+                fontSize: 12.5,
+                color: AppColors.ink,
+              ),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
+                hintText: 'reference url (optional)',
+                hintStyle: TextStyle(
+                  fontFamily: fontMono,
+                  fontSize: 12.5,
+                  color: AppColors.mist,
+                ),
+                contentPadding: EdgeInsets.zero,
+              ),
             ),
           ),
         ],
@@ -665,57 +661,207 @@ class _QuickAction extends StatelessWidget {
   }
 }
 
-// Mode toggle chip
-class _ModeChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
+class _FormRow extends StatelessWidget {
+  final String marker;
+  final Widget child;
+
+  const _FormRow({required this.marker, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 22,
+            child: Text(
+              marker,
+              style: TextStyle(
+                fontFamily: fontMono,
+                fontSize: 10,
+                color: AppColors.mist,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          Expanded(child: child),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Mode card — Quick vs Guided ─────────────────────────────────────
+class _ModeCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
   final bool selected;
   final VoidCallback onTap;
 
-  const _ModeChip({
-    required this.label,
-    required this.icon,
+  const _ModeCard({
+    required this.title,
+    required this.subtitle,
     required this.selected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: AppDuration.fast,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-          boxShadow: selected ? AppShadows.card : [],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: selected ? Colors.white : AppColors.mist,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: AnimatedContainer(
+          duration: AppDuration.fast,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.ink : AppColors.canvas,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: selected ? AppColors.ink : AppColors.hairline,
             ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? Colors.white : AppColors.mist,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: AppText.display4.copyWith(
+                        color: selected ? AppColors.canvas : AppColors.ink,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: selected ? AppColors.canvas : AppColors.border,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: selected
+                        ? Center(
+                            child: Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: AppColors.canvas,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          )
+                        : null,
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontFamily: fontMono,
+                  fontSize: 10,
+                  letterSpacing: 1.5,
+                  fontWeight: FontWeight.w500,
+                  color: selected
+                      ? AppColors.canvas.withValues(alpha: 0.7)
+                      : AppColors.mist,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// Extension to use TextStyle as TextSpan parent
-extension _TextStyleExt on TextStyle {
-  TextSpan let(TextSpan Function(TextStyle) fn) => fn(this);
+// ── Pull-quote — display-italic block used for insights ─────────────
+class _PullQuote extends StatelessWidget {
+  final String text;
+  const _PullQuote({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      text: TextSpan(
+        style: AppText.display4.copyWith(
+          color: AppColors.ink,
+          height: 1.25,
+        ),
+        children: [
+          TextSpan(
+            text: '"',
+            style: AppText.display4.copyWith(fontStyle: FontStyle.italic),
+          ),
+          TextSpan(
+            text: text,
+            style: AppText.display4.copyWith(fontStyle: FontStyle.italic, color: AppColors.ink),
+          ),
+          TextSpan(
+            text: '"',
+            style: AppText.display4.copyWith(fontStyle: FontStyle.italic),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Ledger row — index list-item with hairline rule ─────────────────
+class _LedgerRow extends StatelessWidget {
+  final String title;
+  final String trailing;
+  final VoidCallback onTap;
+  final bool isFirst;
+  final bool isLast;
+
+  const _LedgerRow({
+    required this.title,
+    required this.trailing,
+    required this.onTap,
+    this.isFirst = false,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: isFirst ? const BorderSide(color: AppColors.hairline) : BorderSide.none,
+          bottom: const BorderSide(color: AppColors.hairline),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(title, style: AppText.display4),
+                ),
+                Text(
+                  trailing,
+                  style: AppText.monoMeta,
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.ink),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

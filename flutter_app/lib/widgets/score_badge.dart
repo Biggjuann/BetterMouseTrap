@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
+// Editorial Studio: score rendered as a thin ring with a tabular
+// number inside. Color uses accent ink for low risk, sun for medium,
+// warm for high — all tonal, never saturated primaries.
+
 class ScoreBadge extends StatelessWidget {
   final double score;
   const ScoreBadge({super.key, required this.score});
@@ -15,17 +19,15 @@ class ScoreBadge extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Background ring
           SizedBox(
             width: 48,
             height: 48,
             child: CircularProgressIndicator(
               value: 1.0,
-              strokeWidth: 4,
-              color: _color.withValues(alpha: 0.12),
+              strokeWidth: 2,
+              color: AppColors.hairline,
             ),
           ),
-          // Score ring
           SizedBox(
             width: 48,
             height: 48,
@@ -35,36 +37,23 @@ class ScoreBadge extends StatelessWidget {
               curve: Curves.easeOutCubic,
               builder: (context, value, _) => CircularProgressIndicator(
                 value: value,
-                strokeWidth: 4,
+                strokeWidth: 2,
                 strokeCap: StrokeCap.round,
                 color: _color,
               ),
             ),
           ),
-          // Center text
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '$pct',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: _color,
-                  height: 1,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-              Text(
-                '%',
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                  color: _color.withValues(alpha: 0.7),
-                  height: 1,
-                ),
-              ),
-            ],
+          Text(
+            '$pct',
+            style: TextStyle(
+              fontFamily: fontDisplay,
+              fontSize: 18,
+              fontWeight: FontWeight.w400,
+              color: AppColors.ink,
+              height: 1,
+              letterSpacing: -0.5,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
         ],
       ),
@@ -72,9 +61,9 @@ class ScoreBadge extends StatelessWidget {
   }
 
   Color get _color {
-    if (score >= 0.7) return AppColors.error;
-    if (score >= 0.4) return AppColors.warning;
-    return AppColors.success;
+    if (score >= 0.7) return AppColors.warm;
+    if (score >= 0.4) return AppColors.sun;
+    return AppColors.accentInk;
   }
 }
 
@@ -86,18 +75,19 @@ class ScoreIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final pct = (score * 100).round();
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: _color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: _color.withValues(alpha: 0.3)),
+        color: AppColors.canvas,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+        border: Border.all(color: AppColors.hairline),
       ),
       child: Text(
         '$pct%',
         style: TextStyle(
+          fontFamily: fontMono,
           color: _color,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
           fontFeatures: const [FontFeature.tabularFigures()],
         ),
       ),
@@ -105,8 +95,8 @@ class ScoreIndicator extends StatelessWidget {
   }
 
   Color get _color {
-    if (score >= 0.7) return AppColors.error;
-    if (score >= 0.4) return AppColors.warning;
-    return AppColors.success;
+    if (score >= 0.7) return AppColors.warm;
+    if (score >= 0.4) return AppColors.sun;
+    return AppColors.accentInk;
   }
 }

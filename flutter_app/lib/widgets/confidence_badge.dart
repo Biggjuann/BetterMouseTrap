@@ -2,30 +2,35 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
+// Editorial Studio: confidence rendered as mono caps inside an
+// accent-soft (for high), canvas (for med), or warm (for low) wash.
+
 class ConfidenceBadge extends StatelessWidget {
   final String level;
   const ConfidenceBadge({super.key, required this.level});
 
   @override
   Widget build(BuildContext context) {
+    final (bg, fg) = _tone;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: _color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppRadius.pill),
+        color: bg,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_icon, size: 14, color: _color),
-          const SizedBox(width: 4),
+          Icon(_icon, size: 11, color: fg),
+          const SizedBox(width: 5),
           Text(
             _label,
             style: TextStyle(
-              color: _color,
+              fontFamily: fontMono,
+              color: fg,
               fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1,
             ),
           ),
         ],
@@ -35,34 +40,25 @@ class ConfidenceBadge extends StatelessWidget {
 
   String get _label {
     switch (level) {
-      case 'high':
-        return 'HIGH';
-      case 'med':
-        return 'MEDIUM';
-      default:
-        return 'LOW';
+      case 'high': return 'CLEAR';
+      case 'med': return 'REVIEW';
+      default: return 'CROWDED';
     }
   }
 
-  Color get _color {
+  (Color, Color) get _tone {
     switch (level) {
-      case 'high':
-        return AppColors.success;
-      case 'med':
-        return AppColors.warning;
-      default:
-        return AppColors.error;
+      case 'high': return (AppColors.accentSoft, AppColors.accentInk);
+      case 'med':  return (AppColors.sunSoft, AppColors.ink);
+      default:     return (AppColors.warmSoft, AppColors.warm);
     }
   }
 
   IconData get _icon {
     switch (level) {
-      case 'high':
-        return Icons.verified_outlined;
-      case 'med':
-        return Icons.info_outline;
-      default:
-        return Icons.warning_amber;
+      case 'high': return Icons.check_rounded;
+      case 'med':  return Icons.remove_rounded;
+      default:     return Icons.warning_amber_rounded;
     }
   }
 }

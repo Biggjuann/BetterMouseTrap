@@ -5,6 +5,7 @@ import '../models/idea_variant.dart';
 import '../services/api_client.dart';
 import '../theme.dart';
 import '../widgets/loading_overlay.dart';
+import '../widgets/studio_widgets.dart';
 import 'idea_detail_screen.dart';
 
 class IdeasListScreen extends StatefulWidget {
@@ -56,8 +57,7 @@ class _IdeasListScreenState extends State<IdeasListScreen> {
 
       if (_sessionId != null) {
         ApiClient.instance.updateSession(_sessionId!, {
-          'variants_json':
-              response.variants.map((v) => v.toJson()).toList(),
+          'variants_json': response.variants.map((v) => v.toJson()).toList(),
           'status': 'ideas_generated',
         }).catchError((_) {});
       }
@@ -79,7 +79,7 @@ class _IdeasListScreenState extends State<IdeasListScreen> {
     }
   }
 
-  void _openDetail(IdeaVariant variant) {
+  void _openDetail(IdeaVariant variant, int index) {
     if (_sessionId != null) {
       ApiClient.instance.updateSession(_sessionId!, {
         'selected_variant_json': variant.toJson(),
@@ -108,144 +108,181 @@ class _IdeasListScreenState extends State<IdeasListScreen> {
     final adjacent = _byTier('adjacent');
     final recurring = _byTier('recurring');
 
+    final all = <({String section, IdeaVariant v})>[
+      for (final v in topPicks) (section: 'top', v: v),
+      for (final v in moonshots) (section: 'moonshot', v: v),
+      for (final v in upgrades) (section: 'upgrade', v: v),
+      for (final v in adjacent) (section: 'adjacent', v: v),
+      for (final v in recurring) (section: 'recurring', v: v),
+    ];
+
     return Scaffold(
+      backgroundColor: AppColors.bg,
       body: Stack(
         children: [
-          Container(
-            decoration:
-                const BoxDecoration(gradient: AppGradients.pageBackground),
-          ),
           CustomScrollView(
             slivers: [
-              // Header
               SliverToBoxAdapter(
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.lg, AppSpacing.base, AppSpacing.lg, 0,
-                    ),
+                        AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back_ios_new,
-                                  size: 20),
-                              color: AppColors.primary,
+                            IconBtn(
+                              icon: Icons.arrow_back_rounded,
                               onPressed: () => Navigator.pop(context),
                             ),
                             const Spacer(),
-                            Text(
-                              'SELLABLE IDEAS',
-                              style: TextStyle(
-                                color:
-                                    AppColors.primary.withValues(alpha: 0.8),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 2,
-                              ),
-                            ),
+                            Text('THE BRIEF', style: AppText.monoMeta),
                             const Spacer(),
-                            const SizedBox(width: 48),
+                            const SizedBox(width: 40),
                           ],
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        Eyebrow('Study of · ${widget.productText.isEmpty ? "an unknown specimen" : widget.productText}'),
+                        const SizedBox(height: AppSpacing.md),
+                        RichText(
+                          text: TextSpan(
+                            style: AppText.display1,
+                            children: [
+                              const TextSpan(text: 'Seven\n'),
+                              TextSpan(
+                                text: 'angles.',
+                                style: AppText.display1.copyWith(
+                                  fontStyle: FontStyle.italic,
+                                  color: AppColors.accent,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.base),
                         Text(
-                          'Invention Ideas',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.ink,
-                              ),
+                          'Tiered by ambition. Scored on six axes. Tap any for the full dossier, prior-art read, and one-pager.',
+                          style: AppText.bodyLg.copyWith(color: AppColors.graphite),
                         ),
-                        const SizedBox(height: AppSpacing.lg),
+                        const SizedBox(height: AppSpacing.xl),
                       ],
                     ),
                   ),
                 ),
               ),
 
-              // Customer Truth card
               if (_customerTruth != null)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg),
+                    padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
                     child: _CustomerTruthCard(truth: _customerTruth!),
                   ),
                 ),
 
-              // Top Picks section
-              if (topPicks.isNotEmpty) ...[
-                _sectionHeader('Top Picks', Icons.star, AppColors.primary),
-                _detailedCardList(topPicks),
-              ],
-
-              // Moonshot section
-              if (moonshots.isNotEmpty) ...[
-                _sectionHeader(
-                    'Moonshot', Icons.rocket_launch, AppColors.purpleText),
-                _detailedCardList(moonshots),
-              ],
-
-              // More Upgrades section
-              if (upgrades.isNotEmpty) ...[
-                _sectionHeader(
-                    'More Upgrades', Icons.trending_up, AppColors.blueText),
-                _compactCardList(upgrades),
-              ],
-
-              // Adjacent Products section
-              if (adjacent.isNotEmpty) ...[
-                _sectionHeader(
-                    'Adjacent Products', Icons.grid_view, AppColors.teal),
-                _compactCardList(adjacent),
-              ],
-
-              // Recurring Revenue section
-              if (recurring.isNotEmpty) ...[
-                _sectionHeader('Recurring Revenue', Icons.autorenew,
-                    AppColors.emeraldText),
-                _compactCardList(recurring),
-              ],
-
-              const SliverToBoxAdapter(child: SizedBox(height: 120)),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, 0, AppSpacing.lg, 120),
+                sliver: SliverList.separated(
+                  itemCount: all.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+                  itemBuilder: (context, i) {
+                    final entry = all[i];
+                    final prev = i > 0 ? all[i - 1].section : null;
+                    final showHeader = entry.section != prev;
+                    final compact = entry.section == 'upgrade' ||
+                        entry.section == 'adjacent' ||
+                        entry.section == 'recurring';
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (showHeader) ...[
+                          if (i > 0) const SizedBox(height: AppSpacing.lg),
+                          _SectionHeading(tier: entry.section, count: _byTier(entry.section).length),
+                          const SizedBox(height: AppSpacing.md),
+                        ],
+                        _IdeaCard(
+                          index: i + 1,
+                          variant: entry.v,
+                          compact: compact,
+                          onTap: () => _openDetail(entry.v, i),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
             ],
           ),
 
-          // FAB — "Generate New Ideas"
+          // Bottom action bar
           Positioned(
-            bottom: AppSpacing.xl,
+            bottom: 0,
             left: 0,
             right: 0,
-            child: Center(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  boxShadow: AppShadows.button,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-                child: FilledButton(
-                  onPressed: _isLoading ? null : _regenerate,
-                  style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppRadius.pill),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg,
-                      vertical: AppSpacing.base,
-                    ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.base),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppColors.canvas,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    border: Border.all(color: AppColors.hairline),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.ink.withValues(alpha: 0.06),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Row(
                     children: [
-                      Icon(Icons.auto_fix_high, size: 20),
-                      SizedBox(width: AppSpacing.sm),
-                      Text('Generate New Ideas'),
+                      Expanded(
+                        child: TextButton.icon(
+                          onPressed: _isLoading ? null : _regenerate,
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.ink,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          icon: const Icon(Icons.refresh_rounded, size: 18),
+                          label: Text(
+                            'New set',
+                            style: TextStyle(
+                              fontFamily: fontSans,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(width: 1, height: 22, color: AppColors.hairline),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _isLoading ? null : _regenerate,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.ink,
+                            foregroundColor: AppColors.canvas,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.pill),
+                            ),
+                            textStyle: const TextStyle(
+                              fontFamily: fontSans,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                          label: const Text('Regenerate'),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -255,151 +292,58 @@ class _IdeasListScreenState extends State<IdeasListScreen> {
 
           if (_isLoading)
             const LoadingOverlay(
-                message: 'Analyzing product & generating ideas...'),
+              message: 'Restudying the specimen…',
+            ),
         ],
-      ),
-    );
-  }
-
-  SliverToBoxAdapter _sectionHeader(
-      String title, IconData icon, Color color) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.sm),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              child: Icon(icon, color: color, size: 18),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Text(
-              title.toUpperCase(),
-              style: TextStyle(
-                color: color,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  SliverPadding _detailedCardList(List<IdeaVariant> items) {
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) => _DetailedCard(
-            variant: items[index],
-            onTap: () => _openDetail(items[index]),
-          ),
-          childCount: items.length,
-        ),
-      ),
-    );
-  }
-
-  SliverPadding _compactCardList(List<IdeaVariant> items) {
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) => _CompactCard(
-            variant: items[index],
-            onTap: () => _openDetail(items[index]),
-          ),
-          childCount: items.length,
-        ),
       ),
     );
   }
 }
 
-// ── Customer Truth Card ──────────────────────────────────────────────
+// ── Customer Truth — paper callout ──────────────────────────────────
 
 class _CustomerTruthCard extends StatelessWidget {
   final CustomerTruth truth;
-
   const _CustomerTruthCard({required this.truth});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.base),
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.15),
-        ),
+        color: AppColors.accentSoft,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.people_alt, color: AppColors.primary, size: 20),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                'CUSTOMER TRUTH',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ],
-          ),
+          Eyebrow('Customer truth · field notes', color: AppColors.accentInk),
           const SizedBox(height: AppSpacing.md),
-          _truthRow('Buyer', truth.buyer),
-          _truthRow('Job to be done', truth.jobToBeDone),
+          if (truth.buyer.isNotEmpty)
+            _truthRow('Buyer', truth.buyer),
+          if (truth.jobToBeDone.isNotEmpty)
+            _truthRow('Job to be done', truth.jobToBeDone),
           if (truth.purchaseDrivers.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Purchase Drivers',
-              style: TextStyle(
-                color: AppColors.ink,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
+            Text('Why they buy', style: AppText.monoMeta.copyWith(color: AppColors.accentInk)),
+            const SizedBox(height: 6),
             Wrap(
               spacing: 6,
-              runSpacing: 4,
+              runSpacing: 6,
               children: truth.purchaseDrivers
-                  .map((d) => _pill(d, AppColors.primary))
+                  .map((d) => StudioChip(label: d))
                   .toList(),
             ),
           ],
           if (truth.complaints.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Pain Points',
-              style: TextStyle(
-                color: AppColors.ink,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
+            Text('Where it pinches', style: AppText.monoMeta.copyWith(color: AppColors.accentInk)),
+            const SizedBox(height: 6),
             Wrap(
               spacing: 6,
-              runSpacing: 4,
+              runSpacing: 6,
               children: truth.complaints
-                  .map((c) => _pill(c, AppColors.error))
+                  .map((c) => StudioChip(label: c, tone: ChipTone.warm))
                   .toList(),
             ),
           ],
@@ -409,21 +353,20 @@ class _CustomerTruthCard extends StatelessWidget {
   }
 
   Widget _truthRow(String label, String value) {
-    if (value.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: RichText(
         text: TextSpan(
-          style: const TextStyle(
-            fontFamily: 'Manrope',
-            fontSize: 13,
-            color: AppColors.ink,
-            height: 1.4,
-          ),
+          style: AppText.body.copyWith(color: AppColors.ink, height: 1.5),
           children: [
             TextSpan(
-              text: '$label: ',
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              text: '$label — ',
+              style: const TextStyle(
+                fontFamily: fontMono,
+                fontSize: 11,
+                letterSpacing: 0.5,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             TextSpan(text: value),
           ],
@@ -431,305 +374,182 @@ class _CustomerTruthCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _pill(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
+// ── Section heading ─────────────────────────────────────────────────
+class _SectionHeading extends StatelessWidget {
+  final String tier;
+  final int count;
+  const _SectionHeading({required this.tier, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final label = switch (tier) {
+      'top' => 'Top picks',
+      'moonshot' => 'Moonshots',
+      'upgrade' => 'Upgrades',
+      'adjacent' => 'Adjacent products',
+      'recurring' => 'Recurring revenue',
+      _ => tier,
+    };
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(label, style: AppText.display4),
+        const SizedBox(width: 10),
+        Text('· $count', style: AppText.monoMeta),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Container(height: 1, color: AppColors.hairline, margin: const EdgeInsets.only(bottom: 8)),
         ),
-      ),
+      ],
     );
   }
 }
 
-// ── Detailed Card (Top Picks / Moonshot) ─────────────────────────────
-
-class _DetailedCard extends StatelessWidget {
+// ── Idea card ───────────────────────────────────────────────────────
+class _IdeaCard extends StatelessWidget {
+  final int index;
   final IdeaVariant variant;
+  final bool compact;
   final VoidCallback onTap;
 
-  const _DetailedCard({required this.variant, required this.onTap});
-
-  Color get _accentColor =>
-      variant.tier == 'moonshot' ? AppColors.purpleText : AppColors.primary;
+  const _IdeaCard({
+    required this.index,
+    required this.variant,
+    required this.compact,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.base),
-      child: Material(
-        color: AppColors.cardWhite,
+    final num = index.toString().padLeft(2, '0');
+
+    return StudioCard(
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(
-                color: _accentColor.withValues(alpha: 0.1),
-              ),
-              boxShadow: AppShadows.card,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Tier badge + title row
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _TierBadge(tier: variant.tier),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Text(
-                        variant.title,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleLarge
-                            ?.copyWith(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.ink,
-                            ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.base),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 32,
+                    child: Text(
+                      num,
+                      style: TextStyle(
+                        fontFamily: fontMono,
+                        fontSize: 11,
+                        color: AppColors.mist,
+                        letterSpacing: 1,
                       ),
                     ),
-                    Icon(Icons.chevron_right,
-                        color: AppColors.slateLight, size: 22),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TierDot(tierOf(variant.tier)),
+                        const SizedBox(height: 8),
+                        Text(variant.title, style: AppText.display3),
+                        const SizedBox(height: 4),
+                        Text(
+                          variant.summary,
+                          style: AppText.body.copyWith(color: AppColors.graphite),
+                          maxLines: compact ? 2 : null,
+                          overflow: compact ? TextOverflow.ellipsis : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.ink),
+                ],
+              ),
 
-                // One-line pitch
-                Text(
-                  variant.summary,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.ink,
-                        height: 1.5,
-                      ),
-                ),
-
-                // Target customer
-                if (variant.targetCustomer != null &&
-                    variant.targetCustomer!.isNotEmpty) ...[
+              if (!compact) ...[
+                if (variant.targetCustomer != null && variant.targetCustomer!.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      Icon(Icons.person_outline,
-                          size: 16, color: _accentColor),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          variant.targetCustomer!,
-                          style: TextStyle(
-                            color: AppColors.ink,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  _metaLine(Icons.person_outline_rounded, variant.targetCustomer!),
                 ],
-
-                // Monetization
-                if (variant.monetization != null &&
-                    variant.monetization!.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Row(
-                    children: [
-                      Icon(Icons.attach_money,
-                          size: 16, color: AppColors.emeraldText),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          variant.monetization!,
-                          style: TextStyle(
-                            color: AppColors.emeraldText,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                if (variant.monetization != null && variant.monetization!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  _metaLine(Icons.payments_outlined, variant.monetization!, emphasize: true),
                 ],
-
-                // Scores bar
                 if (variant.scores != null) ...[
                   const SizedBox(height: AppSpacing.md),
-                  _ScoresRow(scores: variant.scores!),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.bg,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: _ScoreGrid(scores: variant.scores!),
+                  ),
                 ],
-
-                // Why it wins
                 if (variant.whyItWins.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.md),
-                  ...variant.whyItWins.take(3).map((reason) => Padding(
+                  ...variant.whyItWins.take(3).map((r) => Padding(
                         padding: const EdgeInsets.only(bottom: 4),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.check_circle,
-                                size: 14, color: _accentColor),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                reason,
-                                style: TextStyle(
-                                  color: AppColors.ink,
-                                  fontSize: 12,
-                                  height: 1.4,
+                            Padding(
+                              padding: const EdgeInsets.only(top: 7, right: 8),
+                              child: Container(
+                                width: 4,
+                                height: 4,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.accent,
+                                  shape: BoxShape.circle,
                                 ),
                               ),
                             ),
+                            Expanded(child: Text(r, style: AppText.bodySm)),
                           ],
                         ),
                       )),
                 ],
               ],
-            ),
+            ],
           ),
         ),
       ),
     );
   }
-}
 
-// ── Compact Card (Upgrades / Adjacent / Recurring) ───────────────────
-
-class _CompactCard extends StatelessWidget {
-  final IdeaVariant variant;
-  final VoidCallback onTap;
-
-  const _CompactCard({required this.variant, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _metaLine(IconData icon, String text, {bool emphasize = false}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Material(
-        color: AppColors.cardWhite,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.05),
+      padding: const EdgeInsets.only(left: 32),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: AppColors.mist),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontFamily: fontSans,
+                fontSize: 12.5,
+                color: emphasize ? AppColors.ink : AppColors.graphite,
+                fontWeight: emphasize ? FontWeight.w600 : FontWeight.w400,
               ),
-              boxShadow: AppShadows.card,
-            ),
-            child: Row(
-              children: [
-                _TierBadge(tier: variant.tier, compact: true),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        variant.title,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.ink,
-                            ),
-                      ),
-                      if (variant.summary.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          variant.summary,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppColors.ink,
-                                    height: 1.4,
-                                  ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Icon(Icons.chevron_right,
-                    color: AppColors.slateLight, size: 20),
-              ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-// ── Tier Badge ───────────────────────────────────────────────────────
-
-class _TierBadge extends StatelessWidget {
-  final String tier;
-  final bool compact;
-
-  const _TierBadge({required this.tier, this.compact = false});
-
-  (Color, Color, IconData) get _style {
-    switch (tier) {
-      case 'top':
-        return (AppColors.primary, AppColors.primary, Icons.star);
-      case 'moonshot':
-        return (AppColors.purpleText, AppColors.purpleText, Icons.rocket_launch);
-      case 'upgrade':
-        return (AppColors.blueText, AppColors.blueText, Icons.trending_up);
-      case 'adjacent':
-        return (AppColors.teal, AppColors.teal, Icons.grid_view);
-      case 'recurring':
-        return (
-          AppColors.emeraldText,
-          AppColors.emeraldText,
-          Icons.autorenew
-        );
-      default:
-        return (AppColors.primary, AppColors.primary, Icons.lightbulb);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final (color, _, icon) = _style;
-    final size = compact ? 32.0 : 40.0;
-    final iconSize = compact ? 16.0 : 20.0;
-
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(compact ? AppRadius.md : AppRadius.lg),
-      ),
-      child: Icon(icon, color: color, size: iconSize),
-    );
-  }
-}
-
-// ── Scores Row ───────────────────────────────────────────────────────
-
-class _ScoresRow extends StatelessWidget {
+class _ScoreGrid extends StatelessWidget {
   final IdeaScores scores;
-
-  const _ScoresRow({required this.scores});
+  const _ScoreGrid({required this.scores});
 
   @override
   Widget build(BuildContext context) {
@@ -745,30 +565,27 @@ class _ScoresRow extends StatelessWidget {
     return Row(
       children: items.map((item) {
         final (label, score) = item;
-        final color = score >= 8
-            ? AppColors.emeraldText
-            : score >= 5
-                ? AppColors.primary
-                : AppColors.error;
         return Expanded(
           child: Column(
             children: [
               Text(
                 '$score',
                 style: TextStyle(
-                  color: color,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
+                  fontFamily: fontDisplay,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.ink,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 label,
                 style: TextStyle(
-                  color: AppColors.slateLight,
+                  fontFamily: fontMono,
                   fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
+                  color: AppColors.mist,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],

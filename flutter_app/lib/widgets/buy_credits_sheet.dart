@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 import '../services/credit_service.dart';
 import '../services/purchase_service.dart';
 import '../theme.dart';
+import 'studio_widgets.dart';
+
+// Editorial Studio: the credit sheet reads as a small subscription
+// card rather than a neon upsell. Mono labels, serif number, ink
+// primary CTA, accent-soft best-value wash.
 
 class BuyCreditsSheet extends StatelessWidget {
   const BuyCreditsSheet({super.key});
@@ -12,87 +17,87 @@ class BuyCreditsSheet extends StatelessWidget {
     final packs = PurchaseService.instance.availablePacks;
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.fromLTRB(22, 14, 22, 22),
       decoration: BoxDecoration(
-        color: AppColors.cardWhite,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppRadius.xl),
-        ),
+        color: AppColors.bg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+        border: Border.all(color: AppColors.hairline),
       ),
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle bar
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.mist.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
+            // Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: AppColors.mist.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: 18),
 
-            // Title
-            const Text(
-              'Get More Credits',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: AppColors.ink,
+            Row(
+              children: [
+                Container(width: 20, height: 2, color: AppColors.accentInk),
+                const SizedBox(width: 10),
+                Text('THE REFILL', style: AppText.monoMeta),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text('Top up your ', style: AppText.display2),
+            Text(
+              'credits.',
+              style: AppText.display2.copyWith(
+                fontStyle: FontStyle.italic,
+                color: AppColors.accentInk,
               ),
             ),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: 10),
 
-            // Current balance
             ValueListenableBuilder<int>(
               valueListenable: CreditService.instance.balance,
               builder: (_, balance, __) => Text(
-                'Current balance: $balance credits',
-                style: TextStyle(
-                  color: AppColors.mist,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+                'Balance on file · $balance credits',
+                style: AppText.monoMeta,
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: 18),
 
-            // Credit packs
             if (packs.isEmpty)
               Padding(
-                padding: const EdgeInsets.all(AppSpacing.xl),
+                padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Text(
-                  'Credit packs are loading or not available on this platform.',
-                  style: TextStyle(color: AppColors.mist),
-                  textAlign: TextAlign.center,
+                  'Credit packs are loading or unavailable on this platform.',
+                  style: AppText.body.copyWith(
+                    color: AppColors.graphite, fontStyle: FontStyle.italic,
+                  ),
                 ),
               )
             else
-              ...packs.map((pack) => _CreditPackCard(pack: pack)),
+              ...packs.map((pack) => _CreditPackRow(pack: pack)),
 
-            const SizedBox(height: AppSpacing.md),
-
-            // Info note
+            const SizedBox(height: 14),
             Text(
-              'Each credit powers one Idea Generation or Patent Analysis.',
-              style: TextStyle(color: AppColors.mist, fontSize: 12),
-              textAlign: TextAlign.center,
+              'One credit · one idea generation or patent search.',
+              style: AppText.monoMeta,
             ),
-            const SizedBox(height: AppSpacing.base),
 
-            // Error display
             ValueListenableBuilder<String?>(
               valueListenable: PurchaseService.instance.purchaseError,
               builder: (_, error, __) {
                 if (error == null) return const SizedBox.shrink();
                 return Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.sm),
+                  padding: const EdgeInsets.only(top: 10),
                   child: Text(
                     error,
-                    style: TextStyle(color: AppColors.coral, fontSize: 13),
-                    textAlign: TextAlign.center,
+                    style: AppText.caption.copyWith(
+                      color: AppColors.warm, fontStyle: FontStyle.italic,
+                    ),
                   ),
                 );
               },
@@ -104,118 +109,74 @@ class BuyCreditsSheet extends StatelessWidget {
   }
 }
 
-class _CreditPackCard extends StatelessWidget {
+class _CreditPackRow extends StatelessWidget {
   final CreditPack pack;
-  const _CreditPackCard({required this.pack});
+  const _CreditPackRow({required this.pack});
 
   bool get _isBestValue => pack.credits >= 50;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.only(bottom: 10),
       child: ValueListenableBuilder<bool>(
         valueListenable: PurchaseService.instance.isPurchasing,
         builder: (_, isPurchasing, __) {
-          return GestureDetector(
-            onTap: isPurchasing
-                ? null
-                : () => PurchaseService.instance.buyCredits(pack),
+          return InkWell(
+            onTap: isPurchasing ? null : () => PurchaseService.instance.buyCredits(pack),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
             child: Container(
-              padding: const EdgeInsets.all(AppSpacing.base),
+              padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
               decoration: BoxDecoration(
-                color: _isBestValue
-                    ? AppColors.primary.withValues(alpha: 0.05)
-                    : AppColors.cardWhite,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
+                color: _isBestValue ? AppColors.accentSoft : AppColors.canvas,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 border: Border.all(
-                  color: _isBestValue
-                      ? AppColors.primary
-                      : AppColors.primary.withValues(alpha: 0.1),
-                  width: _isBestValue ? 2 : 1,
+                  color: _isBestValue ? AppColors.accentInk : AppColors.hairline,
+                  width: _isBestValue ? 1.2 : 1,
                 ),
-                boxShadow: _isBestValue ? AppShadows.card : [],
               ),
               child: Row(
                 children: [
-                  // Credit count icon
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${pack.credits}',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
+                  // Serif number
+                  SizedBox(
+                    width: 54,
+                    child: Text(
+                      '${pack.credits}',
+                      style: TextStyle(
+                        fontFamily: fontDisplay,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.ink,
+                        height: 1,
+                        letterSpacing: -1,
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.base),
-                  // Description
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '${pack.credits} credits',
-                          style: TextStyle(
-                            color: AppColors.ink,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        if (_isBestValue) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
+                        Text('CREDITS', style: AppText.monoMeta),
+                        const SizedBox(height: 4),
+                        if (_isBestValue)
+                          Text(
+                            'Best value',
+                            style: AppText.body.copyWith(
+                              fontStyle: FontStyle.italic,
+                              color: AppColors.accentInk,
                             ),
-                            decoration: BoxDecoration(
-                              color: AppColors.teal.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(AppRadius.pill),
-                            ),
-                            child: Text(
-                              'BEST VALUE',
-                              style: TextStyle(
-                                color: AppColors.teal,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ],
+                          )
+                        else
+                          Text('Pay as you go', style: AppText.caption),
                       ],
                     ),
                   ),
-                  // Price button
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isPurchasing
-                          ? AppColors.mist
-                          : AppColors.primary,
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      boxShadow: isPurchasing ? [] : AppShadows.button,
-                    ),
-                    child: Text(
-                      pack.price.isEmpty ? '...' : pack.price,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                  // Price
+                  StudioButton(
+                    label: pack.price.isEmpty ? '…' : pack.price,
+                    kind: _isBestValue ? BtnKind.primary : BtnKind.ghost,
+                    onPressed: isPurchasing ? null : () => PurchaseService.instance.buyCredits(pack),
                   ),
                 ],
               ),

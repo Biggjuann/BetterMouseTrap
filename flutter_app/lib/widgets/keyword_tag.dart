@@ -9,23 +9,19 @@ class KeywordTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.xs,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.15),
-        ),
+        color: AppColors.accentSoft,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
       ),
       child: Text(
         text,
-        style: const TextStyle(
-          color: AppColors.primary,
-          fontSize: 11,
+        style: TextStyle(
+          fontFamily: fontMono,
+          color: AppColors.accentInk,
+          fontSize: 10.5,
           fontWeight: FontWeight.w600,
+          letterSpacing: 0.6,
         ),
       ),
     );

@@ -9,29 +9,25 @@ class DisclaimerBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.base),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.1),
-        ),
+        color: AppColors.canvas,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border(left: BorderSide(color: AppColors.accentInk, width: 2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.info_outline,
-            color: AppColors.primary,
-            size: 18,
-          ),
-          const SizedBox(width: AppSpacing.sm),
+          Icon(Icons.info_outline_rounded, color: AppColors.accentInk, size: 15),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'This is not legal advice. Always consult a patent attorney before filing.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.ink,
-                  ),
+              'A drafting aid — not legal advice. Review with a patent attorney before filing.',
+              style: AppText.caption.copyWith(
+                fontStyle: FontStyle.italic,
+                color: AppColors.graphite,
+                height: 1.5,
+              ),
             ),
           ),
         ],

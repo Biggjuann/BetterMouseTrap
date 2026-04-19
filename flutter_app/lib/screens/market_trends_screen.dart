@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../services/api_client.dart';
 import '../theme.dart';
+import '../widgets/studio_widgets.dart';
+
+// ─────────────────────────────────────────────────────────────────────
+// Market Trends — The Dispatch
+//
+// A weekly market-intelligence broadsheet. Masthead with issue line,
+// serif display title, lede. Trends as numbered editorial entries —
+// big fraction rank, category metadata row, headline, body, an inset
+// accent-soft "Opportunity" pull-quote, and a growth signal footer.
+// ─────────────────────────────────────────────────────────────────────
 
 class MarketTrendsScreen extends StatefulWidget {
   const MarketTrendsScreen({super.key});
@@ -38,142 +48,121 @@ class _MarketTrendsScreenState extends State<MarketTrendsScreen> {
     }
   }
 
+  String _issueLine() {
+    final now = DateTime.now();
+    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    return 'ISSUE · ${months[now.month - 1]} ${now.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppGradients.pageBackground),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // App bar
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.base,
-                  vertical: AppSpacing.sm,
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primary),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const Expanded(
-                      child: Text(
-                        'Market Trends',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'Manrope',
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 48), // balance the back button
-                  ],
-                ),
+      backgroundColor: AppColors.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+              child: Row(
+                children: [
+                  IconBtn(icon: Icons.arrow_back_rounded, onPressed: () => Navigator.pop(context)),
+                  const Spacer(),
+                  Text('THE DISPATCH', style: AppText.monoMeta),
+                  const Spacer(),
+                  const SizedBox(width: 40),
+                ],
               ),
+            ),
 
-              // Content
-              Expanded(
-                child: _loading
-                    ? const Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(color: AppColors.primary),
-                            SizedBox(height: AppSpacing.base),
-                            Text(
-                              'Analyzing market trends...',
-                              style: TextStyle(
-                                color: AppColors.mist,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : _error != null
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(AppSpacing.xl),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.error_outline, color: AppColors.error, size: 48),
-                                  const SizedBox(height: AppSpacing.base),
-                                  Text(
-                                    'Could not load trends',
-                                    style: TextStyle(
-                                      color: AppColors.ink,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.sm),
-                                  TextButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _loading = true;
-                                        _error = null;
-                                      });
-                                      _loadTrends();
-                                    },
-                                    child: const Text('Try Again'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : RefreshIndicator(
-                            color: AppColors.primary,
-                            onRefresh: () async {
-                              setState(() => _loading = true);
-                              await _loadTrends();
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator(color: AppColors.accentInk, strokeWidth: 2))
+                  : _error != null
+                      ? _errorView()
+                      : RefreshIndicator(
+                          color: AppColors.accentInk,
+                          onRefresh: () async {
+                            setState(() => _loading = true);
+                            await _loadTrends();
+                          },
+                          child: ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(22, 8, 22, 48),
+                            itemCount: _trends.length + 1,
+                            itemBuilder: (context, index) {
+                              if (index == 0) return _masthead();
+                              return _TrendEntry(trend: _trends[index - 1]);
                             },
-                            child: ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(
-                                AppSpacing.base,
-                                AppSpacing.sm,
-                                AppSpacing.base,
-                                AppSpacing.xxl,
-                              ),
-                              itemCount: _trends.length + 1, // +1 for header
-                              itemBuilder: (context, index) {
-                                if (index == 0) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                                    child: Text(
-                                      'Top 10 trending product categories and consumer opportunities, powered by AI.',
-                                      style: TextStyle(
-                                        color: AppColors.mist,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        height: 1.5,
-                                      ),
-                                    ),
-                                  );
-                                }
-                                final trend = _trends[index - 1];
-                                return _TrendCard(trend: trend);
-                              },
-                            ),
                           ),
-              ),
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _masthead() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(width: 24, height: 2, color: AppColors.accentInk),
+              const SizedBox(width: 10),
+              Text(_issueLine(), style: AppText.monoMeta),
             ],
           ),
+          const SizedBox(height: 14),
+          Text('Market ', style: AppText.display1),
+          Text(
+            'Weather',
+            style: AppText.display1.copyWith(
+              fontStyle: FontStyle.italic, color: AppColors.accentInk,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Ten categories worth your attention this cycle — where consumer demand is bending, and what opportunity sits inside the bend.',
+            style: AppText.lede,
+          ),
+          const SizedBox(height: 18),
+          Container(height: 1, color: AppColors.hairline),
+        ],
+      ),
+    );
+  }
+
+  Widget _errorView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Could not load trends', style: AppText.display3),
+            const SizedBox(height: 10),
+            StudioButton(
+              label: 'Try again',
+              icon: Icons.refresh_rounded,
+              kind: BtnKind.primary,
+              onPressed: () {
+                setState(() { _loading = true; _error = null; });
+                _loadTrends();
+              },
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _TrendCard extends StatelessWidget {
+class _TrendEntry extends StatelessWidget {
   final Map<String, dynamic> trend;
-
-  const _TrendCard({required this.trend});
+  const _TrendEntry({required this.trend});
 
   @override
   Widget build(BuildContext context) {
@@ -184,154 +173,89 @@ class _TrendCard extends StatelessWidget {
     final opportunity = trend['opportunity'] ?? '';
     final growthSignal = trend['growth_signal'] ?? '';
 
-    // Top 3 get gold accent, rest get standard
-    final isTopThree = rank <= 3;
-    final accentColor = isTopThree ? AppColors.primary : AppColors.teal;
+    final rankStr = rank.toString().padLeft(2, '0');
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.base),
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: accentColor.withValues(alpha: isTopThree ? 0.2 : 0.1),
-        ),
-        boxShadow: AppShadows.card,
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Rank + Title row
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Rank badge
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  '$rank',
-                  style: TextStyle(
-                    color: accentColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
+              // Big rank
+              Text(
+                rankStr,
+                style: TextStyle(
+                  fontFamily: fontDisplay,
+                  fontSize: 56,
+                  fontWeight: FontWeight.w300,
+                  color: AppColors.accentInk,
+                  height: 0.9,
+                  letterSpacing: -2,
                 ),
               ),
-              const SizedBox(width: AppSpacing.md),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: AppColors.ink,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        height: 1.3,
-                      ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Text(category.toString().toUpperCase(), style: AppText.monoMeta),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                      child: Text(
-                        category,
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+                    const SizedBox(height: 6),
+                    Text(title, style: AppText.display3),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
-
-          // Description
-          Text(
-            description,
-            style: const TextStyle(
-              color: AppColors.ink,
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              height: 1.5,
-            ),
-          ),
-
-          // Opportunity
-          if (opportunity.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: 12),
+          if (description.toString().isNotEmpty)
+            Text(description, style: AppText.body.copyWith(height: 1.6)),
+          if (opportunity.toString().isNotEmpty) ...[
+            const SizedBox(height: 14),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(AppRadius.md),
+                color: AppColors.accentSoft,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border(left: BorderSide(color: AppColors.accentInk, width: 2)),
               ),
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.lightbulb_outline,
-                    size: 16,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      opportunity,
-                      style: TextStyle(
-                        color: AppColors.ink,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        height: 1.4,
-                      ),
+                  Text('THE OPENING', style: AppText.monoMeta.copyWith(color: AppColors.accentInk)),
+                  const SizedBox(height: 6),
+                  Text(
+                    opportunity,
+                    style: AppText.body.copyWith(
+                      fontStyle: FontStyle.italic, color: AppColors.accentInk,
                     ),
                   ),
                 ],
               ),
             ),
           ],
-
-          // Growth signal
-          if (growthSignal.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
+          if (growthSignal.toString().isNotEmpty) ...[
+            const SizedBox(height: 10),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.trending_up,
-                  size: 14,
-                  color: AppColors.success,
-                ),
+                Icon(Icons.trending_up_rounded, size: 14, color: AppColors.accentInk),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(
-                    growthSignal,
-                    style: TextStyle(
-                      color: AppColors.mist,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      height: 1.4,
-                    ),
-                  ),
+                  child: Text(growthSignal, style: AppText.caption),
                 ),
               ],
             ),
           ],
+          const SizedBox(height: 16),
+          Container(height: 1, color: AppColors.hairline),
         ],
       ),
     );
