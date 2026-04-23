@@ -208,15 +208,10 @@ async def analyze_patents(
 ):
     """Professional patent analysis: invention analysis → multi-phase search → assessment."""
 
-    # Fall back to mocks if no API keys
-    has_pv_key = bool(settings.patentsview_api_key)
-    has_llm_key = (
-        (settings.llm_provider == "anthropic" and settings.anthropic_api_key)
-        or (settings.llm_provider == "openai" and settings.openai_api_key)
-    )
-
-    if not has_pv_key and not has_llm_key:
-        log.warning("No API keys configured — returning mock analysis")
+    # Fall back to mocks if no PatentsView API key — without it the search
+    # returns empty results regardless of whether the LLM key is present.
+    if not settings.patentsview_api_key:
+        log.warning("No PATENTSVIEW_API_KEY configured — returning mock analysis")
         return _mock_analysis_response(req)
 
     try:
