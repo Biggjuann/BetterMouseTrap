@@ -69,6 +69,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   IconBtn(
                       icon: Icons.arrow_back_rounded,
                       onPressed: () => Navigator.pop(context)),
+                  const SizedBox(width: 4),
+                  IconBtn(
+                    icon: Icons.home_rounded,
+                    onPressed: () => Navigator.of(context)
+                        .popUntil((r) => r.isFirst),
+                  ),
                   const Spacer(),
                   Text('Your Sessions', style: AppText.sectionTitle),
                   const Spacer(),

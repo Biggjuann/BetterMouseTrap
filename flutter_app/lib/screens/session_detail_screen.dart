@@ -67,6 +67,12 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                   IconBtn(
                       icon: Icons.arrow_back_rounded,
                       onPressed: () => Navigator.pop(context)),
+                  const SizedBox(width: 4),
+                  IconBtn(
+                    icon: Icons.home_rounded,
+                    onPressed: () => Navigator.of(context)
+                        .popUntil((r) => r.isFirst),
+                  ),
                   const Spacer(),
                   Text('Session', style: AppText.sectionTitle),
                   const Spacer(),

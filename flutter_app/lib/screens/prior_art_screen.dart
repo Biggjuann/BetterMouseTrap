@@ -92,13 +92,17 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
                             icon: Icons.arrow_back_rounded,
                             onPressed: () =>
                                 Navigator.pop(context)),
+                        const SizedBox(width: 4),
+                        IconBtn(
+                          icon: Icons.home_rounded,
+                          onPressed: () => Navigator.of(context)
+                              .popUntil((r) => r.isFirst),
+                        ),
                         const Spacer(),
                         Text('Prior Art',
                             style: AppText.sectionTitle),
                         const Spacer(),
-                        IconBtn(
-                            icon: Icons.ios_share_rounded,
-                            onPressed: () {}),
+                        const SizedBox(width: 36),
                       ],
                     ),
                   ),
