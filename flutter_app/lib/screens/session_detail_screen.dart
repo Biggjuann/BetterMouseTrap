@@ -9,17 +9,8 @@ import '../services/api_client.dart';
 import '../theme.dart';
 import '../utils/pdf_downloader.dart';
 import '../utils/pdf_generator.dart';
-import '../widgets/studio_widgets.dart';
+import '../widgets/whiskers_widgets.dart';
 import 'provisional_patent_screen.dart';
-
-// ─────────────────────────────────────────────────────────────────────
-// Session Detail — The Dossier Volume
-//
-// A bound dossier of everything recorded in one session: subject line,
-// selected idea, spec block, patent search result, export body,
-// patent draft, prototype notes. Each is an editorial "section" with
-// an eyebrow, serif title, and accent rule.
-// ─────────────────────────────────────────────────────────────────────
 
 class SessionDetailScreen extends StatefulWidget {
   final String sessionId;
@@ -46,7 +37,8 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
       if (mounted) setState(() => _session = data);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -72,21 +64,28 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
               child: Row(
                 children: [
-                  IconBtn(icon: Icons.arrow_back_rounded, onPressed: () => Navigator.pop(context)),
+                  IconBtn(
+                      icon: Icons.arrow_back_rounded,
+                      onPressed: () => Navigator.pop(context)),
                   const Spacer(),
-                  Text('THE DOSSIER', style: AppText.monoMeta),
+                  Text('Session', style: AppText.sectionTitle),
                   const Spacer(),
-                  const SizedBox(width: 40),
+                  const SizedBox(width: 36),
                 ],
               ),
             ),
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.accentInk, strokeWidth: 2))
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                          color: AppColors.lav, strokeWidth: 2))
                   : _session == null
-                      ? Center(child: Text('Session not found.', style: AppText.lede))
+                      ? Center(
+                          child: Text('Session not found.',
+                              style: AppText.bodyLg))
                       : SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(22, 6, 22, 36),
+                          padding:
+                              const EdgeInsets.fromLTRB(20, 6, 20, 36),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: _buildContent(),
@@ -103,81 +102,126 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
     final s = _session!;
     final blocks = <Widget>[];
 
-    // Masthead
-    blocks.add(Row(
-      children: [
-        Container(width: 24, height: 2, color: AppColors.accentInk),
-        const SizedBox(width: 10),
-        Text('FILE · ${_fileNum()}', style: AppText.monoMeta),
-      ],
-    ));
-    blocks.add(const SizedBox(height: 12));
-    blocks.add(Text(
-      s['title']?.toString() ?? 'Untitled session',
-      style: AppText.display1,
+    // Hero card with inventor mascot
+    blocks.add(WCard(
+      gradient: const LinearGradient(
+        colors: [Color(0xFFEDE9FE), AppColors.lavLight],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('File · ${_fileNum()}',
+                    style: AppText.tiny
+                        .copyWith(color: AppColors.lavDark)),
+                const SizedBox(height: 8),
+                Text(
+                  s['title']?.toString() ?? 'Untitled session',
+                  style: AppText.display2
+                      .copyWith(color: AppColors.ink),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Mascot(pose: MascotPose.inventor, size: 64),
+        ],
+      ),
     ));
     blocks.add(const SizedBox(height: 20));
 
     // Subject
-    blocks.add(_Section(
-      eyebrow: 'THE SUBJECT',
+    blocks.add(SectionHeader('The Subject'));
+    blocks.add(const SizedBox(height: 8));
+    blocks.add(WCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(s['product_text'] ?? '', style: AppText.body.copyWith(height: 1.6)),
+          Text(s['product_text'] ?? '',
+              style: AppText.body.copyWith(height: 1.6, color: AppColors.ink)),
           if (s['product_url'] != null) ...[
             const SizedBox(height: 6),
             Text(
               s['product_url'],
-              style: AppText.caption.copyWith(color: AppColors.accentInk),
+              style: AppText.caption
+                  .copyWith(color: AppColors.lavDark),
             ),
           ],
         ],
       ),
     ));
+    blocks.add(const SizedBox(height: 20));
 
     if (s['selected_variant_json'] != null) {
       final v = s['selected_variant_json'];
-      blocks.add(_Section(
-        eyebrow: 'THE SELECTED IDEA',
+      blocks.add(SectionHeader('Selected Idea'));
+      blocks.add(const SizedBox(height: 8));
+      blocks.add(WCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(v['title'] ?? 'Untitled', style: AppText.display3),
+            Text(v['title'] ?? 'Untitled',
+                style: AppText.display3
+                    .copyWith(color: AppColors.ink)),
             const SizedBox(height: 8),
-            Text(v['summary'] ?? '', style: AppText.body.copyWith(height: 1.6)),
+            Text(v['summary'] ?? '',
+                style: AppText.body
+                    .copyWith(height: 1.6, color: AppColors.ink)),
           ],
         ),
       ));
+      blocks.add(const SizedBox(height: 20));
     }
 
     if (s['spec_json'] != null) {
       final spec = s['spec_json'];
-      blocks.add(_Section(
-        eyebrow: 'THE SPEC',
+      blocks.add(SectionHeader('The Spec'));
+      blocks.add(const SizedBox(height: 8));
+      blocks.add(WCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (spec['novelty'] != null) _specRow('Novelty', spec['novelty']),
-            if (spec['mechanism'] != null) _specRow('Mechanism', spec['mechanism']),
-            if (spec['baseline'] != null) _specRow('Baseline', spec['baseline']),
+            if (spec['novelty'] != null)
+              _specRow('Novelty', spec['novelty']),
+            if (spec['mechanism'] != null)
+              _specRow('Mechanism', spec['mechanism']),
+            if (spec['baseline'] != null)
+              _specRow('Baseline', spec['baseline']),
           ],
         ),
       ));
+      blocks.add(const SizedBox(height: 20));
     }
 
     if (s['patent_confidence'] != null) {
-      blocks.add(_Section(
-        eyebrow: 'PRIOR ART',
+      blocks.add(SectionHeader('Prior Art'));
+      blocks.add(const SizedBox(height: 8));
+      blocks.add(WCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Verdict · ${s['patent_confidence']}',
-              style: AppText.body.copyWith(fontStyle: FontStyle.italic),
+            Row(
+              children: [
+                const Icon(Icons.shield_outlined,
+                    size: 14, color: AppColors.lav),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Verdict · ${s['patent_confidence']}',
+                    style: AppText.body.copyWith(
+                        fontStyle: FontStyle.italic,
+                        color: AppColors.ink),
+                  ),
+                ),
+              ],
             ),
             if (s['patent_hits_json'] != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 '${(s['patent_hits_json'] as List).length} candidate references on file.',
                 style: AppText.caption,
@@ -188,55 +232,60 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                 s['selected_variant_json'] != null &&
                 s['spec_json'] != null) ...[
               const SizedBox(height: 14),
-              StudioButton(
+              PrimaryBtn(
                 label: 'Draft patent application',
-                icon: Icons.shield_outlined,
-                kind: BtnKind.primary,
+                leading: Icons.shield_outlined,
                 onPressed: _navigateToPatentDraft,
               ),
             ],
           ],
         ),
       ));
+      blocks.add(const SizedBox(height: 20));
     }
 
     if (s['export_markdown'] != null) {
-      blocks.add(_Section(
-        eyebrow: 'THE ONE-PAGER',
+      blocks.add(SectionHeader('The One-Pager'));
+      blocks.add(const SizedBox(height: 8));
+      blocks.add(WCard(
         child: _markdownBlock(
           markdown: s['export_markdown'],
           copyText: s['export_plain_text'] ?? s['export_markdown'],
           pdfTitle: 'Invention Summary',
         ),
       ));
+      blocks.add(const SizedBox(height: 20));
     }
 
     if (s['patent_draft_json'] != null) {
-      blocks.add(_Section(
-        eyebrow: 'THE PATENT DRAFT',
+      blocks.add(SectionHeader('The Patent Draft'));
+      blocks.add(const SizedBox(height: 8));
+      blocks.add(WCard(
         child: _markdownBlock(
           markdown: s['patent_draft_json']['markdown'] ?? '',
           copyText: s['patent_draft_json']['markdown'] ?? '',
           pdfTitle: 'Patent Draft',
         ),
       ));
+      blocks.add(const SizedBox(height: 20));
     }
 
     if (s['prototype_json'] != null) {
-      blocks.add(_Section(
-        eyebrow: 'THE PROTOTYPE',
+      blocks.add(SectionHeader('The Prototype'));
+      blocks.add(const SizedBox(height: 8));
+      blocks.add(WCard(
         child: _markdownBlock(
           markdown: s['prototype_json']['markdown'] ?? '',
           copyText: s['prototype_json']['markdown'] ?? '',
           pdfTitle: 'Prototype',
         ),
       ));
+      blocks.add(const SizedBox(height: 20));
     }
 
-    blocks.add(const SizedBox(height: 8));
     blocks.add(Text(
       'A drafting aid. Review before sharing.',
-      style: AppText.monoMeta,
+      style: AppText.tiny,
     ));
 
     return blocks;
@@ -244,13 +293,17 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
 
   Widget _specRow(String label, String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(), style: AppText.monoMeta),
+          Text(label,
+              style: AppText.tiny.copyWith(
+                  color: AppColors.lavDark, letterSpacing: 0.5)),
           const SizedBox(height: 4),
-          Text(text, style: AppText.body.copyWith(height: 1.55)),
+          Text(text,
+              style: AppText.body
+                  .copyWith(height: 1.55, color: AppColors.ink)),
         ],
       ),
     );
@@ -268,13 +321,30 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
           data: markdown,
           selectable: true,
           styleSheet: MarkdownStyleSheet(
-            h1: AppText.display3,
-            h2: TextStyle(fontFamily: fontDisplay, fontSize: 18, fontWeight: FontWeight.w500, color: AppColors.ink),
-            h3: TextStyle(fontFamily: fontDisplay, fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink, fontStyle: FontStyle.italic),
-            p: AppText.body.copyWith(height: 1.6),
-            strong: TextStyle(fontFamily: fontSans, fontWeight: FontWeight.w600, color: AppColors.ink),
-            em: TextStyle(fontFamily: fontSans, fontStyle: FontStyle.italic, color: AppColors.ink),
-            listBullet: AppText.body.copyWith(color: AppColors.accentInk),
+            h1: AppText.display3
+                .copyWith(color: AppColors.ink),
+            h2: TextStyle(
+                fontFamily: fontDisplay,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink),
+            h3: TextStyle(
+                fontFamily: fontDisplay,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink,
+                fontStyle: FontStyle.italic),
+            p: AppText.body
+                .copyWith(height: 1.6, color: AppColors.ink),
+            strong: TextStyle(
+                fontFamily: fontSans,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink),
+            em: TextStyle(
+                fontFamily: fontSans,
+                fontStyle: FontStyle.italic,
+                color: AppColors.ink),
+            listBullet: AppText.body.copyWith(color: AppColors.lav),
           ),
         ),
         const SizedBox(height: 10),
@@ -287,13 +357,17 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                   const SnackBar(content: Text('Copied to clipboard.')),
                 );
               },
-              icon: const Icon(Icons.copy_rounded, size: 14),
-              label: Text('Copy', style: AppText.caption.copyWith(color: AppColors.graphite)),
+              icon: const Icon(Icons.copy_rounded,
+                  size: 14, color: AppColors.inkSoft),
+              label: Text('Copy',
+                  style: AppText.caption
+                      .copyWith(color: AppColors.inkSoft)),
             ),
             TextButton.icon(
               onPressed: () async {
                 try {
-                  final bytes = await PdfGenerator.generateFromMarkdown(
+                  final bytes =
+                      await PdfGenerator.generateFromMarkdown(
                     title: pdfTitle,
                     content: markdown,
                   );
@@ -309,12 +383,16 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                   }
                 } catch (e) {
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('PDF failed: $e')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('PDF failed: $e')));
                   }
                 }
               },
-              icon: const Icon(Icons.picture_as_pdf_outlined, size: 14),
-              label: Text('PDF', style: AppText.caption.copyWith(color: AppColors.graphite)),
+              icon: const Icon(Icons.picture_as_pdf_outlined,
+                  size: 14, color: AppColors.inkSoft),
+              label: Text('PDF',
+                  style: AppText.caption
+                      .copyWith(color: AppColors.inkSoft)),
             ),
           ],
         ),
@@ -323,8 +401,10 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
   }
 
   void _navigateToPatentDraft() {
-    final variant = IdeaVariant.fromJson(Map<String, dynamic>.from(_session!['selected_variant_json']));
-    final spec = IdeaSpec.fromJson(Map<String, dynamic>.from(_session!['spec_json']));
+    final variant = IdeaVariant.fromJson(
+        Map<String, dynamic>.from(_session!['selected_variant_json']));
+    final spec = IdeaSpec.fromJson(
+        Map<String, dynamic>.from(_session!['spec_json']));
     final hits = (_session!['patent_hits_json'] as List)
         .map((h) => PatentHit.fromJson(Map<String, dynamic>.from(h)))
         .toList();
@@ -341,28 +421,5 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
         ),
       ),
     ).then((_) => _loadSession());
-  }
-}
-
-class _Section extends StatelessWidget {
-  final String eyebrow;
-  final Widget child;
-  const _Section({required this.eyebrow, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(height: 1, color: AppColors.hairline),
-          const SizedBox(height: 14),
-          Text(eyebrow, style: AppText.monoMeta.copyWith(color: AppColors.accentInk)),
-          const SizedBox(height: 10),
-          child,
-        ],
-      ),
-    );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/idea_spec.dart';
 import '../models/idea_variant.dart';
@@ -8,17 +9,9 @@ import '../models/product_input.dart';
 import '../services/api_client.dart';
 import '../theme.dart';
 import '../widgets/loading_overlay.dart';
-import '../widgets/studio_widgets.dart';
+import '../widgets/whiskers_widgets.dart';
 import 'provisional_patent_screen.dart';
 import 'export_screen.dart';
-
-// ─────────────────────────────────────────────────────────────────────
-// Prior Art — Dossier language
-//
-// Editorial layout, single vertical scroll. Sections stacked like a
-// printed report: file header → verdict → the field → what was read →
-// the reasoning → what to do next.
-// ─────────────────────────────────────────────────────────────────────
 
 class PriorArtScreen extends StatefulWidget {
   final ProductInput product;
@@ -51,14 +44,31 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
     return _a.priorArtSummary.overallRisk != 'high';
   }
 
-  String _stubFileNum() {
-    final t = widget.variant.title;
-    var h = 0;
-    for (final c in t.codeUnits) {
-      h = (h * 31 + c) & 0xffff;
+  Color _riskColor(String level) {
+    switch (level) {
+      case 'low': return AppColors.success;
+      case 'medium': return AppColors.warn;
+      case 'high': return AppColors.danger;
+      default: return AppColors.inkSoft;
     }
-    final n = 1000 + (h % 8999);
-    return 'PA-$n';
+  }
+
+  String _riskLabel(String level) {
+    switch (level) {
+      case 'low': return 'Clear Skies';
+      case 'medium': return 'Crowded Field';
+      case 'high': return 'Heavy Traffic';
+      default: return level;
+    }
+  }
+
+  Color _riskBg(String level) {
+    switch (level) {
+      case 'low': return AppColors.mintBg;
+      case 'medium': return AppColors.sunBg;
+      case 'high': return AppColors.peachBg;
+      default: return AppColors.lavLight;
+    }
   }
 
   @override
@@ -69,80 +79,665 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
         children: [
           CustomScrollView(
             slivers: [
-              // Header bar — file ribbon
-              SliverToBoxAdapter(child: _Header(onBack: () => Navigator.pop(context))),
+              // Header
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                        14, 10, 14, 10),
+                    child: Row(
+                      children: [
+                        IconBtn(
+                            icon: Icons.arrow_back_rounded,
+                            onPressed: () =>
+                                Navigator.pop(context)),
+                        const Spacer(),
+                        Text('Prior Art',
+                            style: AppText.sectionTitle),
+                        const Spacer(),
+                        IconBtn(
+                            icon: Icons.ios_share_rounded,
+                            onPressed: () {}),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
 
-              // Dossier masthead
-              SliverToBoxAdapter(child: _Masthead(
-                fileNumber: _stubFileNum(),
-                title: widget.variant.title,
-                riskLevel: _a.priorArtSummary.overallRisk,
-              )),
+              // Hero verdict card
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      20, 8, 20, 16),
+                  child: WCard(
+                    gradient: LinearGradient(
+                      colors: [
+                        _riskBg(_a.priorArtSummary.overallRisk)
+                            .withValues(alpha: 0.6),
+                        _riskBg(
+                            _a.priorArtSummary.overallRisk),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Mascot(
+                                pose: MascotPose.detective,
+                                size: 48),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                Text('Prior Art Verdict',
+                                    style: AppText.caption),
+                                Text(
+                                  _riskLabel(_a.priorArtSummary
+                                      .overallRisk),
+                                  style: AppText.display2.copyWith(
+                                    color: _riskColor(_a
+                                        .priorArtSummary
+                                        .overallRisk),
+                                    fontSize: 20,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            Pill(
+                              'Confidence: ${_a.confidence.toUpperCase()}',
+                              bg: AppColors.card,
+                              fg: AppColors.inkSoft,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _a.priorArtSummary.narrative,
+                          style: AppText.body
+                              .copyWith(height: 1.55),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
 
-              // Verdict — the pull quote
-              SliverToBoxAdapter(child: _VerdictBlock(
-                riskLevel: _a.priorArtSummary.overallRisk,
-                narrative: _a.priorArtSummary.narrative,
-                confidence: _a.confidence,
-              )),
+              // Status summary row
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      20, 0, 20, 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          label: 'High Match',
+                          count: _a.hits
+                              .where((h) => h.score >= 70)
+                              .length,
+                          bg: AppColors.peachBg,
+                          fg: AppColors.danger,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _StatCard(
+                          label: 'Possible',
+                          count: _a.hits
+                              .where((h) =>
+                                  h.score >= 40 && h.score < 70)
+                              .length,
+                          bg: AppColors.sunBg,
+                          fg: AppColors.warn,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _StatCard(
+                          label: 'Low Match',
+                          count: _a.hits
+                              .where((h) => h.score < 40)
+                              .length,
+                          bg: AppColors.mintBg,
+                          fg: AppColors.success,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
               // Key findings
               if (_a.priorArtSummary.keyFindings.isNotEmpty)
-                SliverToBoxAdapter(child: _KeyFindingsBlock(
-                  findings: _a.priorArtSummary.keyFindings,
-                )),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                        20, 0, 20, 16),
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        SectionHeader(
+                          'What We Saw',
+                          action:
+                              '${_a.priorArtSummary.keyFindings.length} notes',
+                        ),
+                        WCard(
+                          child: Column(
+                            children: _a
+                                .priorArtSummary.keyFindings
+                                .asMap()
+                                .entries
+                                .map((e) => Padding(
+                                      padding:
+                                          const EdgeInsets.only(
+                                              bottom: 10),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment
+                                                .start,
+                                        children: [
+                                          Container(
+                                            width: 22,
+                                            height: 22,
+                                            decoration: BoxDecoration(
+                                              color: AppColors
+                                                  .lavLight,
+                                              borderRadius:
+                                                  BorderRadius
+                                                      .circular(
+                                                          AppRadius
+                                                              .sm),
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                '${e.key + 1}',
+                                                style: AppText
+                                                    .tiny
+                                                    .copyWith(
+                                                        color: AppColors
+                                                            .lavDark,
+                                                        fontWeight:
+                                                            FontWeight
+                                                                .w700),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(
+                                              width: 10),
+                                          Expanded(
+                                            child: Text(
+                                                e.value,
+                                                style: AppText
+                                                    .body
+                                                    .copyWith(
+                                                        height:
+                                                            1.5)),
+                                          ),
+                                        ],
+                                      ),
+                                    ))
+                                .toList(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
-              // The field — search coverage ledger
-              SliverToBoxAdapter(child: _LedgerBlock(meta: _a.searchMetadata)),
+              // Search coverage
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      20, 0, 20, 16),
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      const SectionHeader('Ground We Covered'),
+                      WCard(
+                        child: Column(
+                          children: [
+                            _metaRow(
+                                'Queries executed',
+                                '${_a.searchMetadata.totalQueriesRun}'),
+                            _metaRow(
+                                'Keyword matches',
+                                '${_a.searchMetadata.keywordHits}'),
+                            _metaRow('CPC matches',
+                                '${_a.searchMetadata.cpcHits}'),
+                            if (_a.searchMetadata.citationHits >
+                                0)
+                              _metaRow(
+                                  'Citation matches',
+                                  '${_a.searchMetadata.citationHits}'),
+                            _metaRow(
+                                'Duplicates removed',
+                                '${_a.searchMetadata.duplicatesRemoved}'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
               // Prior art results
-              SliverToBoxAdapter(child: _PriorArtListBlock(
-                hits: _a.hits,
-                selected: _sourceFilter,
-                onSelect: (s) => setState(() => _sourceFilter = s),
-                confidence: _a.confidence,
-              )),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      20, 0, 20, 16),
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      SectionHeader(
+                        'Specimens on the Shelf',
+                        action: '${_a.hits.length} ref.',
+                      ),
+                      _buildPhaseFilters(),
+                      const SizedBox(height: 10),
+                      if (_filteredHits.isEmpty)
+                        _emptyField()
+                      else
+                        ..._filteredHits
+                            .asMap()
+                            .entries
+                            .map((e) => Padding(
+                                  padding: const EdgeInsets
+                                      .only(bottom: 10),
+                                  child: _SpecimenCard(
+                                    index: e.key + 1,
+                                    hit: e.value,
+                                  ),
+                                )),
+                    ],
+                  ),
+                ),
+              ),
 
-              // Analysis — novelty, obviousness, eligibility
-              SliverToBoxAdapter(child: _AnalysisBlock(a: _a)),
+              // Analysis blocks
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      20, 0, 20, 16),
+                  child: _buildAnalysis(),
+                ),
+              ),
 
-              // Claim strategy
-              SliverToBoxAdapter(child: _StrategyBlock(strategy: _a.claimStrategy)),
+              // Strategy block
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      20, 0, 20, 16),
+                  child: _buildStrategy(),
+                ),
+              ),
 
-              // Invention analysis — how we read it
-              SliverToBoxAdapter(child: _InventionBlock(inv: _a.inventionAnalysis)),
+              // Invention analysis
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      20, 0, 20, 16),
+                  child: _buildInventionAnalysis(),
+                ),
+              ),
 
               // Disclaimer
-              SliverToBoxAdapter(child: _DisclaimerBlock(text: _a.disclaimer)),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      20, 0, 20, 8),
+                  child: WCard(
+                    color: AppColors.lavLight,
+                    child: Row(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                            Icons.info_outline_rounded,
+                            size: 14,
+                            color: AppColors.lavDark),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(_a.disclaimer,
+                              style: AppText.caption),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
 
               // CTAs
-              SliverToBoxAdapter(child: _FootActions(
-                canBuildThis: _canBuildThis,
-                isLoading: _isLoading,
-                onExport: _exportOnePager,
-                onBuildThis: _navigateToBuildThis,
-              )),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      20, 8, 20, 16),
+                  child: Column(
+                    children: [
+                      PrimaryBtn(
+                        label: 'Export Full Analysis',
+                        trailing: Icons.arrow_downward_rounded,
+                        loading: _isLoading,
+                        onPressed:
+                            _isLoading ? null : _exportOnePager,
+                      ),
+                      if (_canBuildThis) ...[
+                        const SizedBox(height: 10),
+                        SoftBtn(
+                          label: 'Draft the Application',
+                          icon: Icons.edit_note_rounded,
+                          bg: AppColors.mintBg,
+                          fg: AppColors.success,
+                          onPressed: _isLoading
+                              ? null
+                              : _navigateToBuildThis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 48)),
+              const SliverToBoxAdapter(
+                  child: SizedBox(height: 48)),
             ],
           ),
           if (_isLoading)
-            const LoadingOverlay(message: 'Putting together your one-pager…'),
+            const LoadingOverlay(
+                message: 'Putting together your one-pager…'),
         ],
       ),
     );
   }
 
+  List<EnhancedPatentHit> get _filteredHits {
+    if (_sourceFilter == null) return _a.hits;
+    return _a.hits
+        .where((h) => h.sourcePhase == _sourceFilter)
+        .toList();
+  }
+
+  Widget _buildPhaseFilters() {
+    final phases =
+        _a.hits.map((h) => h.sourcePhase).toSet().toList()
+          ..sort();
+    if (phases.length <= 1) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          _PhaseChip(
+            label: 'All · ${_a.hits.length}',
+            active: _sourceFilter == null,
+            onTap: () => setState(() => _sourceFilter = null),
+          ),
+          ...phases.map((p) {
+            final n =
+                _a.hits.where((h) => h.sourcePhase == p).length;
+            return _PhaseChip(
+              label: '${_phaseLabel(p)} · $n',
+              active: _sourceFilter == p,
+              onTap: () =>
+                  setState(() => _sourceFilter = p),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  String _phaseLabel(String p) {
+    switch (p) {
+      case 'keyword': return 'Keyword';
+      case 'cpc': return 'CPC';
+      case 'citation': return 'Citation';
+      default: return p;
+    }
+  }
+
+  Widget _emptyField() {
+    return WCard(
+      color: AppColors.mintBg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Mascot(
+                  pose: MascotPose.detective, size: 40),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('A clean shelf!',
+                        style: AppText.bodyBold
+                            .copyWith(color: AppColors.success)),
+                    Text(
+                      'No references matched. The field looks open.',
+                      style: AppText.caption,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metaRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+              child:
+                  Text(label, style: AppText.body)),
+          Text(value, style: AppText.bodyBold),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnalysis() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader('How We Read It'),
+        _AssessmentCard(
+          label: 'Novelty',
+          question: 'Is it new?',
+          riskLevel: _a.noveltyAssessment.riskLevel,
+          summary: _a.noveltyAssessment.summary,
+          riskColor: _riskColor,
+          riskLabel: _riskLabel,
+        ),
+        const SizedBox(height: 10),
+        _AssessmentCard(
+          label: 'Non-Obviousness',
+          question: 'Is the leap real?',
+          riskLevel: _a.obviousnessAssessment.riskLevel,
+          summary: _a.obviousnessAssessment.summary,
+          riskColor: _riskColor,
+          riskLabel: _riskLabel,
+        ),
+        if (_a.eligibilityNote.applies) ...[
+          const SizedBox(height: 10),
+          _AssessmentCard(
+            label: 'Eligibility §101',
+            question:
+                'Is it the kind of thing the office grants?',
+            riskLevel: 'medium',
+            summary: _a.eligibilityNote.summary,
+            riskColor: _riskColor,
+            riskLabel: _riskLabel,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStrategy() {
+    final strategy = _a.claimStrategy;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader('The Move'),
+        WCard(
+          color: AppColors.sunBg,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Recommended Filing',
+                  style: AppText.caption
+                      .copyWith(color: AppColors.warn)),
+              const SizedBox(height: 6),
+              Text(strategy.filingLabel,
+                  style: AppText.display3),
+              const SizedBox(height: 10),
+              Text(strategy.rationale,
+                  style: AppText.body
+                      .copyWith(height: 1.55)),
+            ],
+          ),
+        ),
+        if (strategy.riskAreas.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text('Watch for', style: AppText.sectionTitle),
+          const SizedBox(height: 8),
+          ...strategy.riskAreas.map((r) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding:
+                          EdgeInsets.only(top: 4, right: 8),
+                      child: Icon(
+                          Icons.warning_amber_rounded,
+                          size: 13,
+                          color: AppColors.warn),
+                    ),
+                    Expanded(
+                      child: Text(r,
+                          style: AppText.body
+                              .copyWith(height: 1.5)),
+                    ),
+                  ],
+                ),
+              )),
+        ],
+        if (strategy.suggestedIndependentClaims.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          Text('Draft Claims', style: AppText.sectionTitle),
+          const SizedBox(height: 8),
+          ...strategy.suggestedIndependentClaims
+              .asMap()
+              .entries
+              .map((e) => Padding(
+                    padding:
+                        const EdgeInsets.only(bottom: 10),
+                    child: WCard(
+                      child: Row(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          Pill('${e.key + 1}'),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(e.value,
+                                style: AppText.body
+                                    .copyWith(
+                                        fontStyle: FontStyle
+                                            .italic,
+                                        height: 1.5)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildInventionAnalysis() {
+    final inv = _a.inventionAnalysis;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader('How We Read the Idea'),
+        WCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Core concept',
+                  style: AppText.caption),
+              const SizedBox(height: 4),
+              Text(inv.coreConcept,
+                  style: AppText.body
+                      .copyWith(height: 1.6)),
+              if (inv.essentialElements.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text('Essential elements',
+                    style: AppText.caption),
+                const SizedBox(height: 6),
+                ...inv.essentialElements
+                    .asMap()
+                    .entries
+                    .map((e) => Padding(
+                          padding: const EdgeInsets.only(
+                              bottom: 6),
+                          child: Row(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Pill('${e.key + 1}',
+                                  fontSize: 10),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(e.value,
+                                    style: AppText.body
+                                        .copyWith(
+                                            height: 1.5)),
+                              ),
+                            ],
+                          ),
+                        )),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   void _navigateToBuildThis() {
-    final patentHits = _a.hits.map((h) => PatentHit(
-          patentId: h.patentId,
-          title: h.title,
-          abstract_: h.abstract_,
-          assignee: h.assignee,
-          date: h.date,
-          score: h.score,
-          whySimilar: h.whySimilar,
-        )).toList();
+    final patentHits = _a.hits
+        .map((h) => PatentHit(
+              patentId: h.patentId,
+              title: h.title,
+              abstract_: h.abstract_,
+              assignee: h.assignee,
+              date: h.date,
+              score: h.score,
+              whySimilar: h.whySimilar,
+            ))
+        .toList();
 
     Navigator.push(
       context,
@@ -161,15 +756,17 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
   Future<void> _exportOnePager() async {
     setState(() => _isLoading = true);
     try {
-      final patentHits = _a.hits.map((h) => PatentHit(
-            patentId: h.patentId,
-            title: h.title,
-            abstract_: h.abstract_,
-            assignee: h.assignee,
-            date: h.date,
-            score: h.score,
-            whySimilar: h.whySimilar,
-          )).toList();
+      final patentHits = _a.hits
+          .map((h) => PatentHit(
+                patentId: h.patentId,
+                title: h.title,
+                abstract_: h.abstract_,
+                assignee: h.assignee,
+                date: h.date,
+                score: h.score,
+                whySimilar: h.whySimilar,
+              ))
+          .toList();
 
       final response = await ApiClient.instance.exportOnePager(
         product: widget.product,
@@ -190,14 +787,14 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ExportScreen(exportResponse: response),
+          builder: (_) =>
+              ExportScreen(exportResponse: response),
         ),
       );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
+            SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -205,927 +802,263 @@ class _PriorArtScreenState extends State<PriorArtScreen> {
   }
 }
 
-// ── Layout helpers ───────────────────────────────────────────────────
-
-const EdgeInsets _pageH = EdgeInsets.symmetric(horizontal: 22);
-
-Color _riskColor(String level) {
-  switch (level) {
-    case 'low':  return AppColors.success;
-    case 'medium': return AppColors.warning;
-    case 'high': return AppColors.error;
-    default: return AppColors.graphite;
-  }
-}
-
-String _riskLabel(String level) {
-  switch (level) {
-    case 'low':  return 'Clear skies';
-    case 'medium': return 'Crowded field';
-    case 'high': return 'Heavy traffic';
-    default: return level;
-  }
-}
-
-// ── Header ──────────────────────────────────────────────────────────
-
-class _Header extends StatelessWidget {
-  final VoidCallback onBack;
-  const _Header({required this.onBack});
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-        child: Row(
-          children: [
-            IconBtn(icon: Icons.arrow_back_rounded, onPressed: onBack),
-            const Spacer(),
-            Text('THE FIELD REPORT', style: AppText.monoMeta),
-            const Spacer(),
-            IconBtn(icon: Icons.ios_share_rounded, onPressed: () {}),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Masthead: file Nº · title · risk tag ────────────────────────────
-
-class _Masthead extends StatelessWidget {
-  final String fileNumber;
-  final String title;
-  final String riskLevel;
-
-  const _Masthead({
-    required this.fileNumber,
-    required this.title,
-    required this.riskLevel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: _pageH.copyWith(top: 8, bottom: 28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 8, height: 8,
-                decoration: BoxDecoration(color: _riskColor(riskLevel), shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 10),
-              Text('File Nº $fileNumber', style: AppText.monoMeta),
-              const SizedBox(width: 10),
-              Text('·', style: AppText.monoMeta),
-              const SizedBox(width: 10),
-              Text('Prior art'.toUpperCase(), style: AppText.monoMeta),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Text('The ', style: AppText.display2.copyWith(color: AppColors.mist), maxLines: 1),
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: RichText(
-              text: TextSpan(
-                style: AppText.display1,
-                children: [
-                  const TextSpan(text: 'field for '),
-                  TextSpan(
-                    text: _shorten(title),
-                    style: AppText.display1.copyWith(fontStyle: FontStyle.italic, color: AppColors.accentInk),
-                  ),
-                  const TextSpan(text: '.'),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _shorten(String s) {
-    final words = s.split(' ');
-    if (words.length <= 5) return s;
-    return '${words.take(5).join(' ')}…';
-  }
-}
-
-// ── Verdict: big label + narrative as editorial pull quote ──────────
-
-class _VerdictBlock extends StatelessWidget {
-  final String riskLevel;
-  final String narrative;
-  final String confidence;
-
-  const _VerdictBlock({
-    required this.riskLevel,
-    required this.narrative,
-    required this.confidence,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final c = _riskColor(riskLevel);
-    return Padding(
-      padding: _pageH.copyWith(bottom: 36),
-      child: StudioCard(
-        background: AppColors.accentSoft,
-        border: Border.all(color: Colors.transparent),
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Eyebrow('Verdict', color: AppColors.accentInk.withValues(alpha: 0.6)),
-                const Spacer(),
-                Text('Confidence · ${confidence.toUpperCase()}', style: AppText.monoMeta),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              _riskLabel(riskLevel),
-              style: AppText.display2.copyWith(
-                fontStyle: FontStyle.italic,
-                color: c,
-                height: 1.0,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              narrative,
-              style: AppText.bodyLg.copyWith(height: 1.55, color: AppColors.accentInk),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Key findings ─────────────────────────────────────────────────────
-
-class _KeyFindingsBlock extends StatelessWidget {
-  final List<String> findings;
-  const _KeyFindingsBlock({required this.findings});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: _pageH.copyWith(bottom: 36),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(
-            eyebrow: 'I · Observations',
-            title: 'What we saw',
-            trailing: '${findings.length} notes',
-          ),
-          ...List.generate(findings.length, (i) => Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 28,
-                  child: Text('${i + 1}'.padLeft(2, '0'),
-                    style: AppText.monoMeta.copyWith(color: AppColors.accentInk)),
-                ),
-                Expanded(
-                  child: Text(findings[i],
-                    style: AppText.body.copyWith(height: 1.6)),
-                ),
-              ],
-            ),
-          )),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Search coverage ledger ──────────────────────────────────────────
-
-class _LedgerBlock extends StatelessWidget {
-  final SearchMetadata meta;
-  const _LedgerBlock({required this.meta});
-
-  @override
-  Widget build(BuildContext context) {
-    final rows = <MapEntry<String, String>>[
-      MapEntry('Queries executed', '${meta.totalQueriesRun}'),
-      MapEntry('Keyword matches', '${meta.keywordHits}'),
-      MapEntry('CPC matches', '${meta.cpcHits}'),
-      if (meta.citationHits > 0) MapEntry('Citation matches', '${meta.citationHits}'),
-      MapEntry('Duplicates removed', '${meta.duplicatesRemoved}'),
-      MapEntry('Phases completed', meta.phasesCompleted.join(' · ')),
-    ];
-    return Padding(
-      padding: _pageH.copyWith(bottom: 36),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(eyebrow: 'II · The search', title: 'Ground we covered'),
-          Container(
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.rule)),
-            ),
-            child: Column(
-              children: rows.map((r) => _LedgerRow(label: r.key, value: r.value)).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LedgerRow extends StatelessWidget {
+// ── Stat card (high/possible/low counts) ────────────────────────────
+class _StatCard extends StatelessWidget {
   final String label;
-  final String value;
-  const _LedgerRow({required this.label, required this.value});
+  final int count;
+  final Color bg;
+  final Color fg;
+  const _StatCard(
+      {required this.label,
+      required this.count,
+      required this.bg,
+      required this.fg});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.rule)),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      child: Row(
-        children: [
-          Expanded(child: Text(label, style: AppText.body.copyWith(color: AppColors.graphite))),
-          Text(value, style: AppText.monoValue),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Prior art list ──────────────────────────────────────────────────
-
-class _PriorArtListBlock extends StatelessWidget {
-  final List<EnhancedPatentHit> hits;
-  final String? selected;
-  final ValueChanged<String?> onSelect;
-  final String confidence;
-
-  const _PriorArtListBlock({
-    required this.hits,
-    required this.selected,
-    required this.onSelect,
-    required this.confidence,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final phases = hits.map((h) => h.sourcePhase).toSet().toList()..sort();
-    final filtered = selected == null ? hits : hits.where((h) => h.sourcePhase == selected).toList();
-
-    return Padding(
-      padding: _pageH.copyWith(bottom: 36),
+    return WCard(
+      color: bg,
+      padding: const EdgeInsets.symmetric(
+          horizontal: 12, vertical: 10),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(
-            eyebrow: 'III · What we read',
-            title: 'Specimens on the shelf',
-            trailing: '${hits.length} ref.',
-          ),
-
-          if (phases.length > 1) ...[
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _PhaseChip(
-                  label: 'All · ${hits.length}',
-                  active: selected == null,
-                  onTap: () => onSelect(null),
-                ),
-                ...phases.map((p) {
-                  final n = hits.where((h) => h.sourcePhase == p).length;
-                  return _PhaseChip(
-                    label: '${_phaseLabel(p)} · $n',
-                    active: selected == p,
-                    onTap: () => onSelect(p),
-                  );
-                }),
-              ],
-            ),
-            const SizedBox(height: 20),
-          ],
-
-          if (filtered.isEmpty)
-            _EmptyField()
-          else
-            ...filtered.asMap().entries.map((e) => _SpecimenRow(
-              index: e.key + 1,
-              hit: e.value,
-              isLast: e.key == filtered.length - 1,
-            )),
+          Text('$count',
+              style: AppText.display2.copyWith(
+                  color: fg, fontSize: 24)),
+          Text(label,
+              style: AppText.tiny.copyWith(color: fg),
+              textAlign: TextAlign.center),
         ],
       ),
     );
   }
-
-  String _phaseLabel(String p) {
-    switch (p) {
-      case 'keyword': return 'Keyword';
-      case 'cpc': return 'CPC';
-      case 'citation': return 'Citation';
-      default: return p;
-    }
-  }
 }
 
+// ── Phase filter chip ────────────────────────────────────────────────
 class _PhaseChip extends StatelessWidget {
   final String label;
   final bool active;
   final VoidCallback onTap;
-  const _PhaseChip({required this.label, required this.active, required this.onTap});
+  const _PhaseChip(
+      {required this.label,
+      required this.active,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.pill),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding: const EdgeInsets.symmetric(
+            horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: active ? AppColors.ink : AppColors.canvas,
+          color: active ? AppColors.lav : AppColors.card,
           borderRadius: BorderRadius.circular(AppRadius.pill),
-          border: Border.all(color: active ? AppColors.ink : AppColors.hairline),
+          border: Border.all(
+              color: active
+                  ? AppColors.lav
+                  : AppColors.hairline),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: fontSans, fontSize: 12, fontWeight: FontWeight.w600,
-            color: active ? AppColors.canvas : AppColors.graphite,
-          ),
-        ),
+        child: Text(label,
+            style: AppText.caption.copyWith(
+                color: active
+                    ? Colors.white
+                    : AppColors.inkSoft,
+                fontWeight: FontWeight.w700)),
       ),
     );
   }
 }
 
-class _SpecimenRow extends StatefulWidget {
+// ── Specimen card ─────────────────────────────────────────────────────
+class _SpecimenCard extends StatefulWidget {
   final int index;
   final EnhancedPatentHit hit;
-  final bool isLast;
-  const _SpecimenRow({required this.index, required this.hit, required this.isLast});
+  const _SpecimenCard(
+      {required this.index, required this.hit});
 
   @override
-  State<_SpecimenRow> createState() => _SpecimenRowState();
+  State<_SpecimenCard> createState() => _SpecimenCardState();
 }
 
-class _SpecimenRowState extends State<_SpecimenRow> {
+class _SpecimenCardState extends State<_SpecimenCard> {
   bool _open = false;
+
+  Color get _scoreColor {
+    final s = widget.hit.scorePercent;
+    if (s >= 70) return AppColors.danger;
+    if (s >= 40) return AppColors.warn;
+    return AppColors.success;
+  }
+
+  Color get _scoreBg {
+    final s = widget.hit.scorePercent;
+    if (s >= 70) return AppColors.peachBg;
+    if (s >= 40) return AppColors.sunBg;
+    return AppColors.mintBg;
+  }
 
   @override
   Widget build(BuildContext context) {
     final h = widget.hit;
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          top: const BorderSide(color: AppColors.rule),
-          bottom: widget.isLast ? const BorderSide(color: AppColors.rule) : BorderSide.none,
-        ),
-      ),
+    return WCard(
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           InkWell(
             onTap: () => setState(() => _open = !_open),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 18),
+              padding: const EdgeInsets.all(14),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Index column
-                  SizedBox(
+                  Container(
                     width: 40,
-                    child: Text(
-                      widget.index.toString().padLeft(2, '0'),
-                      style: AppText.monoMeta.copyWith(color: AppColors.mist),
+                    height: 40,
+                    decoration: BoxDecoration(
+                        color: _scoreBg,
+                        borderRadius: BorderRadius.circular(
+                            AppRadius.sm)),
+                    child: Column(
+                      mainAxisAlignment:
+                          MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '${h.scorePercent}',
+                          style: AppText.bodyBold.copyWith(
+                              color: _scoreColor,
+                              fontSize: 13),
+                        ),
+                        Text('%',
+                            style: AppText.tiny
+                                .copyWith(color: _scoreColor)),
+                      ],
                     ),
                   ),
-                  // Body
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
                       children: [
                         Text(h.title,
-                          style: AppText.display4.copyWith(fontSize: 18, height: 1.25),
-                          maxLines: 2, overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 6),
+                            style: AppText.bodyBold,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 4),
                         Wrap(
-                          spacing: 10,
-                          runSpacing: 4,
-                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          runSpacing: 2,
                           children: [
-                            Text(h.patentId, style: AppText.monoMeta),
-                            if (h.assignee != null) ...[
-                              Text('·', style: AppText.monoMeta),
-                              Text(h.assignee!, style: AppText.monoMeta),
-                            ],
-                            if (h.date != null) ...[
-                              Text('·', style: AppText.monoMeta),
-                              Text(h.date!, style: AppText.monoMeta),
-                            ],
-                            Text('·', style: AppText.monoMeta),
-                            Text(h.sourcePhasLabel.toUpperCase(), style: AppText.monoMeta.copyWith(color: AppColors.accentInk)),
+                            Text(h.patentId,
+                                style: AppText.tiny),
+                            if (h.assignee != null)
+                              Text('· ${h.assignee}',
+                                  style: AppText.tiny),
+                            if (h.date != null)
+                              Text('· ${h.date}',
+                                  style: AppText.tiny),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  // Match score — plain integer, right-aligned
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${h.scorePercent}',
-                        style: AppText.display4.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
-                      ),
-                      Text('MATCH', style: AppText.monoMeta),
-                    ],
+                  Icon(
+                    _open
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    size: 20,
+                    color: AppColors.inkSoft,
                   ),
                 ],
               ),
             ),
           ),
-          if (_open) Padding(
-            padding: const EdgeInsets.only(left: 40, right: 0, bottom: 18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 28, height: 1, color: AppColors.accentInk,
-                ),
-                const SizedBox(height: 12),
-                Text('Why it\'s similar', style: AppText.labelSm.copyWith(color: AppColors.accentInk)),
-                const SizedBox(height: 6),
-                Text(h.whySimilar, style: AppText.body.copyWith(height: 1.6)),
-                if (h.cpcCodes.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 6, runSpacing: 6,
-                    children: h.cpcCodes.take(6).map((c) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.hairline),
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                      child: Text(c, style: TextStyle(
-                        fontFamily: fontMono, fontSize: 10,
-                        color: AppColors.graphite, letterSpacing: 0.5,
-                      )),
-                    )).toList(),
-                  ),
-                ],
-                if (h.abstract_.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Text('Abstract', style: AppText.labelSm.copyWith(color: AppColors.accentInk)),
+          if (_open)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  14, 0, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                      height: 1,
+                      color: AppColors.hairline),
+                  const SizedBox(height: 12),
+                  Text('Why it\'s similar',
+                      style: AppText.caption.copyWith(
+                          color: AppColors.lavDark)),
                   const SizedBox(height: 6),
-                  Text(h.abstract_, maxLines: 5, overflow: TextOverflow.ellipsis,
-                    style: AppText.bodySm.copyWith(fontStyle: FontStyle.italic, height: 1.55)),
+                  Text(h.whySimilar,
+                      style: AppText.body
+                          .copyWith(height: 1.6)),
+                  if (h.abstract_.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text('Abstract',
+                        style: AppText.caption.copyWith(
+                            color: AppColors.lavDark)),
+                    const SizedBox(height: 4),
+                    Text(h.abstract_,
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.caption.copyWith(
+                            fontStyle: FontStyle.italic,
+                            height: 1.5)),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 }
 
-class _EmptyField extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.hairline),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('A clean shelf.',
-            style: AppText.display4.copyWith(fontStyle: FontStyle.italic, color: AppColors.accentInk)),
-          const SizedBox(height: 8),
-          Text(
-            'No references matched the search. The field looks open — though absence of proof is not proof of absence.',
-            style: AppText.body.copyWith(color: AppColors.graphite, height: 1.55),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Analysis: novelty · obviousness · eligibility ───────────────────
-
-class _AnalysisBlock extends StatelessWidget {
-  final PatentAnalysisResponse a;
-  const _AnalysisBlock({required this.a});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: _pageH.copyWith(bottom: 36),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(eyebrow: 'IV · The reasoning', title: 'How we read it'),
-
-          _AssessmentEntry(
-            label: 'Novelty',
-            question: 'Is it new?',
-            riskLevel: a.noveltyAssessment.riskLevel,
-            summary: a.noveltyAssessment.summary,
-            details: [
-              if (a.noveltyAssessment.closestReference != null)
-                ('Closest reference', a.noveltyAssessment.closestReference!),
-              if (a.noveltyAssessment.missingElements.isNotEmpty)
-                ('Not found in prior art',
-                  a.noveltyAssessment.missingElements.map((e) => '— $e').join('\n')),
-            ],
-          ),
-          const SizedBox(height: 22),
-
-          _AssessmentEntry(
-            label: 'Non-obviousness',
-            question: 'Is the leap real?',
-            riskLevel: a.obviousnessAssessment.riskLevel,
-            summary: a.obviousnessAssessment.summary,
-            details: [
-              if (a.obviousnessAssessment.combinationRefs.isNotEmpty)
-                ('Could be combined', a.obviousnessAssessment.combinationRefs.join(', ')),
-            ],
-          ),
-
-          if (a.eligibilityNote.applies) ...[
-            const SizedBox(height: 22),
-            _AssessmentEntry(
-              label: 'Eligibility · §101',
-              question: 'Is it the kind of thing the office grants?',
-              riskLevel: 'medium',
-              summary: a.eligibilityNote.summary,
-              details: const [],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _AssessmentEntry extends StatelessWidget {
+// ── Assessment card ──────────────────────────────────────────────────
+class _AssessmentCard extends StatelessWidget {
   final String label;
   final String question;
   final String riskLevel;
   final String summary;
-  final List<(String, String)> details;
+  final Color Function(String) riskColor;
+  final String Function(String) riskLabel;
 
-  const _AssessmentEntry({
+  const _AssessmentCard({
     required this.label,
     required this.question,
     required this.riskLevel,
     required this.summary,
-    required this.details,
+    required this.riskColor,
+    required this.riskLabel,
   });
 
   @override
   Widget build(BuildContext context) {
-    final c = _riskColor(riskLevel);
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.hairline),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        color: AppColors.canvas,
-      ),
+    final c = riskColor(riskLevel);
+    return WCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(child: Eyebrow(label)),
-              Container(
-                width: 8, height: 8,
-                decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+              Expanded(
+                child: Text(label,
+                    style: AppText.sectionTitle),
               ),
-              const SizedBox(width: 8),
-              Text(_riskLabel(riskLevel).toUpperCase(), style: AppText.monoMeta.copyWith(color: c)),
+              Pill(riskLabel(riskLevel),
+                  bg: c.withValues(alpha: 0.15),
+                  fg: c),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(question,
-            style: AppText.display4.copyWith(fontStyle: FontStyle.italic)),
-          const SizedBox(height: 10),
-          Text(summary, style: AppText.body.copyWith(height: 1.6)),
-          for (final d in details) ...[
-            const SizedBox(height: 14),
-            Text(d.$1.toUpperCase(), style: AppText.monoMeta),
-            const SizedBox(height: 4),
-            Text(d.$2, style: AppText.bodySm.copyWith(height: 1.55)),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// ── Strategy ─────────────────────────────────────────────────────────
-
-class _StrategyBlock extends StatelessWidget {
-  final ClaimStrategy strategy;
-  const _StrategyBlock({required this.strategy});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: _pageH.copyWith(bottom: 36),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(eyebrow: 'V · Recommendation', title: 'The move'),
-
-          StudioCard(
-            background: AppColors.sunSoft,
-            border: Border.all(color: Colors.transparent),
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Eyebrow('Recommended filing', color: AppColors.ink.withValues(alpha: 0.5)),
-                const SizedBox(height: 10),
-                Text(strategy.filingLabel,
-                  style: AppText.display3.copyWith(fontStyle: FontStyle.italic)),
-                const SizedBox(height: 14),
-                Text(strategy.rationale,
-                  style: AppText.body.copyWith(height: 1.6)),
-              ],
-            ),
-          ),
-
-          if (strategy.riskAreas.isNotEmpty) ...[
-            const SizedBox(height: 22),
-            Text('Watch for', style: AppText.monoMeta),
-            const SizedBox(height: 10),
-            ...strategy.riskAreas.map((r) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(top: 6),
-                    child: Icon(Icons.warning_amber_rounded, size: 14, color: AppColors.warm),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(r, style: AppText.body.copyWith(height: 1.55))),
-                ],
-              ),
-            )),
-          ],
-
-          if (strategy.suggestedIndependentClaims.isNotEmpty) ...[
-            const SizedBox(height: 22),
-            Text('Draft claims', style: AppText.monoMeta),
-            const SizedBox(height: 10),
-            ...strategy.suggestedIndependentClaims.asMap().entries.map((e) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.canvas,
-                  border: Border.all(color: AppColors.hairline),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 24,
-                      child: Text('${e.key + 1}.',
-                        style: AppText.monoMeta.copyWith(color: AppColors.accentInk)),
-                    ),
-                    Expanded(
-                      child: Text(e.value,
-                        style: AppText.body.copyWith(fontStyle: FontStyle.italic, height: 1.55)),
-                    ),
-                  ],
-                ),
-              ),
-            )),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// ── Invention analysis (how the system read the idea) ───────────────
-
-class _InventionBlock extends StatelessWidget {
-  final InventionAnalysis inv;
-  const _InventionBlock({required this.inv});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: _pageH.copyWith(bottom: 36),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(eyebrow: 'Appendix · Method', title: 'How we read the idea'),
-
-          Text('Core concept', style: AppText.monoMeta),
-          const SizedBox(height: 6),
-          Text(inv.coreConcept, style: AppText.body.copyWith(height: 1.6)),
-          const SizedBox(height: 22),
-
-          if (inv.essentialElements.isNotEmpty) ...[
-            Text('Essential elements', style: AppText.monoMeta),
-            const SizedBox(height: 10),
-            ...inv.essentialElements.asMap().entries.map((e) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 26,
-                    child: Text('${e.key + 1}'.padLeft(2, '0'),
-                      style: AppText.monoMeta.copyWith(color: AppColors.accentInk)),
-                  ),
-                  Expanded(child: Text(e.value, style: AppText.body.copyWith(height: 1.55))),
-                ],
-              ),
-            )),
-            const SizedBox(height: 22),
-          ],
-
-          if (inv.cpcCodes.isNotEmpty) ...[
-            Text('CPC classifications', style: AppText.monoMeta),
-            const SizedBox(height: 10),
-            ...inv.cpcCodes.map((c) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.hairline),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: Text(c.code,
-                      style: TextStyle(fontFamily: fontMono, fontSize: 10,
-                        color: AppColors.accentInk, letterSpacing: 0.5, fontWeight: FontWeight.w600)),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(c.description,
-                    style: AppText.bodySm.copyWith(height: 1.5))),
-                ],
-              ),
-            )),
-            const SizedBox(height: 22),
-          ],
-
-          if (inv.searchStrategies.isNotEmpty) ...[
-            Text('Queries', style: AppText.monoMeta),
-            const SizedBox(height: 10),
-            ...inv.searchStrategies.map((s) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text('"${s.query}"',
-                      style: AppText.body.copyWith(fontStyle: FontStyle.italic)),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(_approach(s.approach).toUpperCase(),
-                    style: AppText.monoMeta.copyWith(color: AppColors.accentInk)),
-                ],
-              ),
-            )),
-            const SizedBox(height: 22),
-          ],
-
-          if (inv.alternativeImplementations.isNotEmpty) ...[
-            Text('Adjacent framings', style: AppText.monoMeta),
-            const SizedBox(height: 10),
-            ...inv.alternativeImplementations.map((a) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8, right: 10),
-                    child: SizedBox(width: 14, child: Divider(color: AppColors.mist, thickness: 1)),
-                  ),
-                  Expanded(child: Text(a, style: AppText.body.copyWith(height: 1.55))),
-                ],
-              ),
-            )),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _approach(String a) {
-    switch (a) {
-      case 'function_words': return 'Function';
-      case 'technical_structure': return 'Structure';
-      case 'use_case': return 'Use case';
-      case 'synonyms': return 'Synonyms';
-      default: return a;
-    }
-  }
-}
-
-// ── Disclaimer ──────────────────────────────────────────────────────
-
-class _DisclaimerBlock extends StatelessWidget {
-  final String text;
-  const _DisclaimerBlock({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: _pageH.copyWith(bottom: 24),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.hairline),
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(top: 2, right: 10),
-              child: Icon(Icons.info_outline_rounded, size: 14, color: AppColors.mist),
-            ),
-            Expanded(
-              child: Text(text,
-                style: AppText.bodySm.copyWith(color: AppColors.graphite, height: 1.5)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Foot actions ────────────────────────────────────────────────────
-
-class _FootActions extends StatelessWidget {
-  final bool canBuildThis;
-  final bool isLoading;
-  final VoidCallback onExport;
-  final VoidCallback onBuildThis;
-
-  const _FootActions({
-    required this.canBuildThis,
-    required this.isLoading,
-    required this.onExport,
-    required this.onBuildThis,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: _pageH.copyWith(top: 8),
-      child: Column(
-        children: [
-          StudioButton(
-            label: 'Export full analysis',
-            icon: Icons.arrow_downward_rounded,
-            kind: BtnKind.primary,
-            onPressed: isLoading ? null : onExport,
-          ),
-          if (canBuildThis) ...[
-            const SizedBox(height: 10),
-            StudioButton(
-              label: 'Draft the application',
-              icon: Icons.edit_note_rounded,
-              kind: BtnKind.accent,
-              onPressed: isLoading ? null : onBuildThis,
-            ),
-          ],
+              style: AppText.bodyBold.copyWith(
+                  fontStyle: FontStyle.italic)),
+          const SizedBox(height: 8),
+          Text(summary,
+              style: AppText.body.copyWith(height: 1.6)),
         ],
       ),
     );

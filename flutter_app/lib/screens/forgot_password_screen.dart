@@ -2,15 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
 import '../theme.dart';
-import '../widgets/studio_widgets.dart';
-
-// ─────────────────────────────────────────────────────────────────────
-// Forgot Password — The Correspondence
-//
-// Three chapters in a single editorial flow: request, verify, rewrite.
-// Each with an eyebrow "chapter" label, a serif prompt, an Inter
-// subprompt, and a StudioCard form beneath.
-// ─────────────────────────────────────────────────────────────────────
+import '../widgets/whiskers_widgets.dart';
 
 enum _Step { enterEmail, enterCode, newPassword }
 
@@ -39,38 +31,30 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  String get _chapter {
+  String get _stepTitle {
     switch (_step) {
-      case _Step.enterEmail: return 'CHAPTER 01 · THE REQUEST';
-      case _Step.enterCode: return 'CHAPTER 02 · THE VERIFICATION';
-      case _Step.newPassword: return 'CHAPTER 03 · THE REWRITE';
+      case _Step.enterEmail: return "Let's Reset It";
+      case _Step.enterCode: return 'Check Your Inbox';
+      case _Step.newPassword: return 'Choose a New Secret';
     }
   }
 
-  String get _titleA {
-    switch (_step) {
-      case _Step.enterEmail: return 'Let\'s ';
-      case _Step.enterCode: return 'Check your ';
-      case _Step.newPassword: return 'Choose a ';
-    }
-  }
-
-  String get _titleB {
-    switch (_step) {
-      case _Step.enterEmail: return 'reset it.';
-      case _Step.enterCode: return 'inbox.';
-      case _Step.newPassword: return 'new secret.';
-    }
-  }
-
-  String get _subtitle {
+  String get _stepSubtitle {
     switch (_step) {
       case _Step.enterEmail:
-        return 'We\'ll send a six-digit code to your email.';
+        return "We'll send a six-digit code to your email.";
       case _Step.enterCode:
         return 'Enter the 6-digit code sent to ${_emailController.text.trim()}.';
       case _Step.newPassword:
         return 'Eight characters or more. Make it memorable.';
+    }
+  }
+
+  int get _stepIndex {
+    switch (_step) {
+      case _Step.enterEmail: return 0;
+      case _Step.enterCode: return 1;
+      case _Step.newPassword: return 2;
     }
   }
 
@@ -81,60 +65,84 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
               child: Row(
                 children: [
-                  IconBtn(icon: Icons.arrow_back_rounded, onPressed: () => Navigator.pop(context)),
+                  IconBtn(
+                      icon: Icons.arrow_back_rounded,
+                      onPressed: () => Navigator.pop(context)),
                   const Spacer(),
-                  Text('THE CORRESPONDENCE', style: AppText.monoMeta),
+                  Text('Reset Password', style: AppText.sectionTitle),
                   const Spacer(),
-                  const SizedBox(width: 40),
+                  const SizedBox(width: 36),
                 ],
               ),
             ),
+
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(22, 16, 22, 28),
+                padding:
+                    const EdgeInsets.fromLTRB(20, 8, 20, 28),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    // Mascot + step pills
+                    const Mascot(
+                        pose: MascotPose.detective, size: 80),
+                    const SizedBox(height: 14),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(width: 20, height: 2, color: AppColors.accentInk),
-                        const SizedBox(width: 10),
-                        Text(_chapter, style: AppText.monoMeta),
+                        Pill('1. Email',
+                            bg: _stepIndex >= 0
+                                ? AppColors.lav
+                                : AppColors.lavLight,
+                            fg: _stepIndex >= 0
+                                ? Colors.white
+                                : AppColors.lavDark),
+                        const SizedBox(width: 6),
+                        Pill('2. Code',
+                            bg: _stepIndex >= 1
+                                ? AppColors.lav
+                                : AppColors.lavLight,
+                            fg: _stepIndex >= 1
+                                ? Colors.white
+                                : AppColors.lavDark),
+                        const SizedBox(width: 6),
+                        Pill('3. Password',
+                            bg: _stepIndex >= 2
+                                ? AppColors.lav
+                                : AppColors.lavLight,
+                            fg: _stepIndex >= 2
+                                ? Colors.white
+                                : AppColors.lavDark),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    RichText(
-                      text: TextSpan(
-                        style: AppText.display1,
-                        children: [
-                          TextSpan(text: _titleA),
-                          TextSpan(
-                            text: _titleB,
-                            style: AppText.display1.copyWith(
-                              fontStyle: FontStyle.italic,
-                              color: AppColors.accentInk,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    const SizedBox(height: 20),
+
+                    // Title + subtitle
+                    Text(_stepTitle,
+                        style: AppText.display2,
+                        textAlign: TextAlign.center),
+                    const SizedBox(height: 6),
+                    Text(_stepSubtitle,
+                        style: AppText.caption,
+                        textAlign: TextAlign.center),
+                    const SizedBox(height: 20),
+
+                    // Step content card
+                    WCard(child: _buildStepContent()),
                     const SizedBox(height: 12),
-                    Text(_subtitle, style: AppText.lede),
-                    const SizedBox(height: 24),
-                    StudioCard(child: _buildStepContent()),
-                    const SizedBox(height: 14),
-                    Center(
-                      child: TextButton(
-                        onPressed: _isLoading ? null : () => Navigator.pop(context),
-                        child: Text(
-                          'Back to sign in',
-                          style: AppText.caption.copyWith(color: AppColors.accentInk),
-                        ),
-                      ),
+
+                    TextButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () => Navigator.pop(context),
+                      child: Text('Back to sign in',
+                          style: AppText.caption.copyWith(
+                              color: AppColors.lavDark)),
                     ),
                   ],
                 ),
@@ -154,7 +162,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
-  Widget _studioField({
+  Widget _field({
     required TextEditingController controller,
     required String hint,
     bool obscure = false,
@@ -162,36 +170,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     TextInputAction? action,
     ValueChanged<String>? onSubmitted,
     int? maxLength,
-    TextStyle? overrideStyle,
     TextAlign textAlign = TextAlign.start,
   }) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-      decoration: BoxDecoration(
-        color: AppColors.bg,
-        border: Border.all(color: AppColors.hairline),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: obscure,
-        keyboardType: keyboardType,
-        textInputAction: action,
-        onSubmitted: onSubmitted,
-        maxLength: maxLength,
-        textAlign: textAlign,
-        style: overrideStyle ?? AppText.body,
-        cursorColor: AppColors.accentInk,
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          isCollapsed: true,
-          counterText: '',
-          contentPadding: const EdgeInsets.symmetric(vertical: 2),
-          hintText: hint,
-          hintStyle: (overrideStyle ?? AppText.body).copyWith(
-            color: AppColors.mist, fontStyle: FontStyle.italic,
-          ),
-        ),
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: keyboardType,
+      textInputAction: action,
+      onSubmitted: onSubmitted,
+      maxLength: maxLength,
+      textAlign: textAlign,
+      style: AppText.bodyLg,
+      decoration: InputDecoration(
+        hintText: hint,
+        counterText: '',
       ),
     );
   }
@@ -200,7 +192,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _studioField(
+        _field(
           controller: _emailController,
           hint: 'you@company.com',
           keyboardType: TextInputType.emailAddress,
@@ -208,10 +200,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           onSubmitted: (_) => _sendCode(),
         ),
         const SizedBox(height: 14),
-        StudioButton(
-          label: _isLoading ? 'Sending…' : 'Send reset code',
-          icon: Icons.mail_outline_rounded,
-          kind: BtnKind.primary,
+        PrimaryBtn(
+          label: _isLoading ? 'Sending…' : 'Send Reset Code',
+          leading: Icons.mail_outline_rounded,
+          loading: _isLoading,
           onPressed: _isLoading ? null : _sendCode,
         ),
       ],
@@ -222,30 +214,27 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _studioField(
+        _field(
           controller: _codeController,
-          hint: '••••••',
+          hint: '000000',
           keyboardType: TextInputType.number,
           maxLength: 6,
           textAlign: TextAlign.center,
-          overrideStyle: TextStyle(
-            fontFamily: fontMono, fontSize: 26, fontWeight: FontWeight.w500,
-            letterSpacing: 10, color: AppColors.ink,
-          ),
         ),
         const SizedBox(height: 14),
-        StudioButton(
-          label: _isLoading ? 'Verifying…' : 'Verify code',
-          icon: Icons.check_rounded,
-          kind: BtnKind.primary,
+        PrimaryBtn(
+          label: _isLoading ? 'Verifying…' : 'Verify Code',
+          leading: Icons.check_rounded,
+          loading: _isLoading,
           onPressed: _isLoading ? null : _verifyCode,
         ),
         const SizedBox(height: 6),
-        TextButton(
-          onPressed: _isLoading ? null : _sendCode,
-          child: Text(
-            'Resend the code',
-            style: AppText.caption.copyWith(color: AppColors.accentInk),
+        Center(
+          child: TextButton(
+            onPressed: _isLoading ? null : _sendCode,
+            child: Text('Resend the code',
+                style: AppText.caption
+                    .copyWith(color: AppColors.lavDark)),
           ),
         ),
       ],
@@ -256,14 +245,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _studioField(
+        _field(
           controller: _passwordController,
           hint: 'New password',
           obscure: true,
           action: TextInputAction.next,
         ),
         const SizedBox(height: 10),
-        _studioField(
+        _field(
           controller: _confirmController,
           hint: 'Confirm password',
           obscure: true,
@@ -271,10 +260,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           onSubmitted: (_) => _resetPassword(),
         ),
         const SizedBox(height: 14),
-        StudioButton(
-          label: _isLoading ? 'Saving…' : 'Rewrite password',
-          icon: Icons.lock_outline_rounded,
-          kind: BtnKind.primary,
+        PrimaryBtn(
+          label: _isLoading ? 'Saving…' : 'Reset Password',
+          leading: Icons.lock_outline_rounded,
+          loading: _isLoading,
           onPressed: _isLoading ? null : _resetPassword,
         ),
       ],
@@ -304,7 +293,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (code.length != 6) { _showError('Enter the 6-digit code.'); return; }
     setState(() => _isLoading = true);
     try {
-      final token = await AuthService.instance.verifyResetCode(_emailController.text.trim(), code);
+      final token = await AuthService.instance
+          .verifyResetCode(_emailController.text.trim(), code);
       _resetToken = token;
       if (!mounted) return;
       setState(() => _step = _Step.newPassword);
@@ -318,8 +308,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _resetPassword() async {
     final password = _passwordController.text;
     final confirm = _confirmController.text;
-    if (password.length < 8) { _showError('Password must be at least 8 characters.'); return; }
-    if (password != confirm) { _showError('Passwords do not match.'); return; }
+    if (password.length < 8) {
+      _showError('Password must be at least 8 characters.');
+      return;
+    }
+    if (password != confirm) {
+      _showError('Passwords do not match.');
+      return;
+    }
     setState(() => _isLoading = true);
     try {
       await AuthService.instance.resetPassword(_resetToken!, password);
@@ -336,6 +332,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 }

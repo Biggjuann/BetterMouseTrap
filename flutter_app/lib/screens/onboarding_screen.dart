@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
 import '../theme.dart';
-import '../widgets/studio_widgets.dart';
+import '../widgets/whiskers_widgets.dart';
 import 'home_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -46,32 +46,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
               child: Row(
                 children: [
-                  Text(
-                    '0${_currentPage + 1} / 03',
-                    style: TextStyle(
-                      fontFamily: fontMono,
-                      fontSize: 10,
-                      letterSpacing: 2,
-                      color: AppColors.mist,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  // Progress dots
+                  Row(
+                    children: List.generate(3, (i) => AnimatedContainer(
+                      duration: AppDuration.fast,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: _currentPage == i ? 20 : 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: _currentPage == i
+                            ? AppColors.lav
+                            : AppColors.hairline,
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.pill),
+                      ),
+                    )),
                   ),
                   const Spacer(),
                   TextButton(
                     onPressed: _completeOnboarding,
-                    child: Text(
-                      'Skip',
-                      style: TextStyle(
-                        fontFamily: fontMono,
-                        fontSize: 10,
-                        letterSpacing: 2,
-                        color: AppColors.graphite,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: Text('Skip',
+                        style: AppText.caption.copyWith(
+                            color: AppColors.inkSoft)),
                   ),
                 ],
               ),
@@ -81,38 +80,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 controller: _pageController,
                 onPageChanged: (i) => setState(() => _currentPage = i),
                 children: [
-                  _buildWelcomePage(),
-                  _buildHowItWorksPage(),
-                  _buildReadyPage(),
+                  _buildPage1(),
+                  _buildPage2(),
+                  _buildPage3(),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.base),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(3, (i) => AnimatedContainer(
-                  duration: AppDuration.fast,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: _currentPage == i ? 18 : 6,
-                  height: 2,
-                  decoration: BoxDecoration(
-                    color: _currentPage == i ? AppColors.ink : AppColors.border,
-                  ),
-                )),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xl),
+              padding:
+                  const EdgeInsets.fromLTRB(20, 8, 20, AppSpacing.xl),
               child: _currentPage == 2
-                  ? StudioButton(
-                      label: 'Enter the workshop',
-                      icon: Icons.arrow_forward_rounded,
+                  ? PrimaryBtn(
+                      label: 'Enter the Workshop',
+                      trailing: Icons.arrow_forward_rounded,
                       onPressed: _completeOnboarding,
                     )
-                  : StudioButton(
-                      label: 'Continue',
-                      icon: Icons.arrow_forward_rounded,
+                  : PrimaryBtn(
+                      label: 'Next',
+                      trailing: Icons.arrow_forward_rounded,
                       onPressed: _nextPage,
                     ),
             ),
@@ -122,58 +107,47 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildWelcomePage() {
+  Widget _buildPage1() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Eyebrow('Chapter one · the premise'),
-          const SizedBox(height: AppSpacing.md),
-          RichText(
-            text: TextSpan(
-              style: AppText.display1,
-              children: [
-                const TextSpan(text: 'A quiet place\nto '),
-                TextSpan(
-                  text: 'invent.',
-                  style: AppText.display1.copyWith(
-                    fontStyle: FontStyle.italic,
-                    color: AppColors.accent,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
+          const Mascot(pose: MascotPose.ideabox, size: 160),
+          const SizedBox(height: 24),
+          Text('A Quiet Place\nto Invent.',
+              style: AppText.display1, textAlign: TextAlign.center),
+          const SizedBox(height: 12),
           Text(
-            'Name any product. MouseTrap writes back with seven invention angles — tiered by ambition, scored by evidence, patent-aware.',
-            style: AppText.bodyLg.copyWith(color: AppColors.graphite),
+            'Name any product. MouseTrap writes back with seven invention angles — tiered, scored, patent-aware.',
+            style: AppText.bodyLg.copyWith(color: AppColors.inkSoft),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: 20),
           Container(
-            padding: const EdgeInsets.all(AppSpacing.base),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.accentSoft,
+              color: AppColors.lavLight,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.star_border_rounded, color: AppColors.accentInk, size: 20),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: RichText(
-                    text: TextSpan(
-                      style: AppText.body.copyWith(color: AppColors.accentInk),
-                      children: [
-                        const TextSpan(
-                          text: 'Five credits on arrival. ',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        const TextSpan(text: 'Spend them on ideas.'),
-                      ],
-                    ),
+                const Icon(Icons.star_rounded,
+                    color: AppColors.lav, size: 18),
+                const SizedBox(width: 8),
+                RichText(
+                  text: TextSpan(
+                    style: AppText.body.copyWith(
+                        color: AppColors.lavDark),
+                    children: const [
+                      TextSpan(
+                          text: '5 free credits ',
+                          style:
+                              TextStyle(fontWeight: FontWeight.w700)),
+                      TextSpan(text: 'on arrival.'),
+                    ],
                   ),
                 ),
               ],
@@ -184,63 +158,55 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildHowItWorksPage() {
+  Widget _buildPage2() {
     const steps = [
-      ('A.', 'Describe the product', 'Type a name or paste a reference url.'),
-      ('B.', 'Receive the brief', 'Seven angles, tiered and scored, within a minute.'),
-      ('C.', 'Weigh the prior art', 'We read the patent ledger for you.'),
-      ('D.', 'Export the one-pager', 'PDF ready to email, print, or pin up.'),
+      ('💬', 'Describe the product',
+          'Type a name or paste a reference URL.'),
+      ('⚡', 'Receive the brief',
+          'Seven angles, tiered and scored, within a minute.'),
+      ('🔍', 'Weigh the prior art',
+          'We read the patent ledger for you.'),
+      ('📄', 'Export the one-pager',
+          'PDF ready to email, print, or pin up.'),
     ];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Eyebrow('Chapter two · the method'),
-          const SizedBox(height: AppSpacing.md),
-          RichText(
-            text: TextSpan(
-              style: AppText.display1,
-              children: [
-                const TextSpan(text: 'Four\n'),
-                TextSpan(
-                  text: 'movements.',
-                  style: AppText.display1.copyWith(fontStyle: FontStyle.italic, color: AppColors.accent),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
+          const Mascot(pose: MascotPose.detective, size: 120),
+          const SizedBox(height: 20),
+          Text('Four Movements.',
+              style: AppText.display1, textAlign: TextAlign.center),
+          const SizedBox(height: 16),
           ...steps.map((s) {
-            final (marker, title, body) = s;
-            return Container(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.hairline)),
-              ),
+            final (emoji, title, body) = s;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    width: 28,
-                    child: Text(
-                      marker,
-                      style: TextStyle(
-                        fontFamily: fontMono,
-                        fontSize: 12,
-                        color: AppColors.mist,
-                      ),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.lavLight,
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.sm),
                     ),
+                    child: Center(
+                        child: Text(emoji,
+                            style: const TextStyle(fontSize: 17))),
                   ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(title, style: AppText.display4),
-                        const SizedBox(height: 3),
-                        Text(body, style: AppText.bodySm),
+                        Text(title, style: AppText.bodyBold),
+                        Text(body,
+                            style: AppText.caption),
                       ],
                     ),
                   ),
@@ -253,48 +219,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildReadyPage() {
+  Widget _buildPage3() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Eyebrow('Chapter three · begin'),
-          const SizedBox(height: AppSpacing.md),
-          RichText(
-            text: TextSpan(
-              style: AppText.display1,
-              children: [
-                const TextSpan(text: 'The desk is\n'),
-                TextSpan(
-                  text: 'ready.',
-                  style: AppText.display1.copyWith(fontStyle: FontStyle.italic, color: AppColors.accent),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
+          const Mascot(pose: MascotPose.hero, size: 160),
+          const SizedBox(height: 24),
+          Text('Ready to Build?',
+              style: AppText.display1, textAlign: TextAlign.center),
+          const SizedBox(height: 12),
           Text(
             'Your first idea is sixty seconds away. Be specific — hero products earn the best briefs.',
-            style: AppText.bodyLg.copyWith(color: AppColors.graphite),
+            style: AppText.bodyLg.copyWith(color: AppColors.inkSoft),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppSpacing.xl),
-          StudioCard(
-            padding: const EdgeInsets.all(AppSpacing.base),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '"The bottle is the moat. Refill models quietly make incumbents look disposable."',
-                    style: AppText.display4.copyWith(fontStyle: FontStyle.italic),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 20),
+          WCard(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFC4B5FD), AppColors.lav],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            child: Text(
+              '"The bottle is the moat. Refill models quietly make incumbents look disposable."',
+              style: AppText.body.copyWith(
+                  color: Colors.white,
+                  fontStyle: FontStyle.italic,
+                  height: 1.5),
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text('Today\'s dispatch', style: AppText.monoMeta),
         ],
       ),
     );

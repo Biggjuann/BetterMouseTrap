@@ -3,16 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/session_summary.dart';
 import '../services/api_client.dart';
 import '../theme.dart';
-import '../widgets/studio_widgets.dart';
+import '../widgets/whiskers_widgets.dart';
 import 'session_detail_screen.dart';
-
-// ─────────────────────────────────────────────────────────────────────
-// History — The Ledger
-//
-// A bound ledger of prior sessions. Each row is a file line with
-// mono file-number, serif title, status chip, and a timestamp in
-// small caps. Empty state is a hand-lettered cue, not a card.
-// ─────────────────────────────────────────────────────────────────────
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -38,7 +30,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (mounted) setState(() => _sessions = sessions);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -56,7 +49,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -68,37 +62,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
               child: Row(
                 children: [
-                  IconBtn(icon: Icons.arrow_back_rounded, onPressed: () => Navigator.pop(context)),
+                  IconBtn(
+                      icon: Icons.arrow_back_rounded,
+                      onPressed: () => Navigator.pop(context)),
                   const Spacer(),
-                  Text('THE LEDGER', style: AppText.monoMeta),
+                  Text('Your Sessions', style: AppText.sectionTitle),
                   const Spacer(),
-                  const SizedBox(width: 40),
+                  const Mascot(pose: MascotPose.cheese, size: 36),
                 ],
               ),
             ),
 
-            // Masthead
             Padding(
-              padding: const EdgeInsets.fromLTRB(22, 6, 22, 16),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Your ', style: AppText.display1),
-                  Text(
-                    'working file',
-                    style: AppText.display1.copyWith(
-                      fontStyle: FontStyle.italic, color: AppColors.accentInk,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                  Text('Working file', style: AppText.display2),
+                  const SizedBox(height: 6),
                   Text(
                     'Every session, kept. Pick up a draft or revisit something you shelved.',
-                    style: AppText.lede,
+                    style: AppText.caption,
                   ),
                 ],
               ),
@@ -106,31 +94,37 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.accentInk, strokeWidth: 2))
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                          color: AppColors.lav, strokeWidth: 2))
                   : _sessions == null || _sessions!.isEmpty
                       ? _emptyState()
                       : RefreshIndicator(
-                          color: AppColors.accentInk,
+                          color: AppColors.lav,
                           onRefresh: _loadSessions,
-                          child: ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(22, 0, 22, 32),
+                          child: ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(
+                                20, 0, 20, 32),
                             itemCount: _sessions!.length,
-                            separatorBuilder: (_, __) => Container(height: 1, color: AppColors.hairline),
                             itemBuilder: (context, index) {
                               final s = _sessions![index];
-                              return _LedgerRow(
-                                session: s,
-                                index: index,
-                                onTap: () async {
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => SessionDetailScreen(sessionId: s.id),
-                                    ),
-                                  );
-                                  _loadSessions();
-                                },
-                                onDelete: () => _deleteSession(s),
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: _SessionCard(
+                                  session: s,
+                                  index: index,
+                                  onTap: () async {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => SessionDetailScreen(
+                                            sessionId: s.id),
+                                      ),
+                                    );
+                                    _loadSessions();
+                                  },
+                                  onDelete: () => _deleteSession(s),
+                                ),
                               );
                             },
                           ),
@@ -149,21 +143,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'A blank ',
-              style: AppText.display2,
-            ),
-            Text(
-              'page.',
-              style: AppText.display2.copyWith(
-                fontStyle: FontStyle.italic, color: AppColors.accentInk,
-              ),
-            ),
-            const SizedBox(height: 12),
+            const Mascot(pose: MascotPose.ideabox, size: 100),
+            const SizedBox(height: 16),
+            Text('A blank page.',
+                style: AppText.display2.copyWith(color: AppColors.ink)),
+            const SizedBox(height: 8),
             Text(
               'Nothing in the ledger yet.\nStart a session — it ends up here.',
               textAlign: TextAlign.center,
-              style: AppText.lede,
+              style: AppText.caption,
             ),
           ],
         ),
@@ -172,91 +160,104 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 }
 
-class _LedgerRow extends StatelessWidget {
+const _sessionTileBgs = [
+  AppColors.lavLight,
+  AppColors.sunBg,
+  AppColors.mintBg,
+  AppColors.peachBg,
+  AppColors.pinkBg,
+];
+
+const _sessionEmojis = ['💡', '🔥', '🚀', '⚡', '🎯'];
+
+class _SessionCard extends StatelessWidget {
   final SessionSummary session;
   final int index;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
-  const _LedgerRow({
+  const _SessionCard({
     required this.session,
     required this.index,
     required this.onTap,
     required this.onDelete,
   });
 
-  String _fileNum() {
-    var h = 0;
-    for (final c in session.id.codeUnits) {
-      h = (h * 31 + c) & 0xffff;
-    }
-    return 'F-${2000 + (h % 7999)}';
-  }
-
   String _formatDate(String isoDate) {
     try {
       final dt = DateTime.parse(isoDate);
       final now = DateTime.now();
       final diff = now.difference(dt);
-      if (diff.inMinutes < 60) return '${diff.inMinutes}M AGO';
-      if (diff.inHours < 24) return '${diff.inHours}H AGO';
-      if (diff.inDays < 7) return '${diff.inDays}D AGO';
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+      if (diff.inHours < 24) return '${diff.inHours}h ago';
+      if (diff.inDays < 7) return '${diff.inDays}d ago';
       return '${dt.month}/${dt.day}/${dt.year}';
-    } catch (_) { return ''; }
+    } catch (_) {
+      return '';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    final tileBg = _sessionTileBgs[index % _sessionTileBgs.length];
+    final emoji = _sessionEmojis[index % _sessionEmojis.length];
+
+    return WCard(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 62,
-              child: Text(_fileNum(), style: AppText.monoMeta),
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: tileBg,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    session.displayTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.display3.copyWith(fontSize: 17),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.accentSoft,
-                          borderRadius: BorderRadius.circular(AppRadius.xs),
-                        ),
-                        child: Text(
-                          session.statusLabel.toUpperCase(),
-                          style: AppText.monoMeta.copyWith(color: AppColors.accentInk, fontSize: 9),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(_formatDate(session.updatedAt), style: AppText.monoMeta),
-                    ],
-                  ),
-                ],
-              ),
+            child: Center(
+              child: Text(emoji,
+                  style: const TextStyle(fontSize: 20)),
             ),
-            IconButton(
-              icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.mist),
-              onPressed: onDelete,
-              tooltip: 'Delete',
-              splashRadius: 18,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  session.displayTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.bodyBold,
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Pill(
+                      session.statusLabel,
+                      bg: AppColors.lavLight,
+                      fg: AppColors.lavDark,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _formatDate(session.updatedAt),
+                      style: AppText.tiny,
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded,
+                size: 16, color: AppColors.inkSoft),
+            onPressed: onDelete,
+            tooltip: 'Delete',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
+        ],
       ),
     );
   }
