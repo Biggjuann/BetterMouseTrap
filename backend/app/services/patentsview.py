@@ -127,7 +127,8 @@ def search_patents(payload: dict) -> list[dict]:
         return []
 
     data = resp.json()
-    patents = data.get("patents", [])
+    # search.patentsview.org/api/v1 returns "hits"; old api.patentsview.org returned "patents"
+    patents = data.get("hits", data.get("patents", []))
     log.info("PatentsView returned %d patents (total_hits=%s)", len(patents), data.get("total_hits"))
     return patents
 
@@ -256,7 +257,8 @@ async def search_patents_async(payload: dict) -> list[dict]:
         return []
 
     data = resp.json()
-    patents = data.get("patents", [])
+    # search.patentsview.org/api/v1 returns "hits"; old api.patentsview.org returned "patents"
+    patents = data.get("hits", data.get("patents", []))
     log.info("PatentsView returned %d patents (total_hits=%s)", len(patents), data.get("total_hits"))
     return patents
 
