@@ -3,7 +3,8 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # API keys
-    patentsview_api_key: str = ""
+    patentsview_api_key: str = ""  # deprecated — PatentsView shut down March 2026
+    odp_api_key: str = ""          # USPTO Open Data Portal (replaces PatentsView)
     anthropic_api_key: str = ""
     openai_api_key: str = ""
 

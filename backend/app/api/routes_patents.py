@@ -51,9 +51,9 @@ def _mock_hits(req: PatentSearchRequest) -> list[PatentHit]:
 async def search_patents(req: PatentSearchRequest):
     """Search for prior-art patents via PatentsView, score, and optionally LLM-rerank."""
 
-    # Fall back to mocks if no PatentsView API key
-    if not settings.patentsview_api_key:
-        log.warning("No PATENTSVIEW_API_KEY configured — returning mock hits")
+    # Fall back to mocks if no ODP API key
+    if not settings.odp_api_key:
+        log.warning("No ODP_API_KEY configured — returning mock hits")
         return PatentSearchResponse(hits=_mock_hits(req), confidence="low")
 
     # 1. Build query and call PatentsView
@@ -208,10 +208,9 @@ async def analyze_patents(
 ):
     """Professional patent analysis: invention analysis → multi-phase search → assessment."""
 
-    # Fall back to mocks if no PatentsView API key — without it the search
-    # returns empty results regardless of whether the LLM key is present.
-    if not settings.patentsview_api_key:
-        log.warning("No PATENTSVIEW_API_KEY configured — returning mock analysis")
+    # Fall back to mocks if no ODP API key — without it the search returns nothing.
+    if not settings.odp_api_key:
+        log.warning("No ODP_API_KEY configured — returning mock analysis")
         return _mock_analysis_response(req)
 
     try:

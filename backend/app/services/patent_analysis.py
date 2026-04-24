@@ -24,7 +24,7 @@ from app.schemas.patent import (
     SearchStrategy,
 )
 from app.services.llm import LLMError, call_llm_async
-from app.services.patentsview import (
+from app.services.odp_patents import (
     deduplicate_hits,
     search_cpc_async,
     search_keyword_async,
